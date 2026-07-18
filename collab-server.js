@@ -28,12 +28,16 @@ io.on("connection", (socket) => {
     socket.to(roomId).emit("new-user", socket.id);
   });
 
-  socket.on("server", (roomId, encryptedBuffer, iv) => {
+  socket.on("server-broadcast", (roomId, encryptedBuffer, iv) => {
     socket.to(roomId).emit("client-broadcast", encryptedBuffer, iv);
   });
 
-  socket.on("server-volatile", (roomId, encryptedBuffer, iv) => {
-    socket.volatile.to(roomId).emit("client-broadcast", encryptedBuffer, iv);
+  socket.on("server-volatile-broadcast", (roomId, encryptedBuffer, iv) => {
+    socket.to(roomId).emit("client-broadcast", encryptedBuffer, iv);
+  });
+
+  socket.on("server-chat", (roomId, data) => {
+    socket.to(roomId).emit("client-chat", data);
   });
 
   socket.on("disconnecting", () => {
