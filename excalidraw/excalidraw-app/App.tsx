@@ -147,6 +147,7 @@ import "./index.scss";
 import { ExcalidrawPlusPromoBanner } from "./components/ExcalidrawPlusPromoBanner";
 import { AppSidebar } from "./components/AppSidebar";
 import { Dashboard } from "./components/Dashboard";
+import { CollabChat } from "./components/CollabChat";
 import { getBoard, saveBoard } from "./data/boardsDb";
 
 import type { CollabAPI } from "./collab/Collab";
@@ -1351,6 +1352,12 @@ const ExcalidrawWrapper = () => {
           />
         )}
       </Excalidraw>
+      {isCollaborating && (
+        <CollabChat
+          sendChatMessage={collabAPI?.sendChatMessage}
+          username={collabAPI?.getUsername() || "Invitado"}
+        />
+      )}
     </div>
   );
 };

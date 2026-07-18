@@ -123,6 +123,7 @@ export interface CollabAPI {
   getUsername: CollabInstance["getUsername"];
   getActiveRoomLink: CollabInstance["getActiveRoomLink"];
   setCollabError: CollabInstance["setErrorDialog"];
+  sendChatMessage?: (text: string) => void;
 }
 
 interface CollabProps {
@@ -238,6 +239,7 @@ class Collab extends PureComponent<CollabProps, CollabState> {
       getUsername: this.getUsername,
       getActiveRoomLink: this.getActiveRoomLink,
       setCollabError: this.setErrorDialog,
+      sendChatMessage: this.sendChatMessage,
     };
 
     appJotaiStore.set(collabAPIAtom, collabAPI);
@@ -414,6 +416,20 @@ class Collab extends PureComponent<CollabProps, CollabState> {
         collaborators: this.collaborators,
       });
       LocalData.resumeSave("collaboration");
+    }
+  };
+
+  sendChatMessage = (text: string) => {
+    if (this.portal.socket && this.portal.roomId) {
+      const msg = {
+        text,
+        username: this.getUsername(),
+        timestamp: new Date().toISOString(),
+      };
+      this.portal.socket.emit("server-chat", this.portal.roomId, msg);
+      window.dispatchEvent(
+        new CustomEvent("collab-chat-message", { detail: msg }),
+      );
     }
   };
 
@@ -696,6 +712,12 @@ class Collab extends PureComponent<CollabProps, CollabState> {
         this.relayVisibleSceneBounds({ force: true });
       },
     );
+
+    this.portal.socket.on("client-chat", (data: any) => {
+      window.dispatchEvent(
+        new CustomEvent("collab-chat-message", { detail: data }),
+      );
+    });
 
     this.initializeIdleDetector();
 
