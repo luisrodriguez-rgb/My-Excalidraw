@@ -7,6 +7,7 @@ import {
   useEditorInterface,
   ExcalidrawAPIProvider,
   useExcalidrawAPI,
+  exportToCanvas,
 } from "@excalidraw/excalidraw";
 import { trackEvent } from "@excalidraw/excalidraw/analytics";
 import { getDefaultAppState } from "@excalidraw/excalidraw/appState";
@@ -1020,6 +1021,208 @@ const ExcalidrawWrapper = () => {
 
   const isOffline = useAtomValue(isOfflineAtom);
 
+  const handleAITextSubmit = useCallback(
+    async (props: {
+      messages: { role: string; content: string }[];
+      onStreamCreated: () => void;
+      onChunk: (chunk: string) => void;
+      signal?: AbortController["signal"];
+    }) => {
+      const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+      if (!apiKey) {
+        return {
+          error: new Error(
+            "API Key de Gemini no configurada. Por favor, añade VITE_GEMINI_API_KEY en tu archivo .env.",
+          ),
+        };
+      }
+
+      try {
+        const systemInstruction =
+          "Eres un experto en diagramación. Tu tarea es generar código Mermaid válido basado en la descripción del usuario. " +
+          "Reglas importantes:\n" +
+          "1. Retorna SOLAMENTE código Mermaid válido.\n" +
+          "2. NO envuelvas tu respuesta con explicaciones, textos de introducción/conclusión ni marcas de bloque de código como ```mermaid. Retorna el texto plano directo de Mermaid.\n" +
+          "3. Si el usuario te pide modificaciones, adapta el diagrama Mermaid existente.";
+
+        const formattedPrompt = `${systemInstruction}\n\nHistorial y petición:\n${props.messages
+          .map(
+            (m) =>
+              `${m.role === "user" ? "Usuario" : "Asistente"}: ${m.content}`,
+          )
+          .join("\n")}\n\nAsistente:`;
+
+        const response = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:streamGenerateContent?key=${apiKey}`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              contents: [
+                {
+                  role: "user",
+                  parts: [{ text: formattedPrompt }],
+                },
+              ],
+            }),
+            signal: props.signal,
+          },
+        );
+
+        if (!response.ok) {
+          const errData = await response.json().catch(() => ({}));
+          throw new Error(
+            errData.error?.message || `HTTP error! status: ${response.status}`,
+          );
+        }
+
+        props.onStreamCreated();
+
+        const reader = response.body?.getReader();
+        const decoder = new TextDecoder("utf-8");
+        let done = false;
+        let buffer = "";
+        let fullResponse = "";
+        let accumulatedText = "";
+
+        while (!done && reader) {
+          const { value, done: readerDone } = await reader.read();
+          done = readerDone;
+          if (value) {
+            buffer += decoder.decode(value, { stream: true });
+
+            let currentText = "";
+            let match;
+            const regex = /"text"\s*:\s*"((?:[^"\\]|\\.)*)"/g;
+            while ((match = regex.exec(buffer)) !== null) {
+              try {
+                currentText += JSON.parse(`"${match[1]}"`);
+              } catch (e) {}
+            }
+
+            if (currentText.length > accumulatedText.length) {
+              const delta = currentText.substring(accumulatedText.length);
+              accumulatedText = currentText;
+              props.onChunk(delta);
+              fullResponse = currentText;
+            }
+          }
+        }
+
+        let cleaned = fullResponse.trim();
+        if (cleaned.startsWith("```")) {
+          cleaned = cleaned.replace(/^```[a-zA-Z]*\n/, "");
+        }
+        if (cleaned.endsWith("```")) {
+          cleaned = cleaned.substring(0, cleaned.length - 3);
+        }
+        cleaned = cleaned.trim();
+
+        return {
+          generatedResponse: cleaned,
+          rateLimit: 100,
+          rateLimitRemaining: 99,
+        };
+      } catch (err: any) {
+        return {
+          error: err,
+        };
+      }
+    },
+    [],
+  );
+
+  const handleExportToPPTX = useCallback(async () => {
+    if (!excalidrawAPI) {
+      return;
+    }
+
+    try {
+      excalidrawAPI.setToast({ message: "Preparando exportación a PPTX..." });
+
+      const { default: pptxgen } = await import("pptxgenjs");
+      const pres = new pptxgen();
+      pres.layout = "LAYOUT_16x9";
+
+      const elements = excalidrawAPI.getSceneElements();
+      const appState = excalidrawAPI.getAppState();
+      const files = excalidrawAPI.getFiles();
+
+      const frames = elements.filter(
+        (el) => el.type === "frame" && !el.isDeleted,
+      );
+
+      if (frames.length > 0) {
+        const sortedFrames = [...frames].sort((a, b) => a.x - b.x);
+
+        for (const frame of sortedFrames) {
+          const frameElements = elements.filter(
+            (el) =>
+              (el.frameId === frame.id || el.id === frame.id) && !el.isDeleted,
+          );
+
+          const canvas = await exportToCanvas({
+            elements: frameElements,
+            appState: { ...appState, exportBackground: true },
+            files,
+          });
+
+          const slide = pres.addSlide();
+
+          if ((frame as any).name) {
+            slide.addText((frame as any).name, {
+              x: 0.5,
+              y: 0.2,
+              w: "90%",
+              h: 0.5,
+              fontSize: 20,
+              bold: true,
+              color: appState.theme === "dark" ? "FFFFFF" : "333333",
+            });
+          }
+
+          const dataUrl = canvas.toDataURL("image/png");
+          slide.addImage({
+            data: dataUrl,
+            x: 0.5,
+            y: 0.8,
+            w: 9.0,
+            h: 5.0,
+            sizing: { type: "contain", w: 9.0, h: 5.0 },
+          });
+        }
+      } else {
+        const canvas = await exportToCanvas({
+          elements: elements.filter((el) => !el.isDeleted),
+          appState: { ...appState, exportBackground: true },
+          files,
+        });
+
+        const slide = pres.addSlide();
+        const dataUrl = canvas.toDataURL("image/png");
+        slide.addImage({
+          data: dataUrl,
+          x: 0.5,
+          y: 0.5,
+          w: 9.0,
+          h: 4.625,
+          sizing: { type: "contain", w: 9.0, h: 4.625 },
+        });
+      }
+
+      const boardName = excalidrawAPI.getName() || "presentacion";
+      await pres.writeFile({ fileName: `${boardName}.pptx` });
+      excalidrawAPI.setToast({ message: "¡Exportación a PPTX completada!" });
+    } catch (error: any) {
+      console.error("Error exporting to PPTX:", error);
+      excalidrawAPI.setToast({
+        message: `Error al exportar a PPTX: ${error.message}`,
+      });
+    }
+  }, [excalidrawAPI]);
+
   const localStorageQuotaExceeded = useAtomValue(localStorageQuotaExceededAtom);
 
   const onCollabDialogOpen = useCallback(
@@ -1169,6 +1372,8 @@ const ExcalidrawWrapper = () => {
         initialData={initialStatePromiseRef.current.promise}
         isCollaborating={isCollaborating}
         onPointerUpdate={collabAPI?.onPointerUpdate}
+        aiEnabled={true}
+        onTextSubmit={handleAITextSubmit}
         UIOptions={{
           canvasActions: {
             toggleTheme: true,
@@ -1177,24 +1382,61 @@ const ExcalidrawWrapper = () => {
               renderCustomUI: excalidrawAPI
                 ? (elements, appState, files) => {
                     return (
-                      <ExportToExcalidrawPlus
-                        elements={elements}
-                        appState={appState}
-                        files={files}
-                        name={excalidrawAPI.getName()}
-                        onError={(error) => {
-                          excalidrawAPI?.updateScene({
-                            appState: {
-                              errorMessage: error.message,
-                            },
-                          });
+                      <div
+                        style={{
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: "8px",
+                          width: "100%",
                         }}
-                        onSuccess={() => {
-                          excalidrawAPI.updateScene({
-                            appState: { openDialog: null },
-                          });
-                        }}
-                      />
+                      >
+                        <ExportToExcalidrawPlus
+                          elements={elements}
+                          appState={appState}
+                          files={files}
+                          name={excalidrawAPI.getName()}
+                          onError={(error) => {
+                            excalidrawAPI?.updateScene({
+                              appState: {
+                                errorMessage: error.message,
+                              },
+                            });
+                          }}
+                          onSuccess={() => {
+                            excalidrawAPI.updateScene({
+                              appState: { openDialog: null },
+                            });
+                          }}
+                        />
+                        <button
+                          onClick={handleExportToPPTX}
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            gap: "8px",
+                            padding: "10px 16px",
+                            fontSize: "13px",
+                            fontWeight: "600",
+                            backgroundColor: "#2563eb",
+                            color: "white",
+                            border: "none",
+                            borderRadius: "8px",
+                            cursor: "pointer",
+                            width: "100%",
+                            boxSizing: "border-box",
+                            transition: "background-color 0.2s",
+                          }}
+                          onMouseOver={(e) =>
+                            (e.currentTarget.style.backgroundColor = "#1d4ed8")
+                          }
+                          onMouseOut={(e) =>
+                            (e.currentTarget.style.backgroundColor = "#2563eb")
+                          }
+                        >
+                          📊 Exportar a PPTX (PowerPoint)
+                        </button>
+                      </div>
                     );
                   }
                 : undefined,

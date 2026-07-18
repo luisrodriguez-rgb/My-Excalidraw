@@ -51,6 +51,8 @@ import type {
 } from "@excalidraw/excalidraw/types";
 import type { Mutable, ValueOf } from "@excalidraw/common/utility-types";
 
+import { supabase } from "../data/supabaseClient";
+
 import { appJotaiStore, atom } from "../app-jotai";
 import {
   CURSOR_SYNC_TIMEOUT,
@@ -512,10 +514,27 @@ class Collab extends PureComponent<CollabProps, CollabState> {
     existingRoomLinkData: null | { roomId: string; roomKey: string },
   ) => {
     if (!this.state.username) {
-      import("@excalidraw/random-username").then(({ getRandomUsername }) => {
-        const username = getRandomUsername();
-        this.setUsername(username);
-      });
+      try {
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+        if (session?.user?.email) {
+          const namePart = session.user.email.split("@")[0];
+          const displayName =
+            namePart.charAt(0).toUpperCase() + namePart.slice(1);
+          this.setUsername(displayName);
+        } else {
+          const { getRandomUsername } = await import(
+            "@excalidraw/random-username"
+          );
+          this.setUsername(getRandomUsername());
+        }
+      } catch (e) {
+        const { getRandomUsername } = await import(
+          "@excalidraw/random-username"
+        );
+        this.setUsername(getRandomUsername());
+      }
     }
 
     if (this.portal.socket) {

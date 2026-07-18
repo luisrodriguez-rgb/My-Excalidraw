@@ -484,7 +484,20 @@ const LayerUI = ({
       {/* Keep supporting surfaces available to host-supplied UI, including
           MainMenu.DefaultItems. */}
       <DefaultOverwriteConfirmDialog />
-      {appState.openDialog?.name === "ttd" && <TTDDialog __fallback />}
+      {appState.openDialog?.name === "ttd" &&
+        (app.props.onTextSubmit ? (
+          <TTDDialog
+            onTextSubmit={app.props.onTextSubmit}
+            persistenceAdapter={
+              app.props.persistenceAdapter || {
+                load: () => Promise.resolve(null),
+                save: () => Promise.resolve(),
+              }
+            }
+          />
+        ) : (
+          <TTDDialog __fallback />
+        ))}
       {/* ------------------------------------------------------------------ */}
 
       {defaultUIEnabled && appState.isLoading && <LoadingMessage delay={250} />}

@@ -919,6 +919,8 @@ export interface ExcalidrawProps {
     appState: AppState,
   ) => JSX.Element | null;
   aiEnabled?: boolean;
+  onTextSubmit?: (props: any) => Promise<any>;
+  persistenceAdapter?: any;
   showDeprecatedFonts?: boolean;
   renderScrollbars?: boolean;
   /**
