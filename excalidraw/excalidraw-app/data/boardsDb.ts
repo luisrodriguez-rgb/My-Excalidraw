@@ -1,6 +1,6 @@
 import { createStore, get, set, del } from "idb-keyval";
 
-import { supabase } from "../supabaseClient";
+import { supabase } from "./supabaseClient";
 
 export interface BoardMetadata {
   id: string;
