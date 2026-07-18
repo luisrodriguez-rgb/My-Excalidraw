@@ -5,11 +5,17 @@ import {
   saveBoard,
   deleteBoard,
   duplicateBoard,
+  getFolders,
+  createFolder,
+  deleteFolder,
+  getBoardVersions,
+  restoreBoardVersion,
 } from "../data/boardsDb";
+import { TEMPLATES } from "../data/templates";
 
 import "./Dashboard.scss";
 
-import type { BoardMetadata } from "../data/boardsDb";
+import type { BoardMetadata, BoardVersion, Folder } from "../data/boardsDb";
 
 interface DashboardProps {
   onSelectBoard: (boardId: string) => void;
@@ -106,6 +112,64 @@ const TrashIcon = () => (
   </svg>
 );
 
+const TagIcon = () => (
+  <svg
+    viewBox="0 0 24 24"
+    width="14"
+    height="14"
+    stroke="currentColor"
+    strokeWidth="2"
+    fill="none"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    style={{ marginRight: "4px" }}
+  >
+    <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path>
+    <line x1="7" y1="7" x2="7.01" y2="7"></line>
+  </svg>
+);
+
+const FolderIcon = () => (
+  <svg
+    viewBox="0 0 24 24"
+    width="14"
+    height="14"
+    stroke="currentColor"
+    strokeWidth="2"
+    fill="none"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    style={{ marginRight: "4px" }}
+  >
+    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+  </svg>
+);
+
+const HistoryIcon = () => (
+  <svg
+    viewBox="0 0 24 24"
+    width="14"
+    height="14"
+    stroke="currentColor"
+    strokeWidth="2"
+    fill="none"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    style={{ marginRight: "4px" }}
+  >
+    <polyline points="23 4 23 10 17 10"></polyline>
+    <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+  </svg>
+);
+
+const PREDEFINED_TAGS = [
+  { label: "Diseño", color: "#6366f1" },
+  { label: "Reunión", color: "#f59e0b" },
+  { label: "Arquitectura", color: "#10b981" },
+  { label: "Brainstorming", color: "#ef4444" },
+  { label: "Cliente", color: "#3b82f6" },
+];
+
 export const Dashboard: React.FC<DashboardProps> = ({
   onSelectBoard,
   onJoinRoom,
@@ -129,6 +193,35 @@ export const Dashboard: React.FC<DashboardProps> = ({
   const [boardIdToDelete, setBoardIdToDelete] = useState<string | null>(null);
   const [boardNameToDelete, setBoardNameToDelete] = useState("");
 
+  const [activeTagFilter, setActiveTagFilter] = useState<string | null>(null);
+  const [showTagsModal, setShowTagsModal] = useState(false);
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [showTemplatesModal, setShowTemplatesModal] = useState(false);
+
+  const [folders, setFolders] = useState<Folder[]>([]);
+  const [activeFolderId, setActiveFolderId] = useState<string | null>(null);
+  const [showCreateFolderModal, setShowCreateFolderModal] = useState(false);
+  const [newFolderName, setNewFolderName] = useState("");
+  const [showMoveModal, setShowMoveModal] = useState(false);
+  const [selectedFolderForMove, setSelectedFolderForMove] = useState<
+    string | null
+  >(null);
+
+  const [showPasswordPromptModal, setShowPasswordPromptModal] = useState(false);
+  const [passwordPromptInput, setPasswordPromptInput] = useState("");
+  const [passwordPromptError, setPasswordPromptError] = useState("");
+  const [boardIdToPrompt, setBoardIdToPrompt] = useState<string | null>(null);
+  const [correctPassword, setCorrectPassword] = useState("");
+
+  const [showPasswordSetModal, setShowPasswordSetModal] = useState(false);
+  const [passwordSetInput, setPasswordSetInput] = useState("");
+
+  const [showHistoryModal, setShowHistoryModal] = useState(false);
+  const [boardVersions, setBoardVersions] = useState<BoardVersion[]>([]);
+  const [boardIdForHistory, setBoardIdForHistory] = useState<string | null>(
+    null,
+  );
+
   useEffect(() => {
     loadBoards();
   }, []);
@@ -136,12 +229,24 @@ export const Dashboard: React.FC<DashboardProps> = ({
   const loadBoards = async () => {
     const list = await getBoardsMetadata();
     setBoards(list);
+    const folderList = await getFolders();
+    setFolders(folderList);
   };
 
-  const handleCreateBoard = async () => {
+  const handleCreateBoard = async (templateId: string | null = null) => {
     const id = `board_${Math.random().toString(36).substr(2, 9)}`;
-    const name = `Workspace ${boards.length + 1}`;
-    await saveBoard(id, { name }, [], {}, {});
+    let name = `Workspace ${boards.length + 1}`;
+    let elements: any[] = [];
+
+    if (templateId) {
+      const template = TEMPLATES.find((t) => t.id === templateId);
+      if (template) {
+        name = template.name;
+        elements = template.getElements();
+      }
+    }
+
+    await saveBoard(id, { name }, elements, {}, {});
     onSelectBoard(id);
   };
 
@@ -252,9 +357,115 @@ export const Dashboard: React.FC<DashboardProps> = ({
     document.documentElement.setAttribute("data-theme", nextTheme);
   };
 
-  const filteredBoards = boards.filter((b) =>
-    b.name.toLowerCase().includes(searchQuery.toLowerCase()),
-  );
+  const openTagsModal = (id: string, currentTags: string[]) => {
+    setSelectedBoardId(id);
+    setSelectedTags(currentTags || []);
+    setShowTagsModal(true);
+  };
+
+  const handleTagsConfirm = async () => {
+    if (selectedBoardId) {
+      await saveBoard(selectedBoardId, { tags: selectedTags });
+      setShowTagsModal(false);
+      setSelectedBoardId(null);
+      loadBoards();
+    }
+  };
+
+  const toggleTagSelection = (tagLabel: string) => {
+    setSelectedTags((prev) =>
+      prev.includes(tagLabel)
+        ? prev.filter((t) => t !== tagLabel)
+        : [...prev, tagLabel],
+    );
+  };
+
+  const handleCreateFolderConfirm = async () => {
+    if (newFolderName.trim()) {
+      await createFolder(newFolderName.trim());
+      setShowCreateFolderModal(false);
+      setNewFolderName("");
+      loadBoards();
+    }
+  };
+
+  const handleMoveBoardConfirm = async () => {
+    if (selectedBoardId) {
+      await saveBoard(selectedBoardId, {
+        folderId: selectedFolderForMove || undefined,
+      });
+      setShowMoveModal(false);
+      setSelectedBoardId(null);
+      loadBoards();
+    }
+  };
+
+  const handleOpenBoard = (board: BoardMetadata) => {
+    if (board.password) {
+      setBoardIdToPrompt(board.id);
+      setCorrectPassword(board.password);
+      setPasswordPromptInput("");
+      setPasswordPromptError("");
+      setShowPasswordPromptModal(true);
+    } else {
+      onSelectBoard(board.id);
+    }
+  };
+
+  const handlePasswordPromptConfirm = () => {
+    if (passwordPromptInput === correctPassword) {
+      setShowPasswordPromptModal(false);
+      if (boardIdToPrompt) {
+        onSelectBoard(boardIdToPrompt);
+      }
+    } else {
+      setPasswordPromptError("Contraseña incorrecta. Inténtalo de nuevo.");
+    }
+  };
+
+  const openHistoryModal = async (id: string) => {
+    setBoardIdForHistory(id);
+    const list = await getBoardVersions(id);
+    const sorted = [...list].sort((a, b) => b.timestamp - a.timestamp);
+    setBoardVersions(sorted);
+    setShowHistoryModal(true);
+  };
+
+  const handleRestoreVersion = async (versionId: string) => {
+    if (
+      boardIdForHistory &&
+      window.confirm(
+        "¿Seguro que quieres restaurar esta versión? Se sobreescribirá el lienzo actual.",
+      )
+    ) {
+      await restoreBoardVersion(boardIdForHistory, versionId);
+      setShowHistoryModal(false);
+      setBoardIdForHistory(null);
+      loadBoards();
+    }
+  };
+
+  const handlePasswordSetConfirm = async () => {
+    if (selectedBoardId) {
+      await saveBoard(selectedBoardId, {
+        password: passwordSetInput.trim() || undefined,
+      });
+      setShowPasswordSetModal(false);
+      setSelectedBoardId(null);
+      loadBoards();
+    }
+  };
+
+  const filteredBoards = boards.filter((b) => {
+    const matchesSearch = b.name
+      .toLowerCase()
+      .includes(searchQuery.toLowerCase());
+    const matchesTag = activeTagFilter
+      ? b.tags && b.tags.includes(activeTagFilter)
+      : true;
+    const matchesFolder = b.folderId === (activeFolderId || undefined);
+    return matchesSearch && matchesTag && matchesFolder;
+  });
 
   return (
     <div className={`workspace-dashboard theme-${theme}`}>
@@ -283,122 +494,287 @@ export const Dashboard: React.FC<DashboardProps> = ({
       </header>
 
       <main className="dashboard-content">
-        <div className="welcome-banner">
-          <h2>¡Hola! Gestiona tus espacios de trabajo ilimitados</h2>
-          <p>
-            Crea tantos tableros como quieras de forma 100% gratuita. Los datos
-            se guardan de forma segura en tu navegador. Colabora en tiempo real
-            sin límites.
-          </p>
-        </div>
+        <aside className="dashboard-sidebar">
+          <button
+            className={`sidebar-nav-item ${
+              activeFolderId === null ? "active" : ""
+            }`}
+            onClick={() => setActiveFolderId(null)}
+          >
+            📂 Todos los Tableros
+          </button>
 
-        <div className="search-and-filter">
-          <div className="search-box">
-            <span className="search-icon">🔍</span>
-            <input
-              type="text"
-              placeholder="Buscar tableros..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </div>
-
-          <div className="action-buttons">
-            <input
-              type="file"
-              id="import-excalidraw-file"
-              accept=".excalidraw,.json"
-              style={{ display: "none" }}
-              onChange={handleImport}
-            />
+          <div className="sidebar-section-title">
+            <span>Carpetas</span>
             <button
-              className="btn-import-board"
-              onClick={() =>
-                document.getElementById("import-excalidraw-file")?.click()
-              }
+              className="btn-add-folder"
+              onClick={() => setShowCreateFolderModal(true)}
+              title="Nueva carpeta"
             >
-              Importar Tablero (.excalidraw)
-            </button>
-            <button className="btn-new-board" onClick={handleCreateBoard}>
-              + Crear Nuevo Tablero
+              +
             </button>
           </div>
-        </div>
 
-        {filteredBoards.length > 0 ? (
-          <div className="boards-grid">
-            {filteredBoards.map((board) => (
-              <div key={board.id} className="board-card">
-                <div
-                  className="board-info"
-                  onClick={() => onSelectBoard(board.id)}
-                  title="Haz clic para abrir este tablero"
+          <div className="folders-list">
+            {folders.map((folder) => (
+              <div
+                key={folder.id}
+                className={`folder-item ${
+                  activeFolderId === folder.id ? "active" : ""
+                }`}
+              >
+                <span
+                  className="folder-name"
+                  onClick={() => setActiveFolderId(folder.id)}
                 >
-                  <h3 className="board-title">{board.name}</h3>
-                  <div className="board-dates">
-                    Actualizado: {new Date(board.updatedAt).toLocaleString()}
-                  </div>
-                  <div className="board-tags">
-                    {board.isCollaboration && (
-                      <span className="tag-collab">
-                        Sala activa (Colaboración)
-                      </span>
-                    )}
-                  </div>
-                </div>
-
-                <div className="board-actions">
-                  <button
-                    className="btn-action btn-open"
-                    title="Abrir el tablero en pantalla completa"
-                    onClick={() => onSelectBoard(board.id)}
-                  >
-                    <OpenIcon />
-                    <span>Abrir</span>
-                  </button>
-                  <button
-                    className="btn-action"
-                    title="Cambiar el nombre del tablero"
-                    onClick={() => openRenameModal(board.id, board.name)}
-                  >
-                    <PencilIcon />
-                    <span>Renombrar</span>
-                  </button>
-                  <button
-                    className="btn-action"
-                    title="Crear una copia exacta de este tablero"
-                    onClick={() => handleDuplicate(board.id, board.name)}
-                  >
-                    <CopyIcon />
-                    <span>Duplicar</span>
-                  </button>
-                  <button
-                    className="btn-action"
-                    title="Descargar este tablero como archivo .excalidraw"
-                    onClick={() => handleExport(board.id, board.name)}
-                  >
-                    <ExportIcon />
-                    <span>Exportar</span>
-                  </button>
-                  <button
-                    className="btn-action btn-delete"
-                    title="Eliminar este tablero permanentemente"
-                    onClick={() => handleDelete(board.id, board.name)}
-                  >
-                    <TrashIcon />
-                    <span>Eliminar</span>
-                  </button>
-                </div>
+                  📁 {folder.name}
+                </span>
+                <button
+                  className="btn-delete-folder"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (
+                      window.confirm(
+                        `¿Estás seguro de que quieres eliminar la carpeta "${folder.name}"? Los tableros no se eliminarán.`,
+                      )
+                    ) {
+                      deleteFolder(folder.id).then(() => {
+                        if (activeFolderId === folder.id) {
+                          setActiveFolderId(null);
+                        }
+                        loadBoards();
+                      });
+                    }
+                  }}
+                  title="Eliminar carpeta"
+                >
+                  🗑️
+                </button>
               </div>
             ))}
           </div>
-        ) : (
-          <div className="empty-state">
-            <h3>No tienes tableros que coincidan</h3>
-            <p>Comienza creando un tablero nuevo o importando uno existente.</p>
-            <button onClick={handleCreateBoard}>Crear Primer Tablero</button>
+        </aside>
+
+        <div className="dashboard-main-area">
+          <div className="welcome-banner">
+            <h2>¡Hola! Gestiona tus espacios de trabajo ilimitados</h2>
+            <p>
+              Crea tantos tableros como quieras de forma 100% gratuita. Los
+              datos se guardan de forma segura en tu navegador. Colabora en
+              tiempo real sin límites.
+            </p>
           </div>
-        )}
+
+          <div className="search-and-filter">
+            <div className="search-box">
+              <span className="search-icon">🔍</span>
+              <input
+                type="text"
+                placeholder="Buscar tableros..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+          </div>
+
+          <div className="tags-filter-bar">
+            <span className="filter-label">Filtrar por etiqueta:</span>
+            <button
+              className={`filter-tag-btn ${
+                activeTagFilter === null ? "active" : ""
+              }`}
+              onClick={() => setActiveTagFilter(null)}
+            >
+              Todos
+            </button>
+            {PREDEFINED_TAGS.map((tag) => (
+              <button
+                key={tag.label}
+                className={`filter-tag-btn ${
+                  activeTagFilter === tag.label ? "active" : ""
+                }`}
+                onClick={() => setActiveTagFilter(tag.label)}
+                style={{
+                  borderColor:
+                    activeTagFilter === tag.label ? tag.color : "transparent",
+                  backgroundColor:
+                    activeTagFilter === tag.label ? tag.color : undefined,
+                  color: activeTagFilter === tag.label ? "white" : undefined,
+                }}
+              >
+                <span
+                  className="tag-dot"
+                  style={{ backgroundColor: tag.color }}
+                ></span>
+                {tag.label}
+              </button>
+            ))}
+
+            <div className="action-buttons">
+              <input
+                type="file"
+                id="import-excalidraw-file"
+                accept=".excalidraw,.json"
+                style={{ display: "none" }}
+                onChange={handleImport}
+              />
+              <button
+                className="btn-import-board"
+                onClick={() =>
+                  document.getElementById("import-excalidraw-file")?.click()
+                }
+              >
+                Importar Tablero (.excalidraw)
+              </button>
+              <button
+                className="btn-new-board"
+                onClick={() => setShowTemplatesModal(true)}
+              >
+                + Crear Nuevo Tablero
+              </button>
+            </div>
+          </div>
+
+          {filteredBoards.length > 0 ? (
+            <div className="boards-grid">
+              {filteredBoards.map((board) => (
+                <div key={board.id} className="board-card">
+                  <div
+                    className="board-info"
+                    onClick={() => handleOpenBoard(board)}
+                    title="Haz clic para abrir este tablero"
+                  >
+                    <h3 className="board-title">
+                      {board.password && (
+                        <span style={{ marginRight: "6px" }}>🔒</span>
+                      )}
+                      {board.name}
+                    </h3>
+                    <div className="board-dates">
+                      Actualizado: {new Date(board.updatedAt).toLocaleString()}
+                    </div>
+                    <div className="board-tags">
+                      {board.isCollaboration && (
+                        <span className="tag-collab">
+                          Sala activa (Colaboración)
+                        </span>
+                      )}
+                      {board.tags &&
+                        board.tags.map((tagLabel) => {
+                          const tagInfo = PREDEFINED_TAGS.find(
+                            (t) => t.label === tagLabel,
+                          );
+                          return (
+                            <span
+                              key={tagLabel}
+                              className="board-tag-pill"
+                              style={{
+                                backgroundColor: tagInfo?.color || "#6b7280",
+                              }}
+                            >
+                              {tagLabel}
+                            </span>
+                          );
+                        })}
+                    </div>
+                  </div>
+
+                  <div className="board-actions">
+                    <button
+                      className="btn-action btn-open"
+                      title="Abrir el tablero en pantalla completa"
+                      onClick={() => handleOpenBoard(board)}
+                    >
+                      <OpenIcon />
+                      <span>Abrir</span>
+                    </button>
+                    <button
+                      className="btn-action"
+                      title="Cambiar el nombre del tablero"
+                      onClick={() => openRenameModal(board.id, board.name)}
+                    >
+                      <PencilIcon />
+                      <span>Renombrar</span>
+                    </button>
+                    <button
+                      className="btn-action"
+                      title="Editar etiquetas del tablero"
+                      onClick={() => openTagsModal(board.id, board.tags || [])}
+                    >
+                      <TagIcon />
+                      <span>Etiquetas</span>
+                    </button>
+                    <button
+                      className="btn-action"
+                      title="Configurar contraseña"
+                      onClick={() => {
+                        setSelectedBoardId(board.id);
+                        setPasswordSetInput(board.password || "");
+                        setShowPasswordSetModal(true);
+                      }}
+                    >
+                      <span>🔑 Proteger</span>
+                    </button>
+                    <button
+                      className="btn-action"
+                      title="Mover tablero a una carpeta"
+                      onClick={() => {
+                        setSelectedBoardId(board.id);
+                        setSelectedFolderForMove(board.folderId || null);
+                        setShowMoveModal(true);
+                      }}
+                    >
+                      <FolderIcon />
+                      <span>Mover</span>
+                    </button>
+                    <button
+                      className="btn-action"
+                      title="Ver historial de versiones"
+                      onClick={() => openHistoryModal(board.id)}
+                    >
+                      <HistoryIcon />
+                      <span>Historial</span>
+                    </button>
+                    <button
+                      className="btn-action"
+                      title="Crear una copia exacta de este tablero"
+                      onClick={() => handleDuplicate(board.id, board.name)}
+                    >
+                      <CopyIcon />
+                      <span>Duplicar</span>
+                    </button>
+                    <button
+                      className="btn-action"
+                      title="Descargar este tablero como archivo .excalidraw"
+                      onClick={() => handleExport(board.id, board.name)}
+                    >
+                      <ExportIcon />
+                      <span>Exportar</span>
+                    </button>
+                    <button
+                      className="btn-action btn-delete"
+                      title="Eliminar este tablero permanentemente"
+                      onClick={() => handleDelete(board.id, board.name)}
+                    >
+                      <TrashIcon />
+                      <span>Eliminar</span>
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="empty-state">
+              <h3>No tienes tableros que coincidan</h3>
+              <p>
+                Comienza creando un tablero nuevo o importando uno existente.
+              </p>
+              <button onClick={() => setShowTemplatesModal(true)}>
+                Crear Primer Tablero
+              </button>
+            </div>
+          )}
+        </div>
       </main>
 
       {/* Rename Modal */}
@@ -490,6 +866,448 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 onClick={handleDeleteConfirm}
               >
                 Eliminar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Tags Selection Modal */}
+      {showTagsModal && (
+        <div className="dialog-overlay">
+          <div className="dialog-box">
+            <h3>Editar Etiquetas</h3>
+            <p
+              style={{
+                margin: "0.5rem 0 1rem 0",
+                color: "var(--text-secondary)",
+                fontSize: "13px",
+              }}
+            >
+              Selecciona las etiquetas para organizar este tablero:
+            </p>
+            <div className="tags-selection-list">
+              {PREDEFINED_TAGS.map((tag) => {
+                const isChecked = selectedTags.includes(tag.label);
+                return (
+                  <label key={tag.label} className="tag-checkbox-label">
+                    <input
+                      type="checkbox"
+                      checked={isChecked}
+                      onChange={() => toggleTagSelection(tag.label)}
+                    />
+                    <span
+                      className="tag-pill"
+                      style={{
+                        backgroundColor: tag.color,
+                      }}
+                    >
+                      {tag.label}
+                    </span>
+                  </label>
+                );
+              })}
+            </div>
+            <div className="dialog-buttons">
+              <button
+                className="btn-cancel"
+                onClick={() => setShowTagsModal(false)}
+              >
+                Cancelar
+              </button>
+              <button className="btn-confirm" onClick={handleTagsConfirm}>
+                Guardar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Templates Modal */}
+      {showTemplatesModal && (
+        <div className="dialog-overlay">
+          <div
+            className="dialog-box templates-dialog"
+            style={{ maxWidth: "600px" }}
+          >
+            <h3>Crear Nuevo Tablero</h3>
+            <p
+              style={{
+                color: "var(--text-secondary)",
+                fontSize: "13px",
+                marginBottom: "1.5rem",
+              }}
+            >
+              Selecciona un punto de partida para tu tablero:
+            </p>
+            <div
+              className="templates-grid"
+              style={{
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr",
+                gap: "1rem",
+                margin: "1rem 0",
+              }}
+            >
+              <div
+                className="template-card blank"
+                onClick={() => {
+                  handleCreateBoard(null);
+                  setShowTemplatesModal(false);
+                }}
+                style={{
+                  border: "1px dashed var(--border-color)",
+                  borderRadius: "8px",
+                  padding: "1.25rem",
+                  cursor: "pointer",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "0.5rem",
+                  transition: "all 0.2s",
+                }}
+              >
+                <span style={{ fontSize: "24px" }}>📄</span>
+                <h4 style={{ margin: 0, fontSize: "14px", fontWeight: "600" }}>
+                  Lienzo Vacío
+                </h4>
+                <p
+                  style={{
+                    margin: 0,
+                    fontSize: "11px",
+                    color: "var(--text-secondary)",
+                  }}
+                >
+                  Comienza desde cero con un lienzo limpio.
+                </p>
+              </div>
+              {TEMPLATES.map((tmpl) => (
+                <div
+                  key={tmpl.id}
+                  className="template-card"
+                  onClick={() => {
+                    handleCreateBoard(tmpl.id);
+                    setShowTemplatesModal(false);
+                  }}
+                  style={{
+                    border: "1px solid var(--border-color)",
+                    backgroundColor: "var(--bg-secondary)",
+                    borderRadius: "8px",
+                    padding: "1.25rem",
+                    cursor: "pointer",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "0.5rem",
+                    transition: "all 0.2s",
+                  }}
+                >
+                  <span style={{ fontSize: "24px" }}>{tmpl.icon}</span>
+                  <h4
+                    style={{ margin: 0, fontSize: "14px", fontWeight: "600" }}
+                  >
+                    {tmpl.name}
+                  </h4>
+                  <p
+                    style={{
+                      margin: 0,
+                      fontSize: "11px",
+                      color: "var(--text-secondary)",
+                    }}
+                  >
+                    {tmpl.description}
+                  </p>
+                </div>
+              ))}
+            </div>
+            <div className="dialog-buttons">
+              <button
+                className="btn-cancel"
+                onClick={() => setShowTemplatesModal(false)}
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Move Board Modal */}
+      {showMoveModal && (
+        <div className="dialog-overlay">
+          <div className="dialog-box">
+            <h3>Mover Tablero</h3>
+            <p
+              style={{
+                margin: "0.5rem 0 1rem 0",
+                color: "var(--text-secondary)",
+                fontSize: "13px",
+              }}
+            >
+              Selecciona la carpeta de destino para este tablero:
+            </p>
+            <div className="form-group">
+              <label>Carpeta:</label>
+              <select
+                value={selectedFolderForMove || ""}
+                onChange={(e) =>
+                  setSelectedFolderForMove(e.target.value || null)
+                }
+                style={{
+                  width: "100%",
+                  padding: "0.75rem",
+                  backgroundColor: "var(--bg-secondary)",
+                  border: "1px solid var(--border-color)",
+                  borderRadius: "6px",
+                  color: "var(--text-primary)",
+                  outline: "none",
+                  cursor: "pointer",
+                }}
+              >
+                <option value="">(Sin carpeta / Raíz)</option>
+                {folders.map((folder) => (
+                  <option key={folder.id} value={folder.id}>
+                    {folder.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="dialog-buttons">
+              <button
+                className="btn-cancel"
+                onClick={() => setShowMoveModal(false)}
+              >
+                Cancelar
+              </button>
+              <button className="btn-confirm" onClick={handleMoveBoardConfirm}>
+                Mover
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Create Folder Modal */}
+      {showCreateFolderModal && (
+        <div className="dialog-overlay">
+          <div className="dialog-box">
+            <h3>Nueva Carpeta</h3>
+            <div className="form-group">
+              <label>Nombre de la Carpeta:</label>
+              <input
+                type="text"
+                placeholder="Escribe el nombre aquí..."
+                value={newFolderName}
+                onChange={(e) => setNewFolderName(e.target.value)}
+                onKeyDown={(e) =>
+                  e.key === "Enter" && handleCreateFolderConfirm()
+                }
+                autoFocus
+              />
+            </div>
+            <div className="dialog-buttons">
+              <button
+                className="btn-cancel"
+                onClick={() => setShowCreateFolderModal(false)}
+              >
+                Cancelar
+              </button>
+              <button
+                className="btn-confirm"
+                onClick={handleCreateFolderConfirm}
+              >
+                Crear
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Password Prompt Modal */}
+      {showPasswordPromptModal && (
+        <div className="dialog-overlay">
+          <div className="dialog-box">
+            <h3>Tablero Protegido</h3>
+            <p
+              style={{
+                margin: "0.5rem 0 1rem 0",
+                color: "var(--text-secondary)",
+                fontSize: "13px",
+              }}
+            >
+              Este tablero está protegido con contraseña. Por favor, introdúcela
+              para abrirlo:
+            </p>
+            <div className="form-group">
+              <label>Contraseña:</label>
+              <input
+                type="password"
+                placeholder="Contraseña..."
+                value={passwordPromptInput}
+                onChange={(e) => setPasswordPromptInput(e.target.value)}
+                onKeyDown={(e) =>
+                  e.key === "Enter" && handlePasswordPromptConfirm()
+                }
+                autoFocus
+              />
+              {passwordPromptError && (
+                <div
+                  style={{
+                    color: "var(--danger-color)",
+                    fontSize: "12px",
+                    marginTop: "5px",
+                  }}
+                >
+                  {passwordPromptError}
+                </div>
+              )}
+            </div>
+            <div className="dialog-buttons">
+              <button
+                className="btn-cancel"
+                onClick={() => setShowPasswordPromptModal(false)}
+              >
+                Cancelar
+              </button>
+              <button
+                className="btn-confirm"
+                onClick={handlePasswordPromptConfirm}
+              >
+                Entrar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Password Set Modal */}
+      {showPasswordSetModal && (
+        <div className="dialog-overlay">
+          <div className="dialog-box">
+            <h3>Proteger Tablero</h3>
+            <p
+              style={{
+                margin: "0.5rem 0 1rem 0",
+                color: "var(--text-secondary)",
+                fontSize: "13px",
+              }}
+            >
+              Introduce una contraseña para proteger este tablero. Déjalo en
+              blanco para quitar la protección:
+            </p>
+            <div className="form-group">
+              <label>Contraseña:</label>
+              <input
+                type="password"
+                placeholder="Escribe la contraseña aquí..."
+                value={passwordSetInput}
+                onChange={(e) => setPasswordSetInput(e.target.value)}
+                onKeyDown={(e) =>
+                  e.key === "Enter" && handlePasswordSetConfirm()
+                }
+                autoFocus
+              />
+            </div>
+            <div className="dialog-buttons">
+              <button
+                className="btn-cancel"
+                onClick={() => setShowPasswordSetModal(false)}
+              >
+                Cancelar
+              </button>
+              <button
+                className="btn-confirm"
+                onClick={handlePasswordSetConfirm}
+              >
+                Guardar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Version History Modal */}
+      {showHistoryModal && (
+        <div className="dialog-overlay">
+          <div className="dialog-box" style={{ maxWidth: "500px" }}>
+            <h3>Historial de Versiones</h3>
+            <p
+              style={{
+                margin: "0.5rem 0 1rem 0",
+                color: "var(--text-secondary)",
+                fontSize: "13px",
+              }}
+            >
+              Restaura este tablero a una versión anterior. Se guardará la
+              versión actual como un punto nuevo en el historial.
+            </p>
+            <div className="versions-list">
+              {boardVersions.length === 0 ? (
+                <div
+                  style={{
+                    textAlign: "center",
+                    color: "var(--text-secondary)",
+                    padding: "20px",
+                  }}
+                >
+                  No hay versiones guardadas para este tablero todavía.
+                </div>
+              ) : (
+                boardVersions.map((version, index) => (
+                  <div
+                    key={version.id}
+                    className="version-item"
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      padding: "10px 15px",
+                      backgroundColor: "var(--bg-secondary)",
+                      border: "1px solid var(--border-color)",
+                      borderRadius: "8px",
+                      marginBottom: "10px",
+                    }}
+                  >
+                    <div>
+                      <div
+                        style={{
+                          fontSize: "14px",
+                          fontWeight: "600",
+                          color: "var(--text-primary)",
+                        }}
+                      >
+                        Versión {boardVersions.length - index}
+                      </div>
+                      <div
+                        style={{
+                          fontSize: "11px",
+                          color: "var(--text-secondary)",
+                          marginTop: "2px",
+                        }}
+                      >
+                        {new Date(version.timestamp).toLocaleString()} (
+                        {version.elementsCount} elementos)
+                      </div>
+                    </div>
+                    <button
+                      className="btn-confirm"
+                      style={{
+                        padding: "4px 10px",
+                        fontSize: "12px",
+                        width: "auto",
+                      }}
+                      onClick={() => handleRestoreVersion(version.id)}
+                    >
+                      Restaurar
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
+            <div className="dialog-buttons">
+              <button
+                className="btn-cancel"
+                onClick={() => setShowHistoryModal(false)}
+              >
+                Cerrar
               </button>
             </div>
           </div>

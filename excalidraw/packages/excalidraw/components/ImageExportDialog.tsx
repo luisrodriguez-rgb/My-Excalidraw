@@ -111,6 +111,42 @@ const ImageExportModal = ({
     exportSelectionOnly,
   );
 
+  const exportToPDF = async () => {
+    try {
+      const canvas = await exportToCanvas({
+        elements: exportedElements,
+        appState: {
+          ...appStateSnapshot,
+          name: projectName,
+          exportBackground: exportWithBackground,
+          exportWithDarkMode,
+          exportScale,
+          exportEmbedScene: embedScene,
+        },
+        files,
+        exportPadding: DEFAULT_EXPORT_PADDING,
+        exportingFrame,
+      });
+
+      const { jsPDF } = await import("jspdf");
+
+      const width = canvas.width;
+      const height = canvas.height;
+
+      const pdf = new jsPDF({
+        orientation: width > height ? "landscape" : "portrait",
+        unit: "px",
+        format: [width, height],
+      });
+
+      const imgData = canvas.toDataURL("image/png");
+      pdf.addImage(imgData, "PNG", 0, 0, width, height);
+      pdf.save(`${projectName || "tablero"}.pdf`);
+    } catch (error) {
+      console.error("Error exporting to PDF:", error);
+    }
+  };
+
   useEffect(() => {
     const previewNode = previewRef.current;
     if (!previewNode) {
@@ -324,6 +360,14 @@ const ImageExportModal = ({
             icon={downloadIcon}
           >
             {t("imageExportDialog.button.exportToSvg")}
+          </FilledButton>
+          <FilledButton
+            className="ImageExportModal__settings__buttons__button"
+            label="Exportar a PDF"
+            onClick={exportToPDF}
+            icon={downloadIcon}
+          >
+            Exportar a PDF
           </FilledButton>
           {(probablySupportsClipboardBlob || isFirefox) && (
             <FilledButton
