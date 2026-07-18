@@ -9,6 +9,7 @@ CREATE TABLE IF NOT EXISTS public.folders (
 -- Habilitar RLS para carpetas
 ALTER TABLE public.folders ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Allow users to manage their own folders" ON public.folders;
 CREATE POLICY "Allow users to manage their own folders"
     ON public.folders FOR ALL
     USING (auth.uid() = user_id);
@@ -31,6 +32,7 @@ CREATE TABLE IF NOT EXISTS public.boards (
 -- Habilitar RLS para tableros
 ALTER TABLE public.boards ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Allow users to manage their own boards" ON public.boards;
 CREATE POLICY "Allow users to manage their own boards"
     ON public.boards FOR ALL
     USING (auth.uid() = user_id);
@@ -45,6 +47,7 @@ CREATE TABLE IF NOT EXISTS public.libraries (
 -- Habilitar RLS para bibliotecas
 ALTER TABLE public.libraries ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Allow users to manage their own library" ON public.libraries;
 CREATE POLICY "Allow users to manage their own library"
     ON public.libraries FOR ALL
     USING (auth.uid() = user_id);
