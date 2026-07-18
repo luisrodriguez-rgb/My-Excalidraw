@@ -124,6 +124,8 @@ export interface CollabAPI {
   getActiveRoomLink: CollabInstance["getActiveRoomLink"];
   setCollabError: CollabInstance["setErrorDialog"];
   sendChatMessage?: (text: string) => void;
+  sendCommentCreate?: (comment: any) => void;
+  sendCommentResolve?: (commentId: string) => void;
 }
 
 interface CollabProps {
@@ -240,6 +242,8 @@ class Collab extends PureComponent<CollabProps, CollabState> {
       getActiveRoomLink: this.getActiveRoomLink,
       setCollabError: this.setErrorDialog,
       sendChatMessage: this.sendChatMessage,
+      sendCommentCreate: this.sendCommentCreate,
+      sendCommentResolve: this.sendCommentResolve,
     };
 
     appJotaiStore.set(collabAPIAtom, collabAPI);
@@ -429,6 +433,26 @@ class Collab extends PureComponent<CollabProps, CollabState> {
       this.portal.socket.emit("server-chat", this.portal.roomId, msg);
       window.dispatchEvent(
         new CustomEvent("collab-chat-message", { detail: msg }),
+      );
+    }
+  };
+
+  sendCommentCreate = (comment: any) => {
+    if (this.portal.socket && this.portal.roomId) {
+      this.portal.socket.emit(
+        "server-comment-create",
+        this.portal.roomId,
+        comment,
+      );
+    }
+  };
+
+  sendCommentResolve = (commentId: string) => {
+    if (this.portal.socket && this.portal.roomId) {
+      this.portal.socket.emit(
+        "server-comment-resolve",
+        this.portal.roomId,
+        commentId,
       );
     }
   };
@@ -716,6 +740,18 @@ class Collab extends PureComponent<CollabProps, CollabState> {
     this.portal.socket.on("client-chat", (data: any) => {
       window.dispatchEvent(
         new CustomEvent("collab-chat-message", { detail: data }),
+      );
+    });
+
+    this.portal.socket.on("client-comment-create", (comment: any) => {
+      window.dispatchEvent(
+        new CustomEvent("collab-comment-create", { detail: comment }),
+      );
+    });
+
+    this.portal.socket.on("client-comment-resolve", (commentId: string) => {
+      window.dispatchEvent(
+        new CustomEvent("collab-comment-resolve", { detail: commentId }),
       );
     });
 

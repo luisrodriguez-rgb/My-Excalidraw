@@ -148,7 +148,15 @@ import { ExcalidrawPlusPromoBanner } from "./components/ExcalidrawPlusPromoBanne
 import { AppSidebar } from "./components/AppSidebar";
 import { Dashboard } from "./components/Dashboard";
 import { CollabChat } from "./components/CollabChat";
-import { getBoard, saveBoard } from "./data/boardsDb";
+
+import {
+  getBoard,
+  saveBoard,
+  getBoardComments,
+  saveBoardComments,
+} from "./data/boardsDb";
+
+import type { BoardComment } from "./data/boardsDb";
 
 import type { CollabAPI } from "./collab/Collab";
 
@@ -449,6 +457,24 @@ const ExcalidrawWrapper = () => {
 
   const [, forceRefresh] = useState(false);
 
+  const [comments, setComments] = useState<BoardComment[]>([]);
+  const [commentModeActive, setCommentModeActive] = useState(false);
+  const [activeCommentPopupId, setActiveCommentPopupId] = useState<
+    string | null
+  >(null);
+  const [showAddCommentModal, setShowAddCommentModal] = useState(false);
+  const [newCommentCoords, setNewCommentCoords] = useState<{
+    x: number;
+    y: number;
+  } | null>(null);
+  const [newCommentText, setNewCommentText] = useState("");
+  const [newCommentAuthor, setNewCommentAuthor] = useState("");
+  const [viewportState, setViewportState] = useState({
+    zoom: 1,
+    scrollX: 0,
+    scrollY: 0,
+  });
+
   useEffect(() => {
     if (isDevEnv()) {
       const debugState = loadSavedDebugState();
@@ -548,6 +574,117 @@ const ExcalidrawWrapper = () => {
     },
     [collabAPI, excalidrawAPI],
   );
+
+  useEffect(() => {
+    if (activeBoardId) {
+      getBoardComments(activeBoardId).then((list) => {
+        setComments(list);
+      });
+    } else {
+      setComments([]);
+    }
+    setCommentModeActive(false);
+    setActiveCommentPopupId(null);
+  }, [activeBoardId]);
+
+  useEffect(() => {
+    const handleCollabCreate = (e: any) => {
+      const newComment = e.detail;
+      setComments((prev) => {
+        if (prev.some((c) => c.id === newComment.id)) {
+          return prev;
+        }
+        return [...prev, newComment];
+      });
+    };
+
+    const handleCollabResolve = (e: any) => {
+      const id = e.detail;
+      setComments((prev) => prev.filter((c) => c.id !== id));
+    };
+
+    window.addEventListener("collab-comment-create" as any, handleCollabCreate);
+    window.addEventListener(
+      "collab-comment-resolve" as any,
+      handleCollabResolve,
+    );
+
+    return () => {
+      window.removeEventListener(
+        "collab-comment-create" as any,
+        handleCollabCreate,
+      );
+      window.removeEventListener(
+        "collab-comment-resolve" as any,
+        handleCollabResolve,
+      );
+    };
+  }, [collabAPI]);
+
+  const handleResolveComment = async (commentId: string) => {
+    const updated = comments.filter((c) => c.id !== commentId);
+    setComments(updated);
+    if (activeBoardId) {
+      await saveBoardComments(activeBoardId, updated);
+    }
+    setActiveCommentPopupId(null);
+    if (collabAPI && collabAPI.sendCommentResolve) {
+      collabAPI.sendCommentResolve(commentId);
+    }
+  };
+
+  const handleCreateCommentConfirm = async () => {
+    if (newCommentText.trim() && newCommentCoords && activeBoardId) {
+      const author = newCommentAuthor.trim() || "Anónimo";
+      localStorage.setItem("comment-author", author);
+
+      const newComment: BoardComment = {
+        id: `comment_${Math.random().toString(36).substr(2, 9)}`,
+        text: newCommentText.trim(),
+        author,
+        x: newCommentCoords.x,
+        y: newCommentCoords.y,
+        createdAt: Date.now(),
+        resolved: false,
+      };
+
+      const updated = [...comments, newComment];
+      setComments(updated);
+      await saveBoardComments(activeBoardId, updated);
+      setShowAddCommentModal(false);
+      setNewCommentCoords(null);
+      setNewCommentText("");
+
+      if (collabAPI && collabAPI.sendCommentCreate) {
+        collabAPI.sendCommentCreate(newComment);
+      }
+    }
+  };
+
+  const handleOverlayClick = (e: React.MouseEvent) => {
+    if (!excalidrawAPI) {
+      return;
+    }
+
+    const clientX = e.clientX;
+    const clientY = e.clientY;
+
+    const appState = excalidrawAPI.getAppState();
+    const zoom = appState.zoom.value;
+    const scrollX = appState.scrollX;
+    const scrollY = appState.scrollY;
+
+    const x = clientX / zoom - scrollX;
+    const y = clientY / zoom - scrollY;
+
+    setNewCommentCoords({ x, y });
+    setNewCommentText("");
+    setNewCommentAuthor(
+      collabAPI?.getUsername() || localStorage.getItem("comment-author") || "",
+    );
+    setShowAddCommentModal(true);
+    setCommentModeActive(false);
+  };
 
   useEffect(() => {
     if (!excalidrawAPI || (!isCollabDisabled && !collabAPI)) {
@@ -720,6 +857,18 @@ const ExcalidrawWrapper = () => {
     appState: AppState,
     files: BinaryFiles,
   ) => {
+    if (
+      appState.zoom.value !== viewportState.zoom ||
+      appState.scrollX !== viewportState.scrollX ||
+      appState.scrollY !== viewportState.scrollY
+    ) {
+      setViewportState({
+        zoom: appState.zoom.value,
+        scrollX: appState.scrollX,
+        scrollY: appState.scrollY,
+      });
+    }
+
     if (collabAPI?.isCollaborating()) {
       collabAPI.syncElements(elements);
     }
@@ -1357,6 +1506,371 @@ const ExcalidrawWrapper = () => {
           sendChatMessage={collabAPI?.sendChatMessage}
           username={collabAPI?.getUsername() || "Invitado"}
         />
+      )}
+
+      {/* Floating Comment Mode Toggle Button */}
+      {activeBoardId && activeBoardId !== "collab_room" && (
+        <button
+          className={`floating-comment-mode-btn ${
+            commentModeActive ? "active" : ""
+          }`}
+          onClick={() => setCommentModeActive(!commentModeActive)}
+          title={
+            commentModeActive
+              ? "Desactivar modo comentarios"
+              : "Activar modo comentarios"
+          }
+          style={{
+            position: "fixed",
+            bottom: "80px",
+            right: "20px",
+            width: "50px",
+            height: "50px",
+            borderRadius: "50%",
+            backgroundColor: commentModeActive
+              ? "var(--accent-color)"
+              : "white",
+            color: commentModeActive ? "white" : "black",
+            border: "1px solid var(--border-color)",
+            boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+            fontSize: "24px",
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 999999,
+            transition: "all 0.2s ease",
+          }}
+        >
+          💬
+        </button>
+      )}
+
+      {/* Comment Overlay to Capture Click */}
+      {commentModeActive && (
+        <>
+          <div
+            className="comment-mode-overlay"
+            onClick={handleOverlayClick}
+            style={{
+              position: "fixed",
+              top: 0,
+              left: 0,
+              width: "100vw",
+              height: "100vh",
+              zIndex: 9999,
+              cursor: "crosshair",
+              backgroundColor: "transparent",
+            }}
+          />
+          <div
+            style={{
+              position: "fixed",
+              top: "20px",
+              left: "50%",
+              transform: "translateX(-50%)",
+              backgroundColor: "rgba(168, 85, 247, 0.95)",
+              color: "white",
+              padding: "8px 16px",
+              borderRadius: "20px",
+              fontSize: "13px",
+              fontWeight: "600",
+              boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+              zIndex: 999999,
+              pointerEvents: "none",
+            }}
+          >
+            📌 Modo Comentarios: Haz clic en el lienzo para anclar una nota
+          </div>
+        </>
+      )}
+
+      {/* Render Comment Pins */}
+      {activeBoardId &&
+        comments.map((comment) => {
+          if (comment.resolved || !excalidrawAPI) {
+            return null;
+          }
+
+          const viewportX =
+            (comment.x + viewportState.scrollX) * viewportState.zoom;
+          const viewportY =
+            (comment.y + viewportState.scrollY) * viewportState.zoom;
+
+          return (
+            <div
+              key={comment.id}
+              className="comment-pin"
+              onClick={(e) => {
+                e.stopPropagation();
+                setActiveCommentPopupId(comment.id);
+              }}
+              style={{
+                position: "fixed",
+                left: `${viewportX}px`,
+                top: `${viewportY}px`,
+                width: "28px",
+                height: "28px",
+                transform: "translate(-50%, -100%)",
+                backgroundColor: "#a855f7",
+                border: "2px solid white",
+                borderRadius: "50% 50% 50% 0",
+                boxShadow: "0 4px 10px rgba(0,0,0,0.25)",
+                color: "white",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: "14px",
+                fontWeight: "bold",
+                cursor: "pointer",
+                zIndex: 99999,
+                transition: "all 0.1s ease",
+              }}
+              title={`Comentario de ${comment.author}`}
+            >
+              💬
+            </div>
+          );
+        })}
+
+      {/* Render Comment Popup */}
+      {activeCommentPopupId &&
+        (() => {
+          const comment = comments.find((c) => c.id === activeCommentPopupId);
+          if (!comment || !excalidrawAPI) {
+            return null;
+          }
+
+          const viewportX =
+            (comment.x + viewportState.scrollX) * viewportState.zoom;
+          const viewportY =
+            (comment.y + viewportState.scrollY) * viewportState.zoom;
+
+          return (
+            <div
+              className="comment-popup"
+              style={{
+                position: "fixed",
+                left: `${viewportX}px`,
+                top: `${viewportY - 10}px`,
+                transform: "translate(-50%, -100%)",
+                backgroundColor: "white",
+                border: "1px solid var(--border-color)",
+                borderRadius: "8px",
+                boxShadow: "0 6px 20px rgba(0,0,0,0.2)",
+                padding: "12px",
+                width: "240px",
+                zIndex: 999999,
+                color: "black",
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  marginBottom: "8px",
+                }}
+              >
+                <span
+                  style={{
+                    fontWeight: "700",
+                    fontSize: "12px",
+                    color: "#a855f7",
+                  }}
+                >
+                  {comment.author}
+                </span>
+                <span style={{ fontSize: "10px", color: "#888" }}>
+                  {new Date(comment.createdAt).toLocaleTimeString([], {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+                </span>
+              </div>
+              <div
+                style={{
+                  fontSize: "13px",
+                  color: "#333",
+                  lineHeight: "1.4",
+                  marginBottom: "12px",
+                  whiteSpace: "pre-wrap",
+                }}
+              >
+                {comment.text}
+              </div>
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "flex-end",
+                  gap: "8px",
+                }}
+              >
+                <button
+                  onClick={() => setActiveCommentPopupId(null)}
+                  style={{
+                    padding: "4px 8px",
+                    fontSize: "11px",
+                    backgroundColor: "#eee",
+                    border: "none",
+                    borderRadius: "4px",
+                    cursor: "pointer",
+                  }}
+                >
+                  Cerrar
+                </button>
+                <button
+                  onClick={() => handleResolveComment(comment.id)}
+                  style={{
+                    padding: "4px 8px",
+                    fontSize: "11px",
+                    backgroundColor: "#a855f7",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "4px",
+                    cursor: "pointer",
+                  }}
+                >
+                  Resolver
+                </button>
+              </div>
+            </div>
+          );
+        })()}
+
+      {/* Add Comment Dialog Modal */}
+      {showAddCommentModal && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            width: "100vw",
+            height: "100vh",
+            backgroundColor: "rgba(0,0,0,0.5)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 9999999,
+          }}
+        >
+          <div
+            style={{
+              backgroundColor: "white",
+              padding: "20px",
+              borderRadius: "12px",
+              width: "360px",
+              boxShadow: "0 10px 25px rgba(0,0,0,0.3)",
+              color: "black",
+            }}
+          >
+            <h3
+              style={{
+                margin: "0 0 15px 0",
+                fontSize: "16px",
+                fontWeight: "700",
+              }}
+            >
+              Dejar un Comentario
+            </h3>
+
+            <div style={{ marginBottom: "12px" }}>
+              <label
+                style={{
+                  display: "block",
+                  fontSize: "12px",
+                  color: "#666",
+                  marginBottom: "4px",
+                }}
+              >
+                Tu Nombre:
+              </label>
+              <input
+                type="text"
+                placeholder="Nombre..."
+                value={newCommentAuthor}
+                onChange={(e) => setNewCommentAuthor(e.target.value)}
+                style={{
+                  width: "100%",
+                  padding: "8px 12px",
+                  border: "1px solid #ccc",
+                  borderRadius: "6px",
+                  fontSize: "13px",
+                  outline: "none",
+                }}
+              />
+            </div>
+
+            <div style={{ marginBottom: "20px" }}>
+              <label
+                style={{
+                  display: "block",
+                  fontSize: "12px",
+                  color: "#666",
+                  marginBottom: "4px",
+                }}
+              >
+                Comentario:
+              </label>
+              <textarea
+                placeholder="Escribe tu comentario aquí..."
+                value={newCommentText}
+                onChange={(e) => setNewCommentText(e.target.value)}
+                rows={4}
+                style={{
+                  width: "100%",
+                  padding: "8px 12px",
+                  border: "1px solid #ccc",
+                  borderRadius: "6px",
+                  fontSize: "13px",
+                  outline: "none",
+                  resize: "none",
+                }}
+                autoFocus
+              />
+            </div>
+
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "flex-end",
+                gap: "10px",
+              }}
+            >
+              <button
+                onClick={() => {
+                  setShowAddCommentModal(false);
+                  setNewCommentCoords(null);
+                }}
+                style={{
+                  padding: "8px 16px",
+                  fontSize: "13px",
+                  backgroundColor: "#eee",
+                  border: "none",
+                  borderRadius: "6px",
+                  cursor: "pointer",
+                  fontWeight: "600",
+                }}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleCreateCommentConfirm}
+                style={{
+                  padding: "8px 16px",
+                  fontSize: "13px",
+                  backgroundColor: "#a855f7",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "6px",
+                  cursor: "pointer",
+                  fontWeight: "600",
+                }}
+              >
+                Comentar
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

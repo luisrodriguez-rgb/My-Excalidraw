@@ -40,6 +40,14 @@ io.on("connection", (socket) => {
     socket.to(roomId).emit("client-chat", data);
   });
 
+  socket.on("server-comment-create", (roomId, comment) => {
+    socket.to(roomId).emit("client-comment-create", comment);
+  });
+
+  socket.on("server-comment-resolve", (roomId, commentId) => {
+    socket.to(roomId).emit("client-comment-resolve", commentId);
+  });
+
   socket.on("disconnecting", () => {
     for (const roomId of socket.rooms) {
       if (roomId !== socket.id) {

@@ -293,3 +293,35 @@ export async function restoreBoardVersion(
     }
   }
 }
+
+export interface BoardComment {
+  id: string;
+  text: string;
+  author: string;
+  x: number;
+  y: number;
+  createdAt: number;
+  resolved: boolean;
+}
+
+export async function getBoardComments(
+  boardId: string,
+): Promise<BoardComment[]> {
+  try {
+    const list = await get<BoardComment[]>(
+      `board_comments_${boardId}`,
+      boardsStore,
+    );
+    return list || [];
+  } catch (error) {
+    console.error(`Error reading comments for board ${boardId}:`, error);
+    return [];
+  }
+}
+
+export async function saveBoardComments(
+  boardId: string,
+  comments: BoardComment[],
+): Promise<void> {
+  await set(`board_comments_${boardId}`, comments, boardsStore);
+}
