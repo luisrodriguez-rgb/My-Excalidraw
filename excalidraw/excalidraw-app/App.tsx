@@ -146,7 +146,6 @@ import { ExcalidrawPlusIframeExport } from "./ExcalidrawPlusIframeExport";
 
 import "./index.scss";
 
-import { ExcalidrawPlusPromoBanner } from "./components/ExcalidrawPlusPromoBanner";
 import { AppSidebar } from "./components/AppSidebar";
 import { Dashboard } from "./components/Dashboard";
 import { CollabChat } from "./components/CollabChat";
@@ -488,10 +487,27 @@ const ExcalidrawWrapper = () => {
       return;
     }
 
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user?.email) {
+        const namePart = session.user.email.split("@")[0];
+        const displayName =
+          namePart.charAt(0).toUpperCase() + namePart.slice(1);
+        localStorage.setItem("comment-author", displayName);
+        setNewCommentAuthor(displayName);
+      }
+    });
+
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (session?.user) {
+        if (session.user.email) {
+          const namePart = session.user.email.split("@")[0];
+          const displayName =
+            namePart.charAt(0).toUpperCase() + namePart.slice(1);
+          localStorage.setItem("comment-author", displayName);
+          setNewCommentAuthor(displayName);
+        }
         try {
           const { data: remoteLib } = await supabase
             .from("libraries")
@@ -778,6 +794,13 @@ const ExcalidrawWrapper = () => {
     initializeScene({ collabAPI, excalidrawAPI, activeBoardId }).then(
       async (data) => {
         loadImages(data, /* isInitialLoad */ true);
+        if (activeBoardId && activeBoardId !== "collab_room") {
+          getBoard(activeBoardId).then((board) => {
+            if (board?.files) {
+              excalidrawAPI.addFiles(Object.values(board.files));
+            }
+          });
+        }
         initialStatePromiseRef.current.promise.resolve(data.scene);
       },
     );
@@ -795,8 +818,14 @@ const ExcalidrawWrapper = () => {
         excalidrawAPI.updateScene({ appState: { isLoading: true } });
 
         initializeScene({ collabAPI, excalidrawAPI, activeBoardId }).then(
-          (data) => {
+          async (data) => {
             loadImages(data);
+            if (activeBoardId && activeBoardId !== "collab_room") {
+              const board = await getBoard(activeBoardId);
+              if (board?.files) {
+                excalidrawAPI.addFiles(Object.values(board.files));
+              }
+            }
             if (data.scene) {
               excalidrawAPI.updateScene({
                 elements: restoreElements(data.scene.elements, null, {
@@ -1503,12 +1532,6 @@ const ExcalidrawWrapper = () => {
 
           return (
             <div className="excalidraw-ui-top-right">
-              {excalidrawAPI?.getEditorInterface().formFactor === "desktop" && (
-                <ExcalidrawPlusPromoBanner
-                  isSignedIn={isExcalidrawPlusSignedUser}
-                />
-              )}
-
               {collabError.message && <CollabError collabError={collabError} />}
               <LiveCollaborationTrigger
                 isCollaborating={isCollaborating}
@@ -1851,7 +1874,6 @@ const ExcalidrawWrapper = () => {
         />
       )}
 
-      {/* Floating Comment Mode Toggle Button */}
       {activeBoardId && activeBoardId !== "collab_room" && (
         <button
           className={`floating-comment-mode-btn ${
@@ -1876,7 +1898,6 @@ const ExcalidrawWrapper = () => {
             color: commentModeActive ? "white" : "black",
             border: "1px solid var(--border-color)",
             boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
-            fontSize: "24px",
             cursor: "pointer",
             display: "flex",
             alignItems: "center",
@@ -1885,7 +1906,19 @@ const ExcalidrawWrapper = () => {
             transition: "all 0.2s ease",
           }}
         >
-          💬
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="22"
+            height="22"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+          </svg>
         </button>
       )}
 
