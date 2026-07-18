@@ -924,6 +924,25 @@ class Collab extends PureComponent<CollabProps, CollabState> {
   };
 
   setCollaborators(sockets: SocketId[]) {
+    const oldSockets = Array.from(this.collaborators.keys());
+    const joined = sockets.filter(
+      (id) => !oldSockets.includes(id) && id !== this.portal.socket?.id,
+    );
+    const left = oldSockets.filter(
+      (id) => !sockets.includes(id) && id !== this.portal.socket?.id,
+    );
+
+    joined.forEach((id) => {
+      window.dispatchEvent(
+        new CustomEvent("collab-user-join", { detail: { socketId: id } }),
+      );
+    });
+    left.forEach((id) => {
+      window.dispatchEvent(
+        new CustomEvent("collab-user-leave", { detail: { socketId: id } }),
+      );
+    });
+
     const collaborators: InstanceType<typeof Collab>["collaborators"] =
       new Map();
     for (const socketId of sockets) {

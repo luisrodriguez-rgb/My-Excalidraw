@@ -149,6 +149,7 @@ import { ExcalidrawPlusPromoBanner } from "./components/ExcalidrawPlusPromoBanne
 import { AppSidebar } from "./components/AppSidebar";
 import { Dashboard } from "./components/Dashboard";
 import { CollabChat } from "./components/CollabChat";
+import { NotificationManager } from "./components/NotificationManager";
 
 import {
   getBoard,
@@ -1539,6 +1540,7 @@ const ExcalidrawWrapper = () => {
           username={collabAPI?.getUsername() || "Invitado"}
         />
       )}
+      <NotificationManager isCollaborating={isCollaborating} />
 
       {/* Floating Comment Mode Toggle Button */}
       {activeBoardId && activeBoardId !== "collab_room" && (
