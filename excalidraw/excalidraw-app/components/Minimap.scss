@@ -1,0 +1,107 @@
+.minimap-panel {
+  position: fixed;
+  bottom: 140px;
+  right: 20px;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+  padding: 10px;
+  z-index: 999999;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow: hidden;
+  user-select: none;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  transform-origin: bottom right;
+
+  .minimap-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 11px;
+    font-weight: 700;
+    color: #475569;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+
+    .minimap-close {
+      background: transparent;
+      border: none;
+      font-size: 11px;
+      color: #94a3b8;
+      cursor: pointer;
+      padding: 2px;
+      line-height: 1;
+
+      &:hover {
+        color: #475569;
+      }
+    }
+  }
+
+  canvas {
+    border-radius: 6px;
+    background: rgba(0, 0, 0, 0.03);
+    border: 1px solid var(--border-color);
+  }
+}
+
+.minimap-toggle-btn {
+  position: fixed;
+  bottom: 140px;
+  right: 20px;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: white;
+  border: 1px solid var(--border-color);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  font-size: 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999999;
+  transition: all 0.2s ease;
+
+  &:hover {
+    transform: scale(1.05);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+  }
+}
+
+// Dark Mode Support
+.theme-dark {
+  .minimap-panel {
+    background: rgba(30, 41, 59, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+
+    .minimap-header {
+      color: #94a3b8;
+
+      .minimap-close {
+        color: #64748b;
+
+        &:hover {
+          color: #94a3b8;
+        }
+      }
+    }
+
+    canvas {
+      background: rgba(0, 0, 0, 0.2);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+  }
+
+  .minimap-toggle-btn {
+    background: rgba(30, 41, 59, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: white;
+  }
+}

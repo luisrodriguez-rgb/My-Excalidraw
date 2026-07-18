@@ -62,7 +62,7 @@ export async function getBoard(id: string): Promise<Board | null> {
 
 export async function saveBoard(
   id: string,
-  data: Partial<Omit<Board, "id">> & { name: string },
+  data: Partial<Omit<Board, "id">> & { name?: string },
   elements?: readonly any[],
   appState?: any,
   files?: any,
@@ -72,7 +72,10 @@ export async function saveBoard(
 
   const updatedBoard: Board = {
     id,
-    name: data.name,
+    name:
+      data.name !== undefined
+        ? data.name
+        : currentBoard?.name || "Untitled Board",
     createdAt: currentBoard?.createdAt || now,
     updatedAt: now,
     elements: elements !== undefined ? elements : currentBoard?.elements || [],
@@ -100,11 +103,10 @@ export async function saveBoard(
   }
 
   // Trigger remote save to Supabase asynchronously
-  supabase.auth.getSession().then(({ data: { session } }) => {
+  supabase.auth.getSession().then(async ({ data: { session } }) => {
     if (session?.user) {
-      supabase
-        .from("boards")
-        .upsert({
+      try {
+        await supabase.from("boards").upsert({
           id,
           user_id: session.user.id,
           name: updatedBoard.name,
@@ -115,10 +117,10 @@ export async function saveBoard(
           folder_id: updatedBoard.folderId || null,
           password: updatedBoard.password || null,
           updated_at: new Date(updatedBoard.updatedAt).toISOString(),
-        })
-        .catch((err) =>
-          console.error("Error upserting remote board to Supabase:", err),
-        );
+        });
+      } catch (err) {
+        console.error("Error upserting remote board to Supabase:", err);
+      }
     }
   });
 
@@ -156,15 +158,13 @@ export async function deleteBoard(id: string): Promise<void> {
   await saveBoardsMetadata(filtered);
 
   // Trigger remote delete asynchronously
-  supabase.auth.getSession().then(({ data: { session } }) => {
+  supabase.auth.getSession().then(async ({ data: { session } }) => {
     if (session?.user) {
-      supabase
-        .from("boards")
-        .delete()
-        .eq("id", id)
-        .catch((err) =>
-          console.error("Error deleting remote board from Supabase:", err),
-        );
+      try {
+        await supabase.from("boards").delete().eq("id", id);
+      } catch (err) {
+        console.error("Error deleting remote board from Supabase:", err);
+      }
     }
   });
 }
@@ -225,17 +225,18 @@ export async function createFolder(name: string): Promise<Folder> {
   await saveFolders(folders);
 
   // Sync to remote
-  supabase.auth.getSession().then(({ data: { session } }) => {
+  supabase.auth.getSession().then(async ({ data: { session } }) => {
     if (session?.user) {
-      supabase
-        .from("folders")
-        .insert({
+      try {
+        await supabase.from("folders").insert({
           id,
           user_id: session.user.id,
           name,
           created_at: new Date(folder.createdAt).toISOString(),
-        })
-        .catch((err) => console.error("Error creating remote folder:", err));
+        });
+      } catch (err) {
+        console.error("Error creating remote folder:", err);
+      }
     }
   });
 
@@ -248,13 +249,13 @@ export async function deleteFolder(id: string): Promise<void> {
   await saveFolders(filtered);
 
   // Sync to remote
-  supabase.auth.getSession().then(({ data: { session } }) => {
+  supabase.auth.getSession().then(async ({ data: { session } }) => {
     if (session?.user) {
-      supabase
-        .from("folders")
-        .delete()
-        .eq("id", id)
-        .catch((err) => console.error("Error deleting remote folder:", err));
+      try {
+        await supabase.from("folders").delete().eq("id", id);
+      } catch (err) {
+        console.error("Error deleting remote folder:", err);
+      }
     }
   });
 

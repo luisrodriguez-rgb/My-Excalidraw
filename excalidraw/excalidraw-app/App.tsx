@@ -150,6 +150,7 @@ import { AppSidebar } from "./components/AppSidebar";
 import { Dashboard } from "./components/Dashboard";
 import { CollabChat } from "./components/CollabChat";
 import { NotificationManager } from "./components/NotificationManager";
+import { Minimap } from "./components/Minimap";
 
 import {
   getBoard,
@@ -476,6 +477,9 @@ const ExcalidrawWrapper = () => {
     scrollX: 0,
     scrollY: 0,
   });
+
+  const [minimapElements, setMinimapElements] = useState<readonly any[]>([]);
+  const [minimapAppState, setMinimapAppState] = useState<any>(null);
 
   useEffect(() => {
     if (!excalidrawAPI) {
@@ -890,6 +894,9 @@ const ExcalidrawWrapper = () => {
     appState: AppState,
     files: BinaryFiles,
   ) => {
+    setMinimapElements(elements);
+    setMinimapAppState(appState);
+
     if (
       appState.zoom.value !== viewportState.zoom ||
       appState.scrollX !== viewportState.scrollX ||
@@ -1541,6 +1548,14 @@ const ExcalidrawWrapper = () => {
         />
       )}
       <NotificationManager isCollaborating={isCollaborating} />
+
+      {activeBoardId && excalidrawAPI && minimapAppState && (
+        <Minimap
+          elements={minimapElements}
+          appState={minimapAppState}
+          excalidrawAPI={excalidrawAPI}
+        />
+      )}
 
       {/* Floating Comment Mode Toggle Button */}
       {activeBoardId && activeBoardId !== "collab_room" && (

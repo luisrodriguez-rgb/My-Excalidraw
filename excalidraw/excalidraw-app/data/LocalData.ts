@@ -256,18 +256,17 @@ export class LibraryIndexedDBAdapter {
     );
 
     // Sync to Supabase if logged in
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (session?.user) {
-        supabase
-          .from("libraries")
-          .upsert({
+        try {
+          await supabase.from("libraries").upsert({
             user_id: session.user.id,
             items: data,
             updated_at: new Date().toISOString(),
-          })
-          .catch((err) =>
-            console.error("Error syncing library to Supabase:", err),
-          );
+          });
+        } catch (err) {
+          console.error("Error syncing library to Supabase:", err);
+        }
       }
     });
 

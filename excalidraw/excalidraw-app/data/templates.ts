@@ -91,7 +91,7 @@ export const TEMPLATES: Template[] = [
       const startX = 100;
       const startY = 150;
 
-      const elements = [];
+      const elements: any[] = [];
 
       // Columns Title and Frame
       const columns = [
@@ -164,7 +164,7 @@ export const TEMPLATES: Template[] = [
       const cardHeight = 400;
       const startX = 100;
       const startY = 150;
-      const elements = [];
+      const elements: any[] = [];
 
       const categories = [
         { title: "Qué Salió Bien 👍", color: "#dcfce7" },
@@ -210,7 +210,7 @@ export const TEMPLATES: Template[] = [
       const size = 500;
       const startX = 200;
       const startY = 150;
-      const elements = [];
+      const elements: any[] = [];
 
       // Grid Container
       elements.push(
