@@ -1,129 +1,399 @@
-import { DefaultSidebar, Sidebar, THEME } from "@excalidraw/excalidraw";
+import React, { useState } from "react";
+import { DefaultSidebar, Sidebar } from "@excalidraw/excalidraw";
 import {
   messageCircleIcon,
   presentationIcon,
 } from "@excalidraw/excalidraw/components/icons";
-import { LinkButton } from "@excalidraw/excalidraw/components/LinkButton";
-import { useUIAppState } from "@excalidraw/excalidraw/context/ui-appState";
 
-import "./AppSidebar.scss";
+interface AppSidebarProps {
+  comments: any[];
+  setComments: React.Dispatch<React.SetStateAction<any[]>>;
+  activeBoardId: string | null;
+  excalidrawAPI: any;
+  onResolveComment: (id: string) => void;
+}
 
-type SidebarPromoCopyProps = {
-  text: string;
-};
+export const AppSidebar = ({
+  comments,
+  setComments,
+  activeBoardId,
+  excalidrawAPI,
+  onResolveComment,
+}: AppSidebarProps) => {
+  const [searchTerm, setSearchTerm] = useState("");
+  const [sortBy, setSortBy] = useState<"date" | "replies">("date");
+  const [showResolved, setShowResolved] = useState(false);
+  const [showFilterDropdown, setShowFilterDropdown] = useState(false);
 
-const SidebarPromoCopy = (props: SidebarPromoCopyProps) => {
-  return (
-    <div className="app-sidebar-promo-copy">
-      <div className="app-sidebar-promo-illustration" aria-hidden="true">
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          viewBox="0 0 300 250"
-          className="app-sidebar-promo-heart"
-        >
-          <path
-            d="M 145 75
-           C 110 35, 60 55, 65 120
-           C 70 180, 140 190, 215 200
-           C 225 180, 260 110, 235 55
-           C 210 -5, 140 20, 160 105"
-            fill="none"
-            stroke="#D06B64"
-            strokeWidth="16"
-            strokeLinecap="round"
-          />
-        </svg>
+  const filteredComments = comments
+    .filter((c) => {
+      const matchText =
+        c.text.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        c.author.toLowerCase().includes(searchTerm.toLowerCase());
+      if (showResolved) {
+        return matchText;
+      }
+      return matchText && !c.resolved;
+    })
+    .sort((a, b) => {
+      if (sortBy === "date") {
+        return b.createdAt - a.createdAt;
+      }
+      const aReplies = a.replies?.length || 0;
+      const bReplies = b.replies?.length || 0;
+      return bReplies - aReplies;
+    });
 
-        <div className="app-sidebar-promo-trial-note excalifont">
-          14 days of
-          <br />
-          free trial
-        </div>
-        <svg
-          className="app-sidebar-promo-trial-arrow"
-          viewBox="0 0 72 48"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <path
-            d="M5 6C23 1 50 8 48 32"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-          />
-          <path
-            d="M42 26L48 32L54 26"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
-      </div>
-      <div className="app-sidebar-promo-text">{props.text}</div>
-    </div>
-  );
-};
-
-export const AppSidebar = () => {
-  const { theme, openSidebar } = useUIAppState();
+  const handleCommentClick = (comment: any) => {
+    if (!excalidrawAPI) {
+      return;
+    }
+    const zoom = excalidrawAPI.getAppState().zoom.value;
+    const width = excalidrawAPI.getAppState().width;
+    const height = excalidrawAPI.getAppState().height;
+    excalidrawAPI.updateScene({
+      appState: {
+        scrollX: -comment.x + width / 2 / zoom,
+        scrollY: -comment.y + height / 2 / zoom,
+      },
+    });
+  };
 
   return (
     <DefaultSidebar>
       <DefaultSidebar.TabTriggers>
-        <Sidebar.TabTrigger
-          tab="comments"
-          style={{ opacity: openSidebar?.tab === "comments" ? 1 : 0.4 }}
-        >
+        <Sidebar.TabTrigger tab="comments">
           {messageCircleIcon}
         </Sidebar.TabTrigger>
-        <Sidebar.TabTrigger
-          tab="presentation"
-          style={{ opacity: openSidebar?.tab === "presentation" ? 1 : 0.4 }}
-        >
+        <Sidebar.TabTrigger tab="presentation">
           {presentationIcon}
         </Sidebar.TabTrigger>
       </DefaultSidebar.TabTriggers>
+
       <Sidebar.Tab tab="comments">
-        <div className="app-sidebar-promo-container">
+        <div
+          style={{
+            padding: "16px",
+            display: "flex",
+            flexDirection: "column",
+            height: "100%",
+            boxSizing: "border-box",
+          }}
+        >
+          {/* Header */}
           <div
-            className="app-sidebar-promo-image"
             style={{
-              ["--image-source" as any]: `url(/sidebar-comments-promo-${
-                theme === THEME.DARK ? "dark" : "light"
-              }.jpg)`,
-              opacity: 0.9,
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              marginBottom: "16px",
             }}
-          />
-          <SidebarPromoCopy text="Make comments with Excalidraw+" />
-          <LinkButton
-            href={`${
-              import.meta.env.VITE_APP_PLUS_LP
-            }/plus?utm_source=excalidraw&utm_medium=app&utm_content=comments_promo#excalidraw-redirect`}
           >
-            Sign up now
-          </LinkButton>
+            <span style={{ fontWeight: "700", fontSize: "16px" }}>
+              Comentarios
+            </span>
+            <button
+              onClick={() => {
+                const updated = comments.map((c) => ({
+                  ...c,
+                  resolved: true,
+                }));
+                setComments(updated);
+                if (activeBoardId) {
+                  import("../data/boardsDb").then((db) =>
+                    db.saveBoardComments(activeBoardId, updated),
+                  );
+                }
+              }}
+              style={{
+                background: "none",
+                border: "none",
+                color: "#a855f7",
+                fontSize: "12px",
+                cursor: "pointer",
+                fontWeight: "600",
+              }}
+            >
+              Marcar todo como resuelto
+            </button>
+          </div>
+
+          {/* Search Box */}
+          <div
+            style={{
+              position: "relative",
+              marginBottom: "12px",
+              display: "flex",
+              gap: "8px",
+            }}
+          >
+            <input
+              type="text"
+              placeholder="Buscar comentarios..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              style={{
+                flex: 1,
+                padding: "8px 12px",
+                fontSize: "13px",
+                borderRadius: "8px",
+                border: "1px solid var(--border-color)",
+                outline: "none",
+                backgroundColor: "var(--input-bg-color)",
+                color: "var(--text-primary-color)",
+              }}
+            />
+
+            {/* Filter Toggle */}
+            <button
+              onClick={() => setShowFilterDropdown(!showFilterDropdown)}
+              style={{
+                padding: "8px 12px",
+                borderRadius: "8px",
+                border: "1px solid var(--border-color)",
+                background: "var(--button-bg-color)",
+                cursor: "pointer",
+                fontSize: "13px",
+              }}
+            >
+              ⚙️
+            </button>
+
+            {showFilterDropdown && (
+              <div
+                style={{
+                  position: "absolute",
+                  top: "42px",
+                  right: 0,
+                  backgroundColor: "white",
+                  border: "1px solid #ccc",
+                  borderRadius: "8px",
+                  boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+                  padding: "12px",
+                  zIndex: 100,
+                  width: "200px",
+                  color: "black",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "8px",
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: "12px",
+                    fontWeight: "700",
+                    borderBottom: "1px solid #eee",
+                    paddingBottom: "4px",
+                  }}
+                >
+                  Ordenar por
+                </div>
+                <label
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "6px",
+                    fontSize: "12px",
+                    cursor: "pointer",
+                  }}
+                >
+                  <input
+                    type="radio"
+                    name="sortBy"
+                    checked={sortBy === "date"}
+                    onChange={() => setSortBy("date")}
+                  />
+                  Fecha de creación
+                </label>
+                <label
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "6px",
+                    fontSize: "12px",
+                    cursor: "pointer",
+                  }}
+                >
+                  <input
+                    type="radio"
+                    name="sortBy"
+                    checked={sortBy === "replies"}
+                    onChange={() => setSortBy("replies")}
+                  />
+                  Número de respuestas
+                </label>
+
+                <div
+                  style={{
+                    fontSize: "12px",
+                    fontWeight: "700",
+                    borderBottom: "1px solid #eee",
+                    paddingBottom: "4px",
+                    marginTop: "8px",
+                  }}
+                >
+                  Filtros
+                </div>
+                <label
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "6px",
+                    fontSize: "12px",
+                    cursor: "pointer",
+                  }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={showResolved}
+                    onChange={(e) => setShowResolved(e.target.checked)}
+                  />
+                  Mostrar resueltos
+                </label>
+              </div>
+            )}
+          </div>
+
+          {/* Comments List */}
+          <div
+            style={{
+              flex: 1,
+              overflowY: "auto",
+              display: "flex",
+              flexDirection: "column",
+              gap: "10px",
+            }}
+          >
+            {filteredComments.length === 0 ? (
+              <div
+                style={{
+                  textAlign: "center",
+                  color: "#888",
+                  fontSize: "13px",
+                  marginTop: "24px",
+                }}
+              >
+                No se encontraron comentarios
+              </div>
+            ) : (
+              filteredComments.map((comment) => {
+                const replyCount = comment.replies?.length || 0;
+                return (
+                  <div
+                    key={comment.id}
+                    onClick={() => handleCommentClick(comment)}
+                    style={{
+                      padding: "12px",
+                      borderRadius: "8px",
+                      border: "1px solid var(--border-color)",
+                      backgroundColor: "var(--card-bg-color)",
+                      cursor: "pointer",
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: "4px",
+                      transition: "transform 0.1s ease",
+                      borderLeft: comment.resolved
+                        ? "4px solid #10b981"
+                        : "4px solid #a855f7",
+                    }}
+                    onMouseEnter={(e) =>
+                      (e.currentTarget.style.transform = "translateX(2px)")
+                    }
+                    onMouseLeave={(e) =>
+                      (e.currentTarget.style.transform = "none")
+                    }
+                  >
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                      }}
+                    >
+                      <span style={{ fontWeight: "700", fontSize: "13px" }}>
+                        {comment.author}
+                      </span>
+                      <span style={{ fontSize: "10px", color: "#888" }}>
+                        {new Date(comment.createdAt).toLocaleDateString([], {
+                          month: "short",
+                          day: "numeric",
+                        })}
+                      </span>
+                    </div>
+                    <div
+                      style={{
+                        fontSize: "13px",
+                        color: "var(--text-secondary-color)",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        display: "-webkit-box",
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: "vertical",
+                        whiteSpace: "pre-wrap",
+                      }}
+                    >
+                      {comment.text}
+                    </div>
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        marginTop: "4px",
+                        fontSize: "11px",
+                      }}
+                    >
+                      <span style={{ color: "#a855f7", fontWeight: "600" }}>
+                        {replyCount > 0
+                          ? `💬 ${replyCount} ${
+                              replyCount === 1 ? "respuesta" : "respuestas"
+                            }`
+                          : "Responder"}
+                      </span>
+                      {!comment.resolved && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onResolveComment(comment.id);
+                          }}
+                          style={{
+                            background: "none",
+                            border: "none",
+                            color: "#10b981",
+                            fontWeight: "600",
+                            cursor: "pointer",
+                            padding: 0,
+                          }}
+                        >
+                          Resolver
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
         </div>
       </Sidebar.Tab>
-      <Sidebar.Tab tab="presentation" className="px-3">
-        <div className="app-sidebar-promo-container">
-          <div
-            className="app-sidebar-promo-image"
+
+      <Sidebar.Tab tab="presentation">
+        <div style={{ padding: "16px" }}>
+          <span
             style={{
-              ["--image-source" as any]: `url(/sidebar-presentation-promo-${
-                theme === THEME.DARK ? "dark" : "light"
-              }.jpg)`,
-              opacity: 0.7,
+              fontWeight: "700",
+              fontSize: "16px",
+              display: "block",
+              marginBottom: "12px",
             }}
-          />
-          <SidebarPromoCopy text="Create presentation with Excalidraw+" />
-          <LinkButton
-            href={`${
-              import.meta.env.VITE_APP_PLUS_LP
-            }/plus?utm_source=excalidraw&utm_medium=app&utm_content=presentations_promo#excalidraw-redirect`}
           >
-            Sign up now
-          </LinkButton>
+            Diapositivas
+          </span>
+          <p style={{ fontSize: "13px", color: "#666", lineHeight: "1.4" }}>
+            Crea marcos ("Frames") en el canvas para organizar tus dibujos en
+            diapositivas individuales. Luego podrás exportarlas todas juntas a
+            PowerPoint utilizando la opción en el menú de exportación.
+          </p>
         </div>
       </Sidebar.Tab>
     </DefaultSidebar>

@@ -473,6 +473,7 @@ const ExcalidrawWrapper = () => {
   } | null>(null);
   const [newCommentText, setNewCommentText] = useState("");
   const [newCommentAuthor, setNewCommentAuthor] = useState("");
+  const [replyText, setReplyText] = useState("");
   const [viewportState, setViewportState] = useState({
     zoom: 1,
     scrollX: 0,
@@ -629,8 +630,11 @@ const ExcalidrawWrapper = () => {
     const handleCollabCreate = (e: any) => {
       const newComment = e.detail;
       setComments((prev) => {
-        if (prev.some((c) => c.id === newComment.id)) {
-          return prev;
+        const index = prev.findIndex((c) => c.id === newComment.id);
+        if (index > -1) {
+          const updated = [...prev];
+          updated[index] = newComment;
+          return updated;
         }
         return [...prev, newComment];
       });
@@ -668,6 +672,48 @@ const ExcalidrawWrapper = () => {
     setActiveCommentPopupId(null);
     if (collabAPI && collabAPI.sendCommentResolve) {
       collabAPI.sendCommentResolve(commentId);
+    }
+  };
+
+  const handleReplyComment = async (commentId: string) => {
+    if (!replyText.trim() || !activeBoardId) {
+      return;
+    }
+    const author =
+      collabAPI?.getUsername() ||
+      localStorage.getItem("comment-author") ||
+      "Anónimo";
+
+    const newReply = {
+      id: `reply_${Math.random().toString(36).substr(2, 9)}`,
+      author,
+      text: replyText.trim(),
+      createdAt: Date.now(),
+    };
+
+    const targetComment = comments.find((c) => c.id === commentId);
+    if (!targetComment) {
+      return;
+    }
+
+    const updatedComment = {
+      ...targetComment,
+      replies: [...(targetComment.replies || []), newReply],
+    };
+
+    const updated = comments.map((c) => {
+      if (c.id === commentId) {
+        return updatedComment;
+      }
+      return c;
+    });
+
+    setComments(updated);
+    await saveBoardComments(activeBoardId, updated);
+    setReplyText("");
+
+    if (collabAPI && collabAPI.sendCommentCreate) {
+      collabAPI.sendCommentCreate(updatedComment);
     }
   };
 
@@ -1586,7 +1632,13 @@ const ExcalidrawWrapper = () => {
           }}
         />
 
-        <AppSidebar />
+        <AppSidebar
+          comments={comments}
+          setComments={setComments}
+          activeBoardId={activeBoardId}
+          excalidrawAPI={excalidrawAPI}
+          onResolveComment={handleResolveComment}
+        />
 
         {errorMessage && (
           <ErrorDialog onClose={() => setErrorMessage("")}>
@@ -1983,12 +2035,97 @@ const ExcalidrawWrapper = () => {
                   fontSize: "13px",
                   color: "#333",
                   lineHeight: "1.4",
-                  marginBottom: "12px",
+                  marginBottom: "8px",
                   whiteSpace: "pre-wrap",
                 }}
               >
                 {comment.text}
               </div>
+
+              {/* Replies Thread */}
+              <div
+                style={{
+                  maxHeight: "150px",
+                  overflowY: "auto",
+                  borderTop: "1px solid #eee",
+                  paddingTop: "8px",
+                  marginTop: "8px",
+                  marginBottom: "8px",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "6px",
+                }}
+              >
+                {(comment.replies || []).map((reply: any) => (
+                  <div
+                    key={reply.id}
+                    style={{ fontSize: "11px", lineHeight: "1.3" }}
+                  >
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        marginBottom: "2px",
+                      }}
+                    >
+                      <span style={{ fontWeight: "700", color: "#a855f7" }}>
+                        {reply.author}
+                      </span>
+                      <span style={{ fontSize: "9px", color: "#999" }}>
+                        {new Date(reply.createdAt).toLocaleTimeString([], {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </span>
+                    </div>
+                    <div style={{ color: "#444", whiteSpace: "pre-wrap" }}>
+                      {reply.text}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Add Reply Input */}
+              <div
+                style={{ display: "flex", gap: "6px", marginBottom: "12px" }}
+              >
+                <textarea
+                  placeholder="Responder..."
+                  value={replyText}
+                  onChange={(e) => setReplyText(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      e.preventDefault();
+                      handleReplyComment(comment.id);
+                    }
+                  }}
+                  style={{
+                    flex: 1,
+                    fontSize: "11px",
+                    padding: "4px 6px",
+                    borderRadius: "4px",
+                    border: "1px solid #ccc",
+                    resize: "none",
+                    height: "28px",
+                    boxSizing: "border-box",
+                  }}
+                />
+                <button
+                  onClick={() => handleReplyComment(comment.id)}
+                  style={{
+                    padding: "4px 8px",
+                    fontSize: "11px",
+                    backgroundColor: "#a855f7",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "4px",
+                    cursor: "pointer",
+                  }}
+                >
+                  ↑
+                </button>
+              </div>
+
               <div
                 style={{
                   display: "flex",

@@ -360,6 +360,13 @@ export async function restoreBoardVersion(
   }
 }
 
+export interface BoardCommentReply {
+  id: string;
+  author: string;
+  text: string;
+  createdAt: number;
+}
+
 export interface BoardComment {
   id: string;
   text: string;
@@ -368,6 +375,7 @@ export interface BoardComment {
   y: number;
   createdAt: number;
   resolved: boolean;
+  replies?: BoardCommentReply[];
 }
 
 export async function getBoardComments(
@@ -390,6 +398,38 @@ export async function saveBoardComments(
   comments: BoardComment[],
 ): Promise<void> {
   await set(`board_comments_${boardId}`, comments, boardsStore);
+
+  const currentBoard = await getBoard(boardId);
+  if (currentBoard) {
+    currentBoard.appState = {
+      ...(currentBoard.appState || {}),
+      comments,
+    };
+    currentBoard.updatedAt = Date.now();
+    await set(`board_content_${boardId}`, currentBoard, boardsStore);
+
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    if (session?.user) {
+      try {
+        await supabase.from("boards").upsert({
+          id: boardId,
+          user_id: session.user.id,
+          name: currentBoard.name,
+          elements: currentBoard.elements,
+          app_state: currentBoard.appState,
+          files: currentBoard.files,
+          tags: currentBoard.tags || [],
+          folder_id: currentBoard.folderId || null,
+          password: currentBoard.password || null,
+          updated_at: new Date(currentBoard.updatedAt).toISOString(),
+        });
+      } catch (err) {
+        console.error("Error syncing board comments to Supabase:", err);
+      }
+    }
+  }
 }
 
 export async function syncBoardsWithSupabase(): Promise<void> {
@@ -472,6 +512,13 @@ export async function syncBoardsWithSupabase(): Promise<void> {
               },
               boardsStore,
             );
+            if ((boardContent.app_state as any)?.comments) {
+              await set(
+                `board_comments_${rb.id}`,
+                (boardContent.app_state as any).comments,
+                boardsStore,
+              );
+            }
           }
         } else {
           const localMeta = mergedMetadata[index];
@@ -502,6 +549,13 @@ export async function syncBoardsWithSupabase(): Promise<void> {
                 },
                 boardsStore,
               );
+              if ((boardContent.app_state as any)?.comments) {
+                await set(
+                  `board_comments_${rb.id}`,
+                  (boardContent.app_state as any).comments,
+                  boardsStore,
+                );
+              }
             }
           } else if (localMeta.updatedAt > remoteUpdated) {
             // Local is newer, upload local to Supabase
