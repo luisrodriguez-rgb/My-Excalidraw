@@ -128,6 +128,7 @@ import {
   LocalData,
   localStorageQuotaExceededAtom,
 } from "./data/LocalData";
+import { supabase } from "./data/supabaseClient";
 import { isBrowserStorageStateNewer } from "./data/tabSync";
 import { ShareDialog, shareDialogStateAtom } from "./share/ShareDialog";
 import CollabError, { collabErrorIndicatorAtom } from "./collab/CollabError";
@@ -474,6 +475,37 @@ const ExcalidrawWrapper = () => {
     scrollX: 0,
     scrollY: 0,
   });
+
+  useEffect(() => {
+    if (!excalidrawAPI) {
+      return;
+    }
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (session?.user) {
+        try {
+          const { data: remoteLib } = await supabase
+            .from("libraries")
+            .select("items")
+            .single();
+
+          if (remoteLib?.items) {
+            await LibraryIndexedDBAdapter.save(remoteLib.items);
+            excalidrawAPI.updateLibrary({
+              libraryItems: remoteLib.items.libraryItems || [],
+              merge: false,
+            });
+          }
+        } catch (err) {
+          console.error("Error loading remote library from Supabase:", err);
+        }
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [excalidrawAPI]);
 
   useEffect(() => {
     if (isDevEnv()) {

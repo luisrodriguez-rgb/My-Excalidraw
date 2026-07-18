@@ -1,5 +1,7 @@
 import { createStore, get, set, del } from "idb-keyval";
 
+import { supabase } from "../supabaseClient";
+
 export interface BoardMetadata {
   id: string;
   name: string;
@@ -97,6 +99,29 @@ export async function saveBoard(
     );
   }
 
+  // Trigger remote save to Supabase asynchronously
+  supabase.auth.getSession().then(({ data: { session } }) => {
+    if (session?.user) {
+      supabase
+        .from("boards")
+        .upsert({
+          id,
+          user_id: session.user.id,
+          name: updatedBoard.name,
+          elements: updatedBoard.elements,
+          app_state: updatedBoard.appState,
+          files: updatedBoard.files,
+          tags: updatedBoard.tags || [],
+          folder_id: updatedBoard.folderId || null,
+          password: updatedBoard.password || null,
+          updated_at: new Date(updatedBoard.updatedAt).toISOString(),
+        })
+        .catch((err) =>
+          console.error("Error upserting remote board to Supabase:", err),
+        );
+    }
+  });
+
   // Update metadata list
   const metadataList = await getBoardsMetadata();
   const index = metadataList.findIndex((item) => item.id === id);
@@ -129,6 +154,19 @@ export async function deleteBoard(id: string): Promise<void> {
   const metadataList = await getBoardsMetadata();
   const filtered = metadataList.filter((item) => item.id !== id);
   await saveBoardsMetadata(filtered);
+
+  // Trigger remote delete asynchronously
+  supabase.auth.getSession().then(({ data: { session } }) => {
+    if (session?.user) {
+      supabase
+        .from("boards")
+        .delete()
+        .eq("id", id)
+        .catch((err) =>
+          console.error("Error deleting remote board from Supabase:", err),
+        );
+    }
+  });
 }
 
 export async function duplicateBoard(
@@ -185,6 +223,22 @@ export async function createFolder(name: string): Promise<Folder> {
   const folders = await getFolders();
   folders.push(folder);
   await saveFolders(folders);
+
+  // Sync to remote
+  supabase.auth.getSession().then(({ data: { session } }) => {
+    if (session?.user) {
+      supabase
+        .from("folders")
+        .insert({
+          id,
+          user_id: session.user.id,
+          name,
+          created_at: new Date(folder.createdAt).toISOString(),
+        })
+        .catch((err) => console.error("Error creating remote folder:", err));
+    }
+  });
+
   return folder;
 }
 
@@ -192,6 +246,17 @@ export async function deleteFolder(id: string): Promise<void> {
   const folders = await getFolders();
   const filtered = folders.filter((f) => f.id !== id);
   await saveFolders(filtered);
+
+  // Sync to remote
+  supabase.auth.getSession().then(({ data: { session } }) => {
+    if (session?.user) {
+      supabase
+        .from("folders")
+        .delete()
+        .eq("id", id)
+        .catch((err) => console.error("Error deleting remote folder:", err));
+    }
+  });
 
   // Also remove folderId from any board metadata that had it
   const metadataList = await getBoardsMetadata();
@@ -324,4 +389,146 @@ export async function saveBoardComments(
   comments: BoardComment[],
 ): Promise<void> {
   await set(`board_comments_${boardId}`, comments, boardsStore);
+}
+
+export async function syncBoardsWithSupabase(): Promise<void> {
+  try {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    if (!session?.user) {
+      return;
+    }
+
+    // 1. Fetch remote folders
+    const { data: remoteFolders } = await supabase.from("folders").select("*");
+    if (remoteFolders) {
+      const localFolders = await getFolders();
+      const mergedFolders = [...localFolders];
+      let foldersChanged = false;
+
+      remoteFolders.forEach((rf) => {
+        if (!mergedFolders.some((lf) => lf.id === rf.id)) {
+          mergedFolders.push({
+            id: rf.id,
+            name: rf.name,
+            createdAt: new Date(rf.created_at).getTime(),
+          });
+          foldersChanged = true;
+        }
+      });
+      if (foldersChanged) {
+        await saveFolders(mergedFolders);
+      }
+    }
+
+    // 2. Fetch remote boards metadata
+    const { data: remoteBoards } = await supabase
+      .from("boards")
+      .select("id, name, created_at, updated_at, tags, folder_id, password");
+    if (remoteBoards) {
+      const localMetadata = await getBoardsMetadata();
+      let changed = false;
+      const mergedMetadata = [...localMetadata];
+
+      for (const rb of remoteBoards) {
+        const index = mergedMetadata.findIndex((m) => m.id === rb.id);
+        const remoteUpdated = new Date(rb.updated_at).getTime();
+        const remoteMeta: BoardMetadata = {
+          id: rb.id,
+          name: rb.name,
+          createdAt: new Date(rb.created_at).getTime(),
+          updatedAt: remoteUpdated,
+          tags: rb.tags || [],
+          folderId: rb.folder_id || undefined,
+          password: rb.password || undefined,
+        };
+
+        if (index === -1) {
+          mergedMetadata.push(remoteMeta);
+          changed = true;
+
+          // Download board content
+          const { data: boardContent } = await supabase
+            .from("boards")
+            .select("elements, app_state, files")
+            .eq("id", rb.id)
+            .single();
+          if (boardContent) {
+            await set(
+              `board_content_${rb.id}`,
+              {
+                id: rb.id,
+                name: rb.name,
+                createdAt: remoteMeta.createdAt,
+                updatedAt: remoteMeta.updatedAt,
+                elements: boardContent.elements,
+                appState: boardContent.app_state,
+                files: boardContent.files,
+                tags: remoteMeta.tags,
+                folderId: remoteMeta.folderId,
+                password: remoteMeta.password,
+              },
+              boardsStore,
+            );
+          }
+        } else {
+          const localMeta = mergedMetadata[index];
+          if (remoteUpdated > localMeta.updatedAt) {
+            mergedMetadata[index] = remoteMeta;
+            changed = true;
+
+            // Redownload newer content
+            const { data: boardContent } = await supabase
+              .from("boards")
+              .select("elements, app_state, files")
+              .eq("id", rb.id)
+              .single();
+            if (boardContent) {
+              await set(
+                `board_content_${rb.id}`,
+                {
+                  id: rb.id,
+                  name: rb.name,
+                  createdAt: remoteMeta.createdAt,
+                  updatedAt: remoteMeta.updatedAt,
+                  elements: boardContent.elements,
+                  appState: boardContent.app_state,
+                  files: boardContent.files,
+                  tags: remoteMeta.tags,
+                  folderId: remoteMeta.folderId,
+                  password: remoteMeta.password,
+                },
+                boardsStore,
+              );
+            }
+          } else if (localMeta.updatedAt > remoteUpdated) {
+            // Local is newer, upload local to Supabase
+            const content = await getBoard(rb.id);
+            if (content) {
+              await supabase.from("boards").upsert({
+                id: rb.id,
+                user_id: session.user.id,
+                name: localMeta.name,
+                elements: content.elements,
+                app_state: content.appState,
+                files: content.files,
+                tags: localMeta.tags || [],
+                folder_id: localMeta.folderId || null,
+                password: localMeta.password || null,
+                updated_at: new Date(localMeta.updatedAt).toISOString(),
+              });
+            }
+          }
+        }
+      }
+
+      if (changed) {
+        mergedMetadata.sort((a, b) => b.updatedAt - a.updatedAt);
+        await saveBoardsMetadata(mergedMetadata);
+      }
+    }
+  } catch (error) {
+    console.error("Error during Supabase synchronization:", error);
+  }
 }

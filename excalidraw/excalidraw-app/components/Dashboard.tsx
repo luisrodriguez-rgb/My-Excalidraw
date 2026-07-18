@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 
 import {
   getBoardsMetadata,
@@ -10,8 +10,12 @@ import {
   deleteFolder,
   getBoardVersions,
   restoreBoardVersion,
+  syncBoardsWithSupabase,
 } from "../data/boardsDb";
 import { TEMPLATES } from "../data/templates";
+import { supabase } from "../data/supabaseClient";
+
+import { AuthModal } from "./AuthModal";
 
 import "./Dashboard.scss";
 
@@ -198,6 +202,10 @@ export const Dashboard: React.FC<DashboardProps> = ({
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [showTemplatesModal, setShowTemplatesModal] = useState(false);
 
+  const [session, setSession] = useState<any>(null);
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [syncing, setSyncing] = useState(false);
+
   const [folders, setFolders] = useState<Folder[]>([]);
   const [activeFolderId, setActiveFolderId] = useState<string | null>(null);
   const [showCreateFolderModal, setShowCreateFolderModal] = useState(false);
@@ -222,17 +230,43 @@ export const Dashboard: React.FC<DashboardProps> = ({
     null,
   );
 
-  useEffect(() => {
-    loadBoards();
+  const handleTriggerSync = useCallback(async () => {
+    setSyncing(true);
+    await syncBoardsWithSupabase();
+    await loadBoards();
+    setSyncing(false);
   }, []);
 
+  useEffect(() => {
+    loadBoards();
+
+    // Initialize Supabase Auth listener
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      if (session) {
+        handleTriggerSync();
+      }
+    });
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+      if (session) {
+        handleTriggerSync();
+      } else {
+        loadBoards();
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [handleTriggerSync]);
   const loadBoards = async () => {
     const list = await getBoardsMetadata();
     setBoards(list);
     const folderList = await getFolders();
     setFolders(folderList);
   };
-
   const handleCreateBoard = async (templateId: string | null = null) => {
     const id = `board_${Math.random().toString(36).substr(2, 9)}`;
     let name = `Workspace ${boards.length + 1}`;
@@ -477,6 +511,50 @@ export const Dashboard: React.FC<DashboardProps> = ({
           <h1>Excalidraw Workspace</h1>
         </div>
         <div className="header-actions">
+          {session ? (
+            <div
+              className="user-profile"
+              style={{ display: "flex", alignItems: "center", gap: "10px" }}
+            >
+              <span
+                className="user-email"
+                style={{ fontSize: "13px", color: "var(--text-secondary)" }}
+              >
+                ☁️ {session.user.email}
+              </span>
+              <button
+                className="btn-action"
+                style={{
+                  padding: "6px 12px",
+                  border: "1px solid var(--border-color)",
+                  borderRadius: "6px",
+                }}
+                onClick={() => supabase.auth.signOut()}
+              >
+                Cerrar Sesión
+              </button>
+            </div>
+          ) : (
+            <button
+              className="join-room-btn"
+              style={{ backgroundColor: "var(--accent-color)", color: "white" }}
+              onClick={() => setShowAuthModal(true)}
+            >
+              Iniciar Sesión
+            </button>
+          )}
+
+          {session && (
+            <button
+              className="theme-toggle-btn"
+              onClick={handleTriggerSync}
+              disabled={syncing}
+              title="Sincronizar tableros ahora"
+            >
+              {syncing ? "⏳" : "🔄"}
+            </button>
+          )}
+
           <button
             className="join-room-btn"
             onClick={() => setShowJoinModal(true)}
@@ -654,6 +732,19 @@ export const Dashboard: React.FC<DashboardProps> = ({
                       Actualizado: {new Date(board.updatedAt).toLocaleString()}
                     </div>
                     <div className="board-tags">
+                      {session && (
+                        <span
+                          className="board-tag-pill"
+                          style={{
+                            backgroundColor: "rgba(16, 185, 129, 0.15)",
+                            color: "#10b981",
+                            border: "1px solid rgba(16, 185, 129, 0.3)",
+                            fontWeight: "bold",
+                          }}
+                        >
+                          ☁️ En la nube
+                        </span>
+                      )}
                       {board.isCollaboration && (
                         <span className="tag-collab">
                           Sala activa (Colaboración)
@@ -1312,6 +1403,14 @@ export const Dashboard: React.FC<DashboardProps> = ({
             </div>
           </div>
         </div>
+      )}
+
+      {/* Auth Modal */}
+      {showAuthModal && (
+        <AuthModal
+          onClose={() => setShowAuthModal(false)}
+          onSuccess={handleTriggerSync}
+        />
       )}
     </div>
   );

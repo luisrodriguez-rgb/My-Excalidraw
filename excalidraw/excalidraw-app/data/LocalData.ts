@@ -41,6 +41,8 @@ import type { MaybePromise } from "@excalidraw/common/utility-types";
 import { appJotaiStore, atom } from "../app-jotai";
 import { SAVE_TO_LOCAL_STORAGE_TIMEOUT, STORAGE_KEYS } from "../app_constants";
 
+import { supabase } from "./supabaseClient";
+
 import { FileManager } from "./FileManager";
 import { FileStatusStore } from "./fileStatusStore";
 import { Locker } from "./Locker";
@@ -247,11 +249,29 @@ export class LibraryIndexedDBAdapter {
   }
 
   static save(data: LibraryPersistedData): MaybePromise<void> {
-    return set(
+    const p = set(
       LibraryIndexedDBAdapter.key,
       data,
       LibraryIndexedDBAdapter.store,
     );
+
+    // Sync to Supabase if logged in
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        supabase
+          .from("libraries")
+          .upsert({
+            user_id: session.user.id,
+            items: data,
+            updated_at: new Date().toISOString(),
+          })
+          .catch((err) =>
+            console.error("Error syncing library to Supabase:", err),
+          );
+      }
+    });
+
+    return p;
   }
 }
 
