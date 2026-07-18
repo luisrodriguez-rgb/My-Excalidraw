@@ -58,25 +58,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onSuccess }) => {
     }
   };
 
-  const handleGoogleLogin = async () => {
-    setLoading(true);
-    setErrorMsg("");
-    try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: "google",
-        options: {
-          redirectTo: window.location.origin,
-        },
-      });
-      if (error) {
-        throw error;
-      }
-    } catch (err: any) {
-      setErrorMsg(err.message || "Error al conectar con Google.");
-      setLoading(false);
-    }
-  };
-
   return (
     <div className="dialog-overlay auth-overlay">
       <div className="dialog-box auth-dialog">
@@ -119,30 +100,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onSuccess }) => {
             {loading ? "Procesando..." : isSignUp ? "Registrarse" : "Entrar"}
           </button>
         </form>
-
-        <div className="auth-divider">
-          <span>O CONTINUAR CON</span>
-        </div>
-
-        <button
-          type="button"
-          onClick={handleGoogleLogin}
-          className="btn-google-login"
-          disabled={loading}
-        >
-          <svg
-            viewBox="0 0 24 24"
-            width="18"
-            height="18"
-            style={{ marginRight: "10px" }}
-          >
-            <path
-              fill="#EA4335"
-              d="M12.24 10.285V14.4h6.887c-.275 1.565-1.88 4.604-6.887 4.604-4.33 0-7.859-3.578-7.859-8s3.53-8 7.859-8c2.46 0 4.105 1.025 5.047 1.926l3.227-3.107C18.29 1.95 15.538 1 12.24 1 5.922 1 1 5.922 1 12s4.922 11 11.24 11c6.592 0 11.002-4.638 11.002-11.2 0-.756-.08-1.333-.18-1.8H12.24z"
-            />
-          </svg>
-          Google
-        </button>
 
         <div className="auth-footer">
           {isSignUp ? (
