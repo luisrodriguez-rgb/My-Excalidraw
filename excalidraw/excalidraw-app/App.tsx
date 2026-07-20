@@ -37,6 +37,7 @@ import polyfill from "@excalidraw/excalidraw/polyfill";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { loadFromBlob } from "@excalidraw/excalidraw/data/blob";
 import { t } from "@excalidraw/excalidraw/i18n";
+import throttle from "lodash.throttle";
 
 import {
   GithubIcon,
@@ -415,6 +416,8 @@ const ExcalidrawWrapper = () => {
     return isCollaborationLink(window.location.href) ? "collab_room" : null;
   });
   const [activeBoardName, setActiveBoardName] = useState("");
+  const presenceChannelRef = useRef<any>(null);
+  const lastUsernameRef = useRef<string>("Usuario");
 
   // initial state
   // ---------------------------------------------------------------------------
@@ -586,6 +589,12 @@ const ExcalidrawWrapper = () => {
         },
       },
     );
+    presenceChannelRef.current = presenceChannel;
+
+    // Ask for Notification permission
+    if ("Notification" in window && Notification.permission === "default") {
+      Notification.requestPermission();
+    }
 
     presenceChannel
       .on("presence", { event: "sync" }, () => {
@@ -605,6 +614,24 @@ const ExcalidrawWrapper = () => {
           }
         });
         excalidrawAPI.updateScene({ collaborators });
+      })
+      .on("presence", { event: "join" }, ({ key, newPresences }) => {
+        if (key !== socketId && newPresences.length > 0) {
+          const user = newPresences[0].username || "Alguien";
+          excalidrawAPI.setToast({ message: `👋 ${user} se unió a la sala`, duration: 3000 });
+          if ("Notification" in window && Notification.permission === "granted") {
+            new Notification("Nueva conexión", { body: `${user} se unió a la sala colaborativa.` });
+          }
+        }
+      })
+      .on("presence", { event: "leave" }, ({ key, leftPresences }) => {
+        if (key !== socketId && leftPresences.length > 0) {
+          const user = leftPresences[0].username || "Alguien";
+          excalidrawAPI.setToast({ message: `👋 ${user} abandonó la sala`, duration: 3000 });
+          if ("Notification" in window && Notification.permission === "granted") {
+            new Notification("Desconexión", { body: `${user} abandonó la sala colaborativa.` });
+          }
+        }
       })
       .on("broadcast", { event: "pointer" }, ({ payload }) => {
         if (payload && payload.socketId !== socketId) {
@@ -627,7 +654,7 @@ const ExcalidrawWrapper = () => {
         }
       });
 
-    const handlePointerMove = (e: MouseEvent) => {
+    const handlePointerMove = throttle((e: MouseEvent) => {
       const appState = excalidrawAPI.getAppState();
       const sceneX =
         (e.clientX - appState.offsetLeft) / appState.zoom.value -
@@ -645,7 +672,7 @@ const ExcalidrawWrapper = () => {
           pointer: { x: sceneX, y: sceneY },
         },
       });
-    };
+    }, 50);
 
     window.addEventListener("pointermove", handlePointerMove);
 
@@ -669,6 +696,35 @@ const ExcalidrawWrapper = () => {
       }
       forceRefresh((prev) => !prev);
     }
+  }, [excalidrawAPI]);
+
+  // ---------------------------------------------------------------------------
+  // Sync Comment Pins position without React re-render lag
+  // ---------------------------------------------------------------------------
+  useEffect(() => {
+    if (!excalidrawAPI) return;
+
+    const unsub = excalidrawAPI.onScrollChange(() => {
+      const appState = excalidrawAPI.getAppState();
+      const pins = document.querySelectorAll(".comment-pin, .comment-popup");
+      pins.forEach((pin: any) => {
+        const originalX = parseFloat(pin.dataset.x);
+        const originalY = parseFloat(pin.dataset.y);
+        if (!isNaN(originalX) && !isNaN(originalY)) {
+          const viewportX = (originalX + appState.scrollX) * appState.zoom.value;
+          const viewportY = (originalY + appState.scrollY) * appState.zoom.value;
+          pin.style.left = `${viewportX}px`;
+          
+          if (pin.classList.contains("comment-popup")) {
+            pin.style.top = `${viewportY - 10}px`;
+          } else {
+            pin.style.top = `${viewportY}px`;
+          }
+        }
+      });
+    });
+
+    return () => unsub();
   }, [excalidrawAPI]);
 
   // ---------------------------------------------------------------------------
@@ -1117,6 +1173,19 @@ const ExcalidrawWrapper = () => {
     minimapElementsRef.current = elements;
     minimapAppStateRef.current = appState;
     throttledMinimapRefresh();
+
+    // Sync username changes to realtime presence
+    const currentUsername = collabAPI?.getUsername();
+    if (currentUsername && currentUsername !== lastUsernameRef.current) {
+      lastUsernameRef.current = currentUsername;
+      localStorage.setItem("comment-author", currentUsername); // Fallback memory
+      if (presenceChannelRef.current) {
+        presenceChannelRef.current.track({
+          username: currentUsername,
+          onlineAt: new Date().toISOString(),
+        });
+      }
+    }
 
     if (collabAPI?.isCollaborating()) {
       collabAPI.syncElements(elements);
@@ -2138,6 +2207,8 @@ const ExcalidrawWrapper = () => {
             <div
               key={comment.id}
               className="comment-pin"
+              data-x={comment.x}
+              data-y={comment.y}
               onClick={(e) => {
                 e.stopPropagation();
                 setActiveCommentPopupId(comment.id);
@@ -2187,6 +2258,8 @@ const ExcalidrawWrapper = () => {
           return (
             <div
               className="comment-popup"
+              data-x={comment.x}
+              data-y={comment.y}
               style={{
                 position: "fixed",
                 left: `${viewportX}px`,
