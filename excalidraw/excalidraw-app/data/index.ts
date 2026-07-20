@@ -223,10 +223,9 @@ export const importFromBackend = async (
     }
 
     const binary = Uint8Array.from(atob(row.data), (c) => c.charCodeAt(0));
-    const { data: decompressed } = await decompressData(
-      binary,
-      { decryptionKey },
-    );
+    const { data: decompressed } = await decompressData(binary, {
+      decryptionKey,
+    });
 
     const decoded = new TextDecoder().decode(decompressed);
     const parsed = JSON.parse(decoded);

@@ -246,7 +246,10 @@ const initializeScene = async (opts: {
     if (board) {
       localDataState = {
         elements: board.elements,
-        appState: board.appState,
+        appState: {
+          ...(board.appState || {}),
+          name: board.name,
+        },
       };
     }
   }
@@ -526,15 +529,23 @@ const ExcalidrawWrapper = () => {
     return () => subscription.unsubscribe();
   }, [excalidrawAPI]);
 
+  const lastLocalSaveTimeRef = useRef<number>(0);
+
   // ---------------------------------------------------------------------------
-  // Supabase Realtime: sync canvas in real time when another user saves changes
+  // Supabase Realtime: sync canvas & live cursors in real time for workspaces
   // ---------------------------------------------------------------------------
   useEffect(() => {
     if (!excalidrawAPI || !activeBoardId || activeBoardId === "collab_room") {
       return;
     }
 
-    const channel = supabase
+    const socketId = `user_${Math.random().toString(36).substring(2, 9)}`;
+    const currentUser =
+      localStorage.getItem("comment-author") || newCommentAuthor || "Usuario";
+    const collaboratorsMap = new Map();
+
+    // 1. Database table changes listener (0-delay canvas sync)
+    const dbChannel = supabase
       .channel(`board-realtime-${activeBoardId}`)
       .on(
         "postgres_changes" as any,
@@ -545,13 +556,9 @@ const ExcalidrawWrapper = () => {
           filter: `id=eq.${activeBoardId}`,
         },
         (payload: any) => {
-          // Don't apply our own saves back to ourselves
-          // We check if the remote updated_at is newer than what we last saved
-          const remoteUpdatedAt = new Date(payload.new?.updated_at).getTime();
           const now = Date.now();
-          // Only apply if the remote change is recent (within last 10s) and
-          // we are not the ones who just saved (give 2s grace period)
-          if (now - remoteUpdatedAt < 10000 && now - remoteUpdatedAt > 2000) {
+          // Apply if we were NOT the ones who just saved locally in the last 2 seconds
+          if (now - lastLocalSaveTimeRef.current > 2000) {
             const remoteElements = payload.new?.elements;
             const remoteFiles = payload.new?.files;
             if (remoteElements) {
@@ -568,10 +575,86 @@ const ExcalidrawWrapper = () => {
       )
       .subscribe();
 
-    return () => {
-      supabase.removeChannel(channel);
+    // 2. Presence & Live Cursor Broadcast Channel
+    const presenceChannel = supabase.channel(
+      `board-presence-${activeBoardId}`,
+      {
+        config: {
+          presence: {
+            key: socketId,
+          },
+        },
+      },
+    );
+
+    presenceChannel
+      .on("presence", { event: "sync" }, () => {
+        const state = presenceChannel.presenceState();
+        const collaborators = new Map();
+        Object.keys(state).forEach((key) => {
+          if (key !== socketId) {
+            const presences = state[key] as any[];
+            if (presences.length > 0) {
+              const p = presences[0];
+              collaborators.set(key, {
+                username: p.username || "Usuario",
+                isCurrentUser: false,
+                pointer: p.pointer || { x: 0, y: 0 },
+              });
+            }
+          }
+        });
+        excalidrawAPI.updateScene({ collaborators });
+      })
+      .on("broadcast", { event: "pointer" }, ({ payload }) => {
+        if (payload && payload.socketId !== socketId) {
+          collaboratorsMap.set(payload.socketId, {
+            username: payload.username || "Usuario",
+            isCurrentUser: false,
+            pointer: payload.pointer,
+          });
+          excalidrawAPI.updateScene({
+            collaborators: new Map(collaboratorsMap),
+          });
+        }
+      })
+      .subscribe(async (status) => {
+        if (status === "SUBSCRIBED") {
+          await presenceChannel.track({
+            username: currentUser,
+            onlineAt: new Date().toISOString(),
+          });
+        }
+      });
+
+    const handlePointerMove = (e: MouseEvent) => {
+      const appState = excalidrawAPI.getAppState();
+      const sceneX =
+        (e.clientX - appState.offsetLeft) / appState.zoom.value -
+        appState.scrollX;
+      const sceneY =
+        (e.clientY - appState.offsetTop) / appState.zoom.value -
+        appState.scrollY;
+
+      presenceChannel.send({
+        type: "broadcast",
+        event: "pointer",
+        payload: {
+          socketId,
+          username: currentUser,
+          pointer: { x: sceneX, y: sceneY },
+        },
+      });
     };
-  }, [excalidrawAPI, activeBoardId]);
+
+    window.addEventListener("pointermove", handlePointerMove);
+
+    return () => {
+      window.removeEventListener("pointermove", handlePointerMove);
+      supabase.removeChannel(dbChannel);
+      supabase.removeChannel(presenceChannel);
+    };
+  }, [excalidrawAPI, activeBoardId, newCommentAuthor]);
 
   useEffect(() => {
     if (isDevEnv()) {
@@ -1017,7 +1100,10 @@ const ExcalidrawWrapper = () => {
         els: readonly OrderedExcalidrawElement[],
         state: AppState,
         fs: BinaryFiles,
-      ) => saveBoard(boardId, { name: boardName }, els, state, fs),
+      ) => {
+        lastLocalSaveTimeRef.current = Date.now();
+        saveBoard(boardId, { name: boardName }, els, state, fs);
+      },
       1500,
     ),
   ).current;
@@ -1037,7 +1123,7 @@ const ExcalidrawWrapper = () => {
     }
 
     if (activeBoardId && activeBoardId !== "collab_room") {
-      const boardName = appState.name || activeBoardName || "Untitled Board";
+      const boardName = activeBoardName || appState.name || "Workspace";
       // Debounced: write to IndexedDB/Supabase only after user pauses 1.5s
       debouncedSaveBoard(activeBoardId, boardName, elements, appState, files);
     }
