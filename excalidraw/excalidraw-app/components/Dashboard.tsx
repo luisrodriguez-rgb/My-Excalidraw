@@ -315,6 +315,25 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
     return () => subscription.unsubscribe();
   }, [handleTriggerSync]);
+
+  // Supabase Realtime: auto-refresh board list when any board changes remotely
+  useEffect(() => {
+    const channel = supabase
+      .channel("dashboard-boards-realtime")
+      .on(
+        "postgres_changes" as any,
+        { event: "*", schema: "public", table: "boards" },
+        () => {
+          // Another user added/updated/deleted a board — re-sync the list
+          syncBoardsWithSupabase().then(() => loadBoards());
+        },
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
   const loadBoards = async () => {
     const list = await getBoardsMetadata();
     setBoards(list);

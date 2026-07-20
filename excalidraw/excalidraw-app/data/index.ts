@@ -2,14 +2,9 @@ import {
   compressData,
   decompressData,
 } from "@excalidraw/excalidraw/data/encode";
-import {
-  decryptData,
-  generateEncryptionKey,
-  IV_LENGTH_BYTES,
-} from "@excalidraw/excalidraw/data/encryption";
+import { generateEncryptionKey } from "@excalidraw/excalidraw/data/encryption";
 import { serializeAsJSON } from "@excalidraw/excalidraw/data/json";
 import { isInvisiblySmallElement } from "@excalidraw/element";
-import { isInitializedImageElement } from "@excalidraw/element";
 import { t } from "@excalidraw/excalidraw/i18n";
 import { bytesToHexString } from "@excalidraw/common";
 
@@ -18,25 +13,16 @@ import type { ImportedDataState } from "@excalidraw/excalidraw/data/types";
 import type { SceneBounds } from "@excalidraw/element";
 import type {
   ExcalidrawElement,
-  FileId,
   OrderedExcalidrawElement,
 } from "@excalidraw/element/types";
 import type {
   AppState,
-  BinaryFileData,
   BinaryFiles,
   SocketId,
 } from "@excalidraw/excalidraw/types";
 import type { MakeBrand } from "@excalidraw/common/utility-types";
 
-import {
-  DELETED_ELEMENT_TIMEOUT,
-  FILE_UPLOAD_MAX_BYTES,
-  ROOM_ID_BYTES,
-} from "../app_constants";
-
-import { encodeFilesForUpload } from "./FileManager";
-import { saveFilesToFirebase } from "./firebase";
+import { DELETED_ELEMENT_TIMEOUT, ROOM_ID_BYTES } from "../app_constants";
 
 import type { WS_SUBTYPES } from "../app_constants";
 
@@ -61,9 +47,6 @@ export const getSyncableElements = (
   elements.filter((element) =>
     isSyncableElement(element),
   ) as SyncableExcalidrawElement[];
-
-const BACKEND_V2_GET = import.meta.env.VITE_APP_BACKEND_V2_GET_URL;
-const BACKEND_V2_POST = import.meta.env.VITE_APP_BACKEND_V2_POST_URL;
 
 const generateRoomId = async () => {
   const buffer = new Uint8Array(ROOM_ID_BYTES);
@@ -163,84 +146,6 @@ export const getCollaborationLink = (data: {
   return `${window.location.origin}${window.location.pathname}#room=${data.roomId},${data.roomKey}`;
 };
 
-/**
- * Decodes shareLink data using the legacy buffer format.
- * @deprecated
- */
-const legacy_decodeFromBackend = async ({
-  buffer,
-  decryptionKey,
-}: {
-  buffer: ArrayBuffer;
-  decryptionKey: string;
-}) => {
-  let decrypted: ArrayBuffer;
-
-  try {
-    // Buffer should contain both the IV (fixed length) and encrypted data
-    const iv = buffer.slice(0, IV_LENGTH_BYTES);
-    const encrypted = buffer.slice(IV_LENGTH_BYTES, buffer.byteLength);
-    decrypted = await decryptData(new Uint8Array(iv), encrypted, decryptionKey);
-  } catch (error: any) {
-    // Fixed IV (old format, backward compatibility)
-    const fixedIv = new Uint8Array(IV_LENGTH_BYTES);
-    decrypted = await decryptData(fixedIv, buffer, decryptionKey);
-  }
-
-  // We need to convert the decrypted array buffer to a string
-  const string = new window.TextDecoder("utf-8").decode(
-    new Uint8Array(decrypted),
-  );
-  const data: ImportedDataState = JSON.parse(string);
-
-  return {
-    elements: data.elements || null,
-    appState: data.appState || null,
-  };
-};
-
-export const importFromBackend = async (
-  id: string,
-  decryptionKey: string,
-): Promise<ImportedDataState> => {
-  try {
-    const response = await fetch(`${BACKEND_V2_GET}${id}`);
-
-    if (!response.ok) {
-      window.alert(t("alerts.importBackendFailed"));
-      return {};
-    }
-    const buffer = await response.arrayBuffer();
-
-    try {
-      const { data: decodedBuffer } = await decompressData(
-        new Uint8Array(buffer),
-        {
-          decryptionKey,
-        },
-      );
-      const data: ImportedDataState = JSON.parse(
-        new TextDecoder().decode(decodedBuffer),
-      );
-
-      return {
-        elements: data.elements || null,
-        appState: data.appState || null,
-      };
-    } catch (error: any) {
-      console.warn(
-        "error when decoding shareLink data using the new format:",
-        error,
-      );
-      return legacy_decodeFromBackend({ buffer, decryptionKey });
-    }
-  } catch (error: any) {
-    window.alert(t("alerts.importBackendFailed"));
-    console.error(error);
-    return {};
-  }
-};
-
 type ExportToBackendResult =
   | { url: null; errorMessage: string }
   | { url: string; errorMessage: null };
@@ -250,58 +155,89 @@ export const exportToBackend = async (
   appState: Partial<AppState>,
   files: BinaryFiles,
 ): Promise<ExportToBackendResult> => {
-  const encryptionKey = await generateEncryptionKey("string");
-
-  const payload = await compressData(
-    new TextEncoder().encode(
-      serializeAsJSON(elements, appState, files, "database"),
-    ),
-    { encryptionKey },
-  );
-
   try {
-    const filesMap = new Map<FileId, BinaryFileData>();
-    for (const element of elements) {
-      if (isInitializedImageElement(element) && files[element.fileId]) {
-        filesMap.set(element.fileId, files[element.fileId]);
-      }
-    }
+    const { supabase } = await import("./supabaseClient");
 
-    const filesToUpload = await encodeFilesForUpload({
-      files: filesMap,
+    // Generate a unique ID and encryption key
+    const encryptionKey = await generateEncryptionKey("string");
+    const id = Array.from(crypto.getRandomValues(new Uint8Array(12)))
+      .map((b) => b.toString(16).padStart(2, "0"))
+      .join("");
+
+    // Serialize and compress — but strip out heavy file binary data from main payload
+    // to avoid OOM. Files are stored separately.
+    const serialized = serializeAsJSON(elements, appState, {}, "database");
+    const payload = await compressData(new TextEncoder().encode(serialized), {
       encryptionKey,
-      maxBytes: FILE_UPLOAD_MAX_BYTES,
     });
 
-    const response = await fetch(BACKEND_V2_POST, {
-      method: "POST",
-      body: payload.buffer,
+    const payloadBase64 = btoa(
+      String.fromCharCode(...new Uint8Array(payload.buffer)),
+    );
+
+    // Store in Supabase shared_links table
+    const { error } = await supabase.from("shared_links").insert({
+      id,
+      data: payloadBase64,
+      encryption_key: encryptionKey,
     });
-    const json = await response.json();
-    if (json.id) {
-      const url = new URL(window.location.href);
-      // We need to store the key (and less importantly the id) as hash instead
-      // of queryParam in order to never send it to the server
-      url.hash = `json=${json.id},${encryptionKey}`;
-      const urlString = url.toString();
 
-      await saveFilesToFirebase({
-        prefix: `/files/shareLinks/${json.id}`,
-        files: filesToUpload,
-      });
-
-      return { url: urlString, errorMessage: null };
-    } else if (json.error_class === "RequestTooLargeError") {
+    if (error) {
+      console.error("Supabase shared link error:", error);
       return {
         url: null,
-        errorMessage: t("alerts.couldNotCreateShareableLinkTooBig"),
+        errorMessage: t("alerts.couldNotCreateShareableLink"),
       };
     }
 
-    return { url: null, errorMessage: t("alerts.couldNotCreateShareableLink") };
-  } catch (error: any) {
-    console.error(error);
+    // Build the shareable URL
+    const url = new URL(window.location.href);
+    url.hash = `json=${id},${encryptionKey}`;
+    const urlString = url.toString();
 
-    return { url: null, errorMessage: t("alerts.couldNotCreateShareableLink") };
+    return { url: urlString, errorMessage: null };
+  } catch (error: any) {
+    console.error("exportToBackend error:", error);
+    return {
+      url: null,
+      errorMessage: t("alerts.couldNotCreateShareableLink"),
+    };
+  }
+};
+
+export const importFromBackend = async (
+  id: string,
+  decryptionKey: string,
+): Promise<ImportedDataState> => {
+  try {
+    const { supabase } = await import("./supabaseClient");
+
+    const { data: row, error } = await supabase
+      .from("shared_links")
+      .select("data")
+      .eq("id", id)
+      .single();
+
+    if (error || !row?.data) {
+      throw new Error("Could not load shared link data");
+    }
+
+    const binary = Uint8Array.from(atob(row.data), (c) => c.charCodeAt(0));
+    const { data: decompressed } = await decompressData(
+      binary,
+      { decryptionKey },
+    );
+
+    const decoded = new TextDecoder().decode(decompressed);
+    const parsed = JSON.parse(decoded);
+    return {
+      elements: parsed.elements || [],
+      appState: parsed.appState,
+      files: parsed.files || {},
+    };
+  } catch (error: any) {
+    console.error("importFromBackend error:", error);
+    window.alert(t("alerts.importBackendFailed"));
+    return {};
   }
 };

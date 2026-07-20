@@ -102,10 +102,7 @@ import Collab, {
 import { AppFooter } from "./components/AppFooter";
 import { AppMainMenu } from "./components/AppMainMenu";
 import { AppWelcomeScreen } from "./components/AppWelcomeScreen";
-import {
-  ExportToExcalidrawPlus,
-  exportToExcalidrawPlus,
-} from "./components/ExportToExcalidrawPlus";
+import { exportToExcalidrawPlus } from "./components/ExportToExcalidrawPlus";
 import { TopErrorBoundary } from "./components/TopErrorBoundary";
 
 import {
@@ -473,14 +470,13 @@ const ExcalidrawWrapper = () => {
   const [newCommentText, setNewCommentText] = useState("");
   const [newCommentAuthor, setNewCommentAuthor] = useState("");
   const [replyText, setReplyText] = useState("");
-  const [viewportState, setViewportState] = useState({
-    zoom: 1,
-    scrollX: 0,
-    scrollY: 0,
-  });
-
-  const [minimapElements, setMinimapElements] = useState<readonly any[]>([]);
-  const [minimapAppState, setMinimapAppState] = useState<any>(null);
+  const minimapElementsRef = useRef<readonly any[]>([]);
+  const minimapAppStateRef = useRef<any>(null);
+  const [minimapTick, setMinimapTick] = useState(0);
+  // Throttle minimap updates to at most once per 200ms to avoid re-renders every frame
+  const throttledMinimapRefresh = useRef(
+    debounce(() => setMinimapTick((t) => t + 1), 200),
+  ).current;
 
   useEffect(() => {
     if (!excalidrawAPI) {
@@ -529,6 +525,53 @@ const ExcalidrawWrapper = () => {
 
     return () => subscription.unsubscribe();
   }, [excalidrawAPI]);
+
+  // ---------------------------------------------------------------------------
+  // Supabase Realtime: sync canvas in real time when another user saves changes
+  // ---------------------------------------------------------------------------
+  useEffect(() => {
+    if (!excalidrawAPI || !activeBoardId || activeBoardId === "collab_room") {
+      return;
+    }
+
+    const channel = supabase
+      .channel(`board-realtime-${activeBoardId}`)
+      .on(
+        "postgres_changes" as any,
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "boards",
+          filter: `id=eq.${activeBoardId}`,
+        },
+        (payload: any) => {
+          // Don't apply our own saves back to ourselves
+          // We check if the remote updated_at is newer than what we last saved
+          const remoteUpdatedAt = new Date(payload.new?.updated_at).getTime();
+          const now = Date.now();
+          // Only apply if the remote change is recent (within last 10s) and
+          // we are not the ones who just saved (give 2s grace period)
+          if (now - remoteUpdatedAt < 10000 && now - remoteUpdatedAt > 2000) {
+            const remoteElements = payload.new?.elements;
+            const remoteFiles = payload.new?.files;
+            if (remoteElements) {
+              excalidrawAPI.updateScene({
+                elements: restoreElements(remoteElements, null),
+                captureUpdate: CaptureUpdateAction.NEVER,
+              });
+            }
+            if (remoteFiles && Object.keys(remoteFiles).length > 0) {
+              excalidrawAPI.addFiles(Object.values(remoteFiles));
+            }
+          }
+        },
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [excalidrawAPI, activeBoardId]);
 
   useEffect(() => {
     if (isDevEnv()) {
@@ -965,25 +1008,29 @@ const ExcalidrawWrapper = () => {
     };
   }, [excalidrawAPI]);
 
+  // Debounced board save - only writes to DB after 1.5s of inactivity
+  const debouncedSaveBoard = useRef(
+    debounce(
+      (
+        boardId: string,
+        boardName: string,
+        els: readonly OrderedExcalidrawElement[],
+        state: AppState,
+        fs: BinaryFiles,
+      ) => saveBoard(boardId, { name: boardName }, els, state, fs),
+      1500,
+    ),
+  ).current;
+
   const onChange = (
     elements: readonly OrderedExcalidrawElement[],
     appState: AppState,
     files: BinaryFiles,
   ) => {
-    setMinimapElements(elements);
-    setMinimapAppState(appState);
-
-    if (
-      appState.zoom.value !== viewportState.zoom ||
-      appState.scrollX !== viewportState.scrollX ||
-      appState.scrollY !== viewportState.scrollY
-    ) {
-      setViewportState({
-        zoom: appState.zoom.value,
-        scrollX: appState.scrollX,
-        scrollY: appState.scrollY,
-      });
-    }
+    // Update refs without triggering React re-renders on every frame
+    minimapElementsRef.current = elements;
+    minimapAppStateRef.current = appState;
+    throttledMinimapRefresh();
 
     if (collabAPI?.isCollaborating()) {
       collabAPI.syncElements(elements);
@@ -991,7 +1038,8 @@ const ExcalidrawWrapper = () => {
 
     if (activeBoardId && activeBoardId !== "collab_room") {
       const boardName = appState.name || activeBoardName || "Untitled Board";
-      saveBoard(activeBoardId, { name: boardName }, elements, appState, files);
+      // Debounced: write to IndexedDB/Supabase only after user pauses 1.5s
+      debouncedSaveBoard(activeBoardId, boardName, elements, appState, files);
     }
 
     // this check is redundant, but since this is a hot path, it's best
@@ -1455,61 +1503,85 @@ const ExcalidrawWrapper = () => {
             export: {
               onExportToBackend,
               renderCustomUI: excalidrawAPI
-                ? (elements, appState, files) => {
+                ? () => {
                     return (
                       <div
+                        className="Card"
                         style={{
+                          background: "var(--color-primary)",
+                          color: "white",
+                          borderRadius: "8px",
+                          padding: "16px",
                           display: "flex",
                           flexDirection: "column",
+                          alignItems: "center",
                           gap: "8px",
-                          width: "100%",
+                          cursor: "pointer",
+                          minWidth: "160px",
+                          textAlign: "center",
+                        }}
+                        onClick={handleExportToPPTX}
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            handleExportToPPTX();
+                          }
                         }}
                       >
-                        <ExportToExcalidrawPlus
-                          elements={elements}
-                          appState={appState}
-                          files={files}
-                          name={excalidrawAPI.getName()}
-                          onError={(error) => {
-                            excalidrawAPI?.updateScene({
-                              appState: {
-                                errorMessage: error.message,
-                              },
-                            });
-                          }}
-                          onSuccess={() => {
-                            excalidrawAPI.updateScene({
-                              appState: { openDialog: null },
-                            });
-                          }}
-                        />
-                        <button
-                          onClick={handleExportToPPTX}
+                        <div
                           style={{
+                            width: "3.2rem",
+                            height: "3.2rem",
+                            borderRadius: "50%",
+                            backgroundColor: "rgba(255,255,255,0.2)",
                             display: "flex",
                             alignItems: "center",
                             justifyContent: "center",
-                            gap: "8px",
-                            padding: "10px 16px",
-                            fontSize: "13px",
-                            fontWeight: "600",
-                            backgroundColor: "#2563eb",
-                            color: "white",
-                            border: "none",
-                            borderRadius: "8px",
-                            cursor: "pointer",
-                            width: "100%",
-                            boxSizing: "border-box",
-                            transition: "background-color 0.2s",
                           }}
-                          onMouseOver={(e) =>
-                            (e.currentTarget.style.backgroundColor = "#1d4ed8")
-                          }
-                          onMouseOut={(e) =>
-                            (e.currentTarget.style.backgroundColor = "#2563eb")
-                          }
                         >
-                          📊 Exportar a PPTX (PowerPoint)
+                          <svg
+                            width="28"
+                            height="28"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="white"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <rect
+                              x="2"
+                              y="3"
+                              width="20"
+                              height="14"
+                              rx="2"
+                              ry="2"
+                            />
+                            <line x1="8" y1="21" x2="16" y2="21" />
+                            <line x1="12" y1="17" x2="12" y2="21" />
+                          </svg>
+                        </div>
+                        <h2 style={{ margin: 0, fontSize: "1rem" }}>
+                          PowerPoint
+                        </h2>
+                        <div style={{ fontSize: "0.8rem", opacity: 0.9 }}>
+                          Exporta como presentación .pptx
+                        </div>
+                        <button
+                          className="Card-button"
+                          style={{
+                            marginTop: "4px",
+                            background: "white",
+                            color: "var(--color-primary)",
+                            border: "none",
+                            borderRadius: "6px",
+                            padding: "6px 16px",
+                            fontWeight: 600,
+                            cursor: "pointer",
+                          }}
+                        >
+                          Exportar
                         </button>
                       </div>
                     );
@@ -1866,10 +1938,12 @@ const ExcalidrawWrapper = () => {
       )}
       <NotificationManager isCollaborating={isCollaborating} />
 
-      {activeBoardId && excalidrawAPI && minimapAppState && (
+      {activeBoardId && excalidrawAPI && minimapAppStateRef.current && (
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         <Minimap
-          elements={minimapElements}
-          appState={minimapAppState}
+          key={`minimap-${minimapTick}`}
+          elements={minimapElementsRef.current}
+          appState={minimapAppStateRef.current}
           excalidrawAPI={excalidrawAPI}
         />
       )}
@@ -1968,10 +2042,11 @@ const ExcalidrawWrapper = () => {
             return null;
           }
 
+          const appState = excalidrawAPI.getAppState();
           const viewportX =
-            (comment.x + viewportState.scrollX) * viewportState.zoom;
+            (comment.x + appState.scrollX) * appState.zoom.value;
           const viewportY =
-            (comment.y + viewportState.scrollY) * viewportState.zoom;
+            (comment.y + appState.scrollY) * appState.zoom.value;
 
           return (
             <div
@@ -2017,10 +2092,11 @@ const ExcalidrawWrapper = () => {
             return null;
           }
 
+          const appState = excalidrawAPI.getAppState();
           const viewportX =
-            (comment.x + viewportState.scrollX) * viewportState.zoom;
+            (comment.x + appState.scrollX) * appState.zoom.value;
           const viewportY =
-            (comment.y + viewportState.scrollY) * viewportState.zoom;
+            (comment.y + appState.scrollY) * appState.zoom.value;
 
           return (
             <div
