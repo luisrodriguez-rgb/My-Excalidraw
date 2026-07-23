@@ -6,12 +6,14 @@ interface MinimapProps {
   elements: readonly any[];
   appState: any;
   excalidrawAPI: any;
+  tick?: number;
 }
 
 export const Minimap: React.FC<MinimapProps> = ({
   elements,
   appState,
   excalidrawAPI,
+  tick,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [visible, setVisible] = useState(true);
@@ -110,7 +112,7 @@ export const Minimap: React.FC<MinimapProps> = ({
   useEffect(() => {
     drawMinimap();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [elements, appState]);
+  }, [elements, appState, tick]);
 
   const handlePointerEvent = (e: React.PointerEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;

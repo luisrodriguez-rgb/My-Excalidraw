@@ -546,6 +546,7 @@ const ExcalidrawWrapper = () => {
     const currentUser =
       localStorage.getItem("comment-author") || newCommentAuthor || "Usuario";
     const collaboratorsMap = new Map();
+    let isSubscribed = false;
 
     // 1. Database table changes listener (0-delay canvas sync)
     const dbChannel = supabase
@@ -647,6 +648,7 @@ const ExcalidrawWrapper = () => {
       })
       .subscribe(async (status) => {
         if (status === "SUBSCRIBED") {
+          isSubscribed = true;
           await presenceChannel.track({
             username: currentUser,
             onlineAt: new Date().toISOString(),
@@ -655,6 +657,7 @@ const ExcalidrawWrapper = () => {
       });
 
     const handlePointerMove = throttle((e: MouseEvent) => {
+      if (!isSubscribed) return;
       const appState = excalidrawAPI.getAppState();
       const sceneX =
         (e.clientX - appState.offsetLeft) / appState.zoom.value -
@@ -711,8 +714,8 @@ const ExcalidrawWrapper = () => {
         const originalX = parseFloat(pin.dataset.x);
         const originalY = parseFloat(pin.dataset.y);
         if (!isNaN(originalX) && !isNaN(originalY)) {
-          const viewportX = (originalX + appState.scrollX) * appState.zoom.value;
-          const viewportY = (originalY + appState.scrollY) * appState.zoom.value;
+          const viewportX = (originalX + appState.scrollX) * appState.zoom.value + appState.offsetLeft;
+          const viewportY = (originalY + appState.scrollY) * appState.zoom.value + appState.offsetTop;
           pin.style.left = `${viewportX}px`;
           
           if (pin.classList.contains("comment-popup")) {
@@ -2096,10 +2099,11 @@ const ExcalidrawWrapper = () => {
       {activeBoardId && excalidrawAPI && minimapAppStateRef.current && (
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         <Minimap
-          key={`minimap-${minimapTick}`}
+          key="minimap"
           elements={minimapElementsRef.current}
           appState={minimapAppStateRef.current}
           excalidrawAPI={excalidrawAPI}
+          tick={minimapTick}
         />
       )}
 
@@ -2199,9 +2203,9 @@ const ExcalidrawWrapper = () => {
 
           const appState = excalidrawAPI.getAppState();
           const viewportX =
-            (comment.x + appState.scrollX) * appState.zoom.value;
+            (comment.x + appState.scrollX) * appState.zoom.value + appState.offsetLeft;
           const viewportY =
-            (comment.y + appState.scrollY) * appState.zoom.value;
+            (comment.y + appState.scrollY) * appState.zoom.value + appState.offsetTop;
 
           return (
             <div
@@ -2232,7 +2236,7 @@ const ExcalidrawWrapper = () => {
                 fontWeight: "bold",
                 cursor: "pointer",
                 zIndex: 99999,
-                transition: "all 0.1s ease",
+                transition: "background-color 0.1s ease, box-shadow 0.1s ease, transform 0.1s ease",
               }}
               title={`Comentario de ${comment.author}`}
             >
@@ -2251,9 +2255,9 @@ const ExcalidrawWrapper = () => {
 
           const appState = excalidrawAPI.getAppState();
           const viewportX =
-            (comment.x + appState.scrollX) * appState.zoom.value;
+            (comment.x + appState.scrollX) * appState.zoom.value + appState.offsetLeft;
           const viewportY =
-            (comment.y + appState.scrollY) * appState.zoom.value;
+            (comment.y + appState.scrollY) * appState.zoom.value + appState.offsetTop;
 
           return (
             <div
