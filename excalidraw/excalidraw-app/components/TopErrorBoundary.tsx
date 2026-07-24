@@ -24,12 +24,17 @@ export class TopErrorBoundary extends React.Component<
   }
 
   componentDidCatch(error: Error, errorInfo: any) {
+    // Only capture safe, non-sensitive keys from localStorage (CN-008)
+    const SAFE_KEYS = ["excalidraw-state", "excalidraw_theme", "language", "isLibraryMenuOpen"];
     const _localStorage: any = {};
-    for (const [key, value] of Object.entries({ ...localStorage })) {
-      try {
-        _localStorage[key] = JSON.parse(value);
-      } catch (error: any) {
-        _localStorage[key] = value;
+    for (const key of SAFE_KEYS) {
+      const value = localStorage.getItem(key);
+      if (value) {
+        try {
+          _localStorage[key] = JSON.parse(value);
+        } catch (error: any) {
+          _localStorage[key] = value;
+        }
       }
     }
 
@@ -44,6 +49,7 @@ export class TopErrorBoundary extends React.Component<
       }));
     });
   }
+
 
   private selectTextArea(event: React.MouseEvent<HTMLTextAreaElement>) {
     if (event.target !== document.activeElement) {

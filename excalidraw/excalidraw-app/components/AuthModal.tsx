@@ -11,6 +11,21 @@ interface AuthModalProps {
 
 type AuthMode = "login" | "signup" | "forgot";
 
+// CN-009: User-friendly error messages to avoid exposing Supabase internals
+const AUTH_ERROR_MESSAGES: Record<string, string> = {
+  "Invalid login credentials": "Correo o contrasena incorrectos.",
+  "Email not confirmed": "Verifica tu correo antes de iniciar sesion.",
+  "User already registered": "Ya existe una cuenta con este correo.",
+  "Password should be at least 6 characters": "La contrasena debe tener al menos 6 caracteres.",
+  "For security purposes, you can only request this once every 60 seconds":
+    "Por seguridad, espera 60 segundos antes de intentarlo de nuevo.",
+  "signup is disabled": "El registro esta temporalmente deshabilitado.",
+};
+
+const getAuthErrorMessage = (err: any): string =>
+  AUTH_ERROR_MESSAGES[err?.message] || "Ha ocurrido un error. Intenta de nuevo.";
+
+
 export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onSuccess }) => {
   const [mode, setMode] = useState<AuthMode>("login");
   const [email, setEmail] = useState("");
@@ -43,10 +58,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onSuccess }) => {
         );
         if (error) throw error;
         setInfoMsg(
-          "✅ Te hemos enviado un correo para restablecer tu contraseña. Revisa tu bandeja de entrada.",
+          "Te hemos enviado un correo para restablecer tu contrasena. Revisa tu bandeja de entrada.",
         );
       } catch (err: any) {
-        setErrorMsg(err.message || "Ha ocurrido un error.");
+        setErrorMsg(getAuthErrorMessage(err));
       } finally {
         setLoading(false);
       }
@@ -79,7 +94,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onSuccess }) => {
         onClose();
       }
     } catch (err: any) {
-      setErrorMsg(err.message || "Ha ocurrido un error en la autenticación.");
+      setErrorMsg(getAuthErrorMessage(err));
+
     } finally {
       setLoading(false);
     }

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import Spinner from "@excalidraw/excalidraw/components/Spinner";
+import DOMPurify from "dompurify";
 
 interface QRCodeProps {
   value: string;
@@ -50,7 +51,13 @@ export const QRCode = ({ value }: QRCodeProps) => {
       className="ShareDialog__active__qrcode"
       role="img"
       aria-label="QR code for collaboration link"
-      dangerouslySetInnerHTML={{ __html: svgData }}
+      dangerouslySetInnerHTML={{
+        // Sanitize SVG output to prevent SVG-based XSS (CN-012)
+        __html: DOMPurify.sanitize(svgData, {
+          USE_PROFILES: { svg: true, svgFilters: true },
+        }),
+      }}
     />
   );
 };
+

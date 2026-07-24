@@ -152,6 +152,8 @@ import { Minimap } from "./components/Minimap";
 import { PresenceBar } from "./components/PresenceBar";
 import { AuthModal } from "./components/AuthModal";
 import { PresentationMode } from "./components/PresentationMode";
+import DOMPurify from "dompurify";
+
 
 import {
   getBoard,
@@ -470,13 +472,19 @@ const ExcalidrawWrapper = () => {
       .replace(/`(.*?)`/gim, "<code style='background: #f1f5f9; padding: 2px 6px; border-radius: 4px; font-family: monospace; font-size: 12px;'>$1</code>")
       .replace(/^\s*-\s+(.*$)/gim, "<li>$1</li>");
     html = html.replace(/(<li>.*<\/li>)/gim, "<ul>$1</ul>");
-    return html.split(/\n\n+/).map(p => {
+    const rawHtml = html.split(/\n\n+/).map(p => {
       if (p.trim().startsWith("<h") || p.trim().startsWith("<ul") || p.trim().startsWith("<li")) {
         return p;
       }
       return `<p style='margin-bottom: 12px; line-height: 1.5; color: #334155;'>${p.replace(/\n/g, "<br>")}</p>`;
     }).join("\n");
+    // Sanitize to prevent XSS from stored notes (CN-002)
+    return DOMPurify.sanitize(rawHtml, {
+      ALLOWED_TAGS: ["h1", "h2", "h3", "strong", "em", "code", "ul", "li", "p", "br"],
+      ALLOWED_ATTR: ["style"],
+    });
   };
+
 
   const selectedElement = activeBoardId && selectedElementId && excalidrawAPI
     ? excalidrawAPI.getSceneElements().find(el => el.id === selectedElementId && !el.isDeleted)
@@ -1035,7 +1043,7 @@ const ExcalidrawWrapper = () => {
       "Anónimo";
 
     const newReply = {
-      id: `reply_${Math.random().toString(36).substr(2, 9)}`,
+      id: `reply_${crypto.randomUUID().replace(/-/g, "").substring(0, 12)}`,
       author,
       text: replyText.trim(),
       createdAt: Date.now(),
@@ -1073,7 +1081,7 @@ const ExcalidrawWrapper = () => {
       localStorage.setItem("comment-author", author);
 
       const newComment: BoardComment = {
-        id: `comment_${Math.random().toString(36).substr(2, 9)}`,
+        id: `comment_${crypto.randomUUID().replace(/-/g, "").substring(0, 12)}`,
         text: newCommentText.trim(),
         author,
         x: newCommentCoords.x,

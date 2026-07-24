@@ -84,9 +84,11 @@
         USING (true);
 
     DROP POLICY IF EXISTS "Public insert access for shared_links" ON public.shared_links;
-    CREATE POLICY "Public insert access for shared_links"
+    -- CN-003: Only authenticated users can create shared links
+    CREATE POLICY "Authenticated insert access for shared_links"
         ON public.shared_links FOR INSERT
-        WITH CHECK (true);
+        WITH CHECK (auth.uid() IS NOT NULL);
+
 
     -- Función de mantenimiento para auto-eliminar enlaces compartidos de más de 30 días
     CREATE OR REPLACE FUNCTION public.clean_old_shared_links()

@@ -54,7 +54,7 @@ export const NotificationManager: React.FC<NotificationManagerProps> = ({
     message: string,
     avatarColor?: string,
   ) => {
-    const id = Math.random().toString(36).substr(2, 9);
+    const id = crypto.randomUUID().replace(/-/g, "").substring(0, 12);
     const newNotification: NotificationItem = {
       id,
       type,

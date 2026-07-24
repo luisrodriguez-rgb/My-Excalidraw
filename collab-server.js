@@ -6,12 +6,47 @@ const server = http.createServer((req, res) => {
   res.end("Excalidraw Collaboration Server running");
 });
 
+// CN-004: Restrict CORS to known origins only
+const ALLOWED_ORIGINS = [
+  "https://my-excalidraw-nine.vercel.app",
+  "http://localhost:3001",
+  "http://localhost:3000",
+];
+
+// CN-005 + CN-013: Rate limiter to prevent message flooding
+function createRateLimiter(maxEvents, windowMs) {
+  const counts = new Map();
+  return function isAllowed(id) {
+    const now = Date.now();
+    const entry = counts.get(id) || { count: 0, reset: now + windowMs };
+    if (now > entry.reset) {
+      entry.count = 0;
+      entry.reset = now + windowMs;
+    }
+    if (entry.count >= maxEvents) return false;
+    entry.count++;
+    counts.set(id, entry);
+    return true;
+  };
+}
+
+const chatLimiter = createRateLimiter(20, 10000);     // 20 messages per 10s
+const broadcastLimiter = createRateLimiter(60, 1000); // 60 updates per 1s
+
 const io = new Server(server, {
   cors: {
-    origin: "*",
+    origin: (origin, callback) => {
+      if (!origin || ALLOWED_ORIGINS.includes(origin)) {
+        callback(null, true);
+      } else {
+        console.warn(`[CORS] Blocked request from origin: ${origin}`);
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
     methods: ["GET", "POST"],
   },
 });
+
 
 io.on("connection", (socket) => {
   console.log("User connected:", socket.id);
@@ -29,16 +64,20 @@ io.on("connection", (socket) => {
   });
 
   socket.on("server-broadcast", (roomId, encryptedBuffer, iv) => {
+    if (!broadcastLimiter(socket.id)) return; // CN-005: rate limit
     socket.to(roomId).emit("client-broadcast", encryptedBuffer, iv);
   });
 
   socket.on("server-volatile-broadcast", (roomId, encryptedBuffer, iv) => {
+    if (!broadcastLimiter(socket.id)) return; // CN-005: rate limit
     socket.to(roomId).emit("client-broadcast", encryptedBuffer, iv);
   });
 
   socket.on("server-chat", (roomId, data) => {
+    if (!chatLimiter(socket.id)) return; // CN-013: rate limit chat messages
     socket.to(roomId).emit("client-chat", data);
   });
+
 
   socket.on("server-comment-create", (roomId, comment) => {
     socket.to(roomId).emit("client-comment-create", comment);

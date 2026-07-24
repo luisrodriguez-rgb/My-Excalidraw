@@ -200,7 +200,8 @@ export async function duplicateBoard(
   if (!source) {
     throw new Error("Source board not found");
   }
-  const newId = `board_${Math.random().toString(36).substr(2, 9)}`;
+  const newId = `board_${crypto.randomUUID().replace(/-/g, "").substring(0, 12)}`;
+
   await saveBoard(
     newId,
     {
@@ -237,7 +238,8 @@ export async function saveFolders(folders: Folder[]): Promise<void> {
 }
 
 export async function createFolder(name: string): Promise<Folder> {
-  const id = `folder_${Math.random().toString(36).substr(2, 9)}`;
+  const id = `folder_${crypto.randomUUID().replace(/-/g, "").substring(0, 12)}`;
+
   const folder: Folder = {
     id,
     name,

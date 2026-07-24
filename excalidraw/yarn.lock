@@ -1223,10 +1223,11 @@
     image-blob-reduce "3.0.1"
     jotai "2.11.0"
     jotai-scope "0.7.2"
-    jspdf "^2.5.1"
+    jspdf "4.2.1"
     lodash.debounce "4.0.8"
     lodash.throttle "4.1.1"
     nanoid "3.3.3"
+    next "14.2.35"
     pako "2.0.3"
     perfect-freehand "1.2.0"
     pica "7.1.1"
@@ -1238,7 +1239,10 @@
     radix-ui "1.4.3"
     roughjs "4.6.4"
     sass "1.51.0"
+    socket.io-client "4.8.3"
     tunnel-rat "0.1.2"
+    vite "5.4.21"
+    vitest "3.2.7"
 
 "@excalidraw/fractional-indexing@3.3.0", "@excalidraw/fractional-indexing@file:/Users/leonfeliperodriguez/Desktop/Trabajos/My-Excalidraw/My-Excalidraw/excalidraw/packages/fractional-indexing":
   version "3.3.0"
@@ -3257,6 +3261,13 @@
   resolved "https://registry.npmjs.org/@types/deep-eql/-/deep-eql-4.0.2.tgz"
   integrity sha512-c9h9dVVMigMPc4bwTvC5dxqtqJZwQPePsWjPlpSOnojbor6pGqdk541lfA7AqFQr5pB1BRdq0juY9db81BwyFw==
 
+"@types/dompurify@3.0.5":
+  version "3.0.5"
+  resolved "https://registry.npmjs.org/@types/dompurify/-/dompurify-3.0.5.tgz"
+  integrity sha512-1Wg0g3BtQF7sSb27fJQAKck1HECM6zV1EB66j8JH9i3LCjYabJa0FSdiSgsD5K/RbrsR0SiraKacLB+T8ZVYAg==
+  dependencies:
+    "@types/trusted-types" "*"
+
 "@types/estree@^1.0.0", "@types/estree@^1.0.8", "@types/estree@1.0.9":
   version "1.0.9"
   resolved "https://registry.npmjs.org/@types/estree/-/estree-1.0.9.tgz"
@@ -3377,7 +3388,7 @@
   resolved "https://registry.npmjs.org/@types/tinycolor2/-/tinycolor2-1.4.6.tgz"
   integrity sha512-iEN8J0BoMnsWBqjVbWH/c0G0Hh7O21lpR2/+PrvAVgWdzL7eexIFm4JN/Wn10PTcmNdtS6U67r499mlWMXOxNw==
 
-"@types/trusted-types@^2.0.2", "@types/trusted-types@^2.0.7":
+"@types/trusted-types@*", "@types/trusted-types@^2.0.2", "@types/trusted-types@^2.0.7":
   version "2.0.7"
   resolved "https://registry.npmjs.org/@types/trusted-types/-/trusted-types-2.0.7.tgz"
   integrity sha512-ScaPdn1dQczgbl0QFTeTOmVHFULt394XJgOQNoyVhZ6r2vLnMLJfBPd53SB52T/3G36VI1/g2MZaX0cwDuXsfw==
@@ -5361,7 +5372,7 @@ domhandler@^4.2.0, domhandler@^4.3.1:
   dependencies:
     domelementtype "^2.2.0"
 
-dompurify@^3.3.1, dompurify@^3.3.3:
+dompurify@^3.3.1, dompurify@^3.3.3, dompurify@3.4.12:
   version "3.4.12"
   resolved "https://registry.npmjs.org/dompurify/-/dompurify-3.4.12.tgz"
   integrity sha512-zQvGet8Z2sWbQhCmfFz/T5QWH2oBmjnqK3qvOjaqaNLrLEF912WamU+ohnTp0TCep/MFVHpdJuCZEdFOdTnEFg==
@@ -6047,16 +6058,21 @@ events@^3.2.0:
     "@sentry/browser" "9.0.1"
     "@supabase/supabase-js" "2.110.7"
     callsites "4.2.0"
+    esbuild "0.28.1"
     firebase "11.3.1"
     i18next-browser-languagedetector "6.1.4"
     idb-keyval "6.0.3"
     jotai "2.11.0"
+    jspdf "4.2.1"
+    next "14.2.35"
     pptxgenjs "4.0.1"
     react "19.0.0"
     react-dom "19.0.0"
-    socket.io-client "4.7.2"
+    socket.io-client "4.8.3"
     uqr "0.1.2"
+    vite "5.4.21"
     vite-plugin-html "3.2.2"
+    vitest "3.2.7"
 
 execa@^5.1.1:
   version "5.1.1"
@@ -10541,7 +10557,9 @@ why-is-node-running@^2.3.0:
   version "0.1.0"
   resolved "file:examples/with-nextjs"
   dependencies:
-    next "14.1"
+    esbuild "0.28.1"
+    jspdf "4.2.1"
+    next "14.2.35"
     react "19.0.0"
     react-dom "19.0.0"
 
@@ -10551,6 +10569,9 @@ why-is-node-running@^2.3.0:
   dependencies:
     "@excalidraw/excalidraw" "*"
     browser-fs-access "0.38.0"
+    esbuild "0.28.1"
+    jspdf "4.2.1"
+    next "14.2.35"
     react "19.0.0"
     react-dom "19.0.0"
 

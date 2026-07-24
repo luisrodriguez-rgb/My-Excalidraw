@@ -343,7 +343,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
     setFolders(folderList);
   };
   const handleCreateBoard = async (templateId: string | null = null) => {
-    const id = `board_${Math.random().toString(36).substr(2, 9)}`;
+    const id = `board_${crypto.randomUUID().replace(/-/g, "").substring(0, 12)}`;
+
     let name = `Workspace ${boards.length + 1}`;
     let elements: any[] = [];
 
@@ -435,7 +436,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
         // Standard excalidraw file format parsing
         const name =
           file.name.replace(/\.excalidraw$|\.json$/, "") || "Tablero Importado";
-        const id = `board_${Math.random().toString(36).substr(2, 9)}`;
+        const id = `board_${crypto.randomUUID().replace(/-/g, "").substring(0, 12)}`;
+
 
         const elements = importedData.elements || [];
         const appState = importedData.appState || {};
