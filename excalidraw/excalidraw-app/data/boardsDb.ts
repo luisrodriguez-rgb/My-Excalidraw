@@ -1,6 +1,7 @@
 import { createStore, get, set, del } from "idb-keyval";
 
 import { supabase } from "./supabaseClient";
+import { compressBinaryFiles } from "./imageOptimizer";
 
 export interface BoardMetadata {
   id: string;
@@ -70,6 +71,9 @@ export async function saveBoard(
   const now = Date.now();
   const currentBoard = await getBoard(id);
 
+  const rawFiles = files !== undefined ? files : currentBoard?.files || {};
+  const optimizedFiles = await compressBinaryFiles(rawFiles);
+
   const updatedBoard: Board = {
     id,
     name:
@@ -80,7 +84,7 @@ export async function saveBoard(
     updatedAt: now,
     elements: elements !== undefined ? elements : currentBoard?.elements || [],
     appState: appState !== undefined ? appState : currentBoard?.appState || {},
-    files: files !== undefined ? files : currentBoard?.files || {},
+    files: optimizedFiles,
     isCollaboration:
       data.isCollaboration !== undefined
         ? data.isCollaboration

@@ -65,3 +65,34 @@
         ALTER PUBLICATION supabase_realtime ADD TABLE public.boards;
       END IF;
     END $$;
+
+    -- 5. Tabla de Enlaces Compartidos (Shared Links)
+    CREATE TABLE IF NOT EXISTS public.shared_links (
+        id TEXT PRIMARY KEY,
+        data TEXT NOT NULL,
+        encryption_key TEXT,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+
+    -- Habilitar RLS para shared_links
+    ALTER TABLE public.shared_links ENABLE ROW LEVEL SECURITY;
+
+    DROP POLICY IF EXISTS "Public read access for shared_links" ON public.shared_links;
+    CREATE POLICY "Public read access for shared_links"
+        ON public.shared_links FOR SELECT
+        USING (true);
+
+    DROP POLICY IF EXISTS "Public insert access for shared_links" ON public.shared_links;
+    CREATE POLICY "Public insert access for shared_links"
+        ON public.shared_links FOR INSERT
+        WITH CHECK (true);
+
+    -- Función de mantenimiento para auto-eliminar enlaces compartidos de más de 30 días
+    CREATE OR REPLACE FUNCTION public.clean_old_shared_links()
+    RETURNS void AS $$
+    BEGIN
+      DELETE FROM public.shared_links
+      WHERE created_at < NOW() - INTERVAL '30 days';
+    END;
+    $$ LANGUAGE plpgsql SECURITY DEFINER;
+
