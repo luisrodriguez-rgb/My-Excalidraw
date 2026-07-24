@@ -259,6 +259,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
   const [session, setSession] = useState<any>(null);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [syncing, setSyncing] = useState(false);
+  const [showOnlyTemplates, setShowOnlyTemplates] = useState(false);
+
 
   const [folders, setFolders] = useState<Folder[]>([]);
   const [activeFolderId, setActiveFolderId] = useState<string | null>(null);
@@ -507,7 +509,28 @@ export const Dashboard: React.FC<DashboardProps> = ({
     }
   };
 
-  const handleOpenBoard = (board: BoardMetadata) => {
+  const handleToggleTemplate = async (id: string, isTemplate: boolean) => {
+    await saveBoard(id, { isTemplate });
+    loadBoards();
+  };
+
+  const handleCreateFromTemplate = async (id: string, name: string) => {
+    const newId = await duplicateBoard(id, `${name}`);
+    await saveBoard(newId, { isTemplate: false });
+    onSelectBoard(newId);
+  };
+
+  const handleOpenBoard = async (board: BoardMetadata) => {
+    if (board.isTemplate) {
+      const useTemplate = window.confirm(
+        `¿Deseas crear un nuevo tablero basado en la plantilla "${board.name}"?\n\n(Haz clic en "Cancelar" si prefieres editar el diseño original de la plantilla directamente).`
+      );
+      if (useTemplate) {
+        await handleCreateFromTemplate(board.id, board.name);
+        return;
+      }
+    }
+
     if (board.password) {
       setBoardIdToPrompt(board.id);
       setCorrectPassword(board.password);
@@ -570,9 +593,15 @@ export const Dashboard: React.FC<DashboardProps> = ({
     const matchesTag = activeTagFilter
       ? b.tags && b.tags.includes(activeTagFilter)
       : true;
+
+    if (showOnlyTemplates) {
+      return matchesSearch && matchesTag && !!b.isTemplate;
+    }
+
     const matchesFolder = b.folderId === (activeFolderId || undefined);
-    return matchesSearch && matchesTag && matchesFolder;
+    return matchesSearch && matchesTag && matchesFolder && !b.isTemplate;
   });
+
 
   return (
     <div className={`workspace-dashboard theme-${theme}`}>
@@ -648,11 +677,27 @@ export const Dashboard: React.FC<DashboardProps> = ({
         <aside className="dashboard-sidebar">
           <button
             className={`sidebar-nav-item ${
-              activeFolderId === null ? "active" : ""
+              activeFolderId === null && !showOnlyTemplates ? "active" : ""
             }`}
-            onClick={() => setActiveFolderId(null)}
+            onClick={() => {
+              setActiveFolderId(null);
+              setShowOnlyTemplates(false);
+            }}
           >
             📂 Todos los Tableros
+          </button>
+
+          <button
+            className={`sidebar-nav-item ${
+              showOnlyTemplates ? "active" : ""
+            }`}
+            onClick={() => {
+              setShowOnlyTemplates(true);
+              setActiveFolderId(null);
+            }}
+            style={{ marginTop: "4px" }}
+          >
+            ✨ Mis Plantillas
           </button>
 
           <div className="sidebar-section-title">
@@ -676,7 +721,10 @@ export const Dashboard: React.FC<DashboardProps> = ({
               >
                 <span
                   className="folder-name"
-                  onClick={() => setActiveFolderId(folder.id)}
+                  onClick={() => {
+                    setActiveFolderId(folder.id);
+                    setShowOnlyTemplates(false);
+                  }}
                 >
                   📁 {folder.name}
                 </span>
@@ -872,6 +920,19 @@ export const Dashboard: React.FC<DashboardProps> = ({
                           ☁️ En la nube
                         </span>
                       )}
+                      {board.isTemplate && (
+                        <span
+                          className="board-tag-pill"
+                          style={{
+                            backgroundColor: "rgba(99, 102, 241, 0.15)",
+                            color: "#6366f1",
+                            border: "1px solid rgba(99, 102, 241, 0.3)",
+                            fontWeight: "bold",
+                          }}
+                        >
+                          ✨ Plantilla
+                        </span>
+                      )}
                       {board.isCollaboration && (
                         <span className="tag-collab">
                           Sala activa (Colaboración)
@@ -960,6 +1021,13 @@ export const Dashboard: React.FC<DashboardProps> = ({
                     >
                       <CopyIcon />
                       <span>Duplicar</span>
+                    </button>
+                    <button
+                      className="btn-action"
+                      title={board.isTemplate ? "Quitar de mis plantillas" : "Convertir en plantilla reusable"}
+                      onClick={() => handleToggleTemplate(board.id, !board.isTemplate)}
+                    >
+                      <span>{board.isTemplate ? "⭐ Quitar Plantilla" : "✨ Hacer Plantilla"}</span>
                     </button>
                     <button
                       className="btn-action"

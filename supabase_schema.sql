@@ -25,6 +25,7 @@
         tags TEXT[] NOT NULL DEFAULT '{}',
         folder_id TEXT REFERENCES public.folders(id) ON DELETE SET NULL,
         password TEXT,
+        is_template BOOLEAN NOT NULL DEFAULT FALSE,
         created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
         updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
@@ -95,4 +96,8 @@
       WHERE created_at < NOW() - INTERVAL '30 days';
     END;
     $$ LANGUAGE plpgsql SECURITY DEFINER;
+
+    -- Garantizar que la columna is_template existe en bases de datos ya creadas
+    ALTER TABLE public.boards ADD COLUMN IF NOT EXISTS is_template BOOLEAN NOT NULL DEFAULT FALSE;
+
 

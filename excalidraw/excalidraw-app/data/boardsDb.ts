@@ -14,6 +14,7 @@ export interface BoardMetadata {
   tags?: string[];
   folderId?: string;
   password?: string;
+  isTemplate?: boolean;
 }
 
 export interface Board {
@@ -30,6 +31,7 @@ export interface Board {
   tags?: string[];
   folderId?: string;
   password?: string;
+  isTemplate?: boolean;
 }
 
 const boardsStore = createStore("excalidraw-boards-db", "boards-store");
@@ -96,6 +98,8 @@ export async function saveBoard(
       data.folderId !== undefined ? data.folderId : currentBoard?.folderId,
     password:
       data.password !== undefined ? data.password : currentBoard?.password,
+    isTemplate:
+      data.isTemplate !== undefined ? data.isTemplate : currentBoard?.isTemplate || false,
   };
 
   await set(`board_content_${id}`, updatedBoard, boardsStore);
@@ -130,6 +134,7 @@ export async function saveBoard(
           tags: updatedBoard.tags || [],
           folder_id: updatedBoard.folderId || null,
           password: updatedBoard.password || null,
+          is_template: updatedBoard.isTemplate || false,
           updated_at: new Date(updatedBoard.updatedAt).toISOString(),
         });
         if (error) {
@@ -155,6 +160,7 @@ export async function saveBoard(
     tags: updatedBoard.tags,
     folderId: updatedBoard.folderId,
     password: updatedBoard.password,
+    isTemplate: updatedBoard.isTemplate,
   };
 
   if (index > -1) {
@@ -480,10 +486,9 @@ export async function syncBoardsWithSupabase(): Promise<void> {
       }
     }
 
-    // 2. Fetch remote boards metadata
     const { data: remoteBoards } = await supabase
       .from("boards")
-      .select("id, name, created_at, updated_at, tags, folder_id, password");
+      .select("id, name, created_at, updated_at, tags, folder_id, password, is_template");
     if (remoteBoards) {
       const localMetadata = await getBoardsMetadata();
       let changed = false;
@@ -500,6 +505,7 @@ export async function syncBoardsWithSupabase(): Promise<void> {
           tags: rb.tags || [],
           folderId: rb.folder_id || undefined,
           password: rb.password || undefined,
+          isTemplate: rb.is_template || false,
         };
 
         if (index === -1) {
@@ -526,6 +532,7 @@ export async function syncBoardsWithSupabase(): Promise<void> {
                 tags: remoteMeta.tags,
                 folderId: remoteMeta.folderId,
                 password: remoteMeta.password,
+                isTemplate: remoteMeta.isTemplate,
               },
               boardsStore,
             );
@@ -563,6 +570,7 @@ export async function syncBoardsWithSupabase(): Promise<void> {
                   tags: remoteMeta.tags,
                   folderId: remoteMeta.folderId,
                   password: remoteMeta.password,
+                  isTemplate: remoteMeta.isTemplate,
                 },
                 boardsStore,
               );
@@ -588,6 +596,7 @@ export async function syncBoardsWithSupabase(): Promise<void> {
                 tags: localMeta.tags || [],
                 folder_id: localMeta.folderId || null,
                 password: localMeta.password || null,
+                is_template: localMeta.isTemplate || false,
                 updated_at: new Date(localMeta.updatedAt).toISOString(),
               });
             }
