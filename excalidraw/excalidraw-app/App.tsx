@@ -2353,7 +2353,7 @@ const ExcalidrawWrapper = () => {
                 fontSize: "14px",
                 fontWeight: "bold",
                 cursor: "pointer",
-                zIndex: 9999,
+                zIndex: 4,
                 transition: "background-color 0.1s ease, box-shadow 0.1s ease, transform 0.1s ease",
               }}
               title={`Comentario de ${comment.author}`}
@@ -2393,7 +2393,7 @@ const ExcalidrawWrapper = () => {
                 boxShadow: "0 6px 20px rgba(0,0,0,0.2)",
                 padding: "12px",
                 width: "240px",
-                zIndex: 9999,
+                zIndex: 100,
                 color: "black",
               }}
             >
