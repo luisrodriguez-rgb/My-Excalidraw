@@ -150,12 +150,14 @@ import { CollabChat } from "./components/CollabChat";
 import { NotificationManager } from "./components/NotificationManager";
 import { Minimap } from "./components/Minimap";
 import { PresenceBar } from "./components/PresenceBar";
+import { AuthModal } from "./components/AuthModal";
 
 import {
   getBoard,
   saveBoard,
   getBoardComments,
   saveBoardComments,
+  syncBoardsWithSupabase,
 } from "./data/boardsDb";
 
 import type { BoardComment } from "./data/boardsDb";
@@ -441,6 +443,8 @@ const ExcalidrawWrapper = () => {
   const [presenceUsers, setPresenceUsers] = useState<
     Array<{ username: string; color: string }>
   >([]);
+  const [userSession, setUserSession] = useState<any>(null);
+  const [showAuthModal, setShowAuthModal] = useState(false);
 
   // initial state
   // ---------------------------------------------------------------------------
@@ -513,6 +517,7 @@ const ExcalidrawWrapper = () => {
     }
 
     supabase.auth.getSession().then(({ data: { session } }) => {
+      setUserSession(session);
       if (session?.user?.email) {
         const namePart = session.user.email.split("@")[0];
         const displayName =
@@ -525,6 +530,7 @@ const ExcalidrawWrapper = () => {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
+      setUserSession(session);
       if (session?.user) {
         if (session.user.email) {
           const namePart = session.user.email.split("@")[0];
@@ -715,7 +721,7 @@ const ExcalidrawWrapper = () => {
           pointer: { x: sceneX, y: sceneY },
         },
       });
-    }, 50);
+    }, 120);
 
     window.addEventListener("pointermove", handlePointerMove);
 
@@ -2173,6 +2179,52 @@ const ExcalidrawWrapper = () => {
         <PresenceBar users={presenceUsers} />
       )}
 
+      {/* Guest Mode Banner: Local Board & Save to Cloud Call to Action */}
+      {activeBoardId && activeBoardId !== "collab_room" && !userSession && (
+        <div
+          className="guest-mode-banner"
+          style={{
+            position: "fixed",
+            top: "12px",
+            left: "50%",
+            transform: "translateX(-50%)",
+            backgroundColor: "rgba(30, 41, 59, 0.92)",
+            backdropFilter: "blur(8px)",
+            color: "#f8fafc",
+            padding: "6px 14px",
+            borderRadius: "20px",
+            fontSize: "12px",
+            fontWeight: "500",
+            boxShadow: "0 4px 14px rgba(0,0,0,0.2)",
+            zIndex: 9999,
+            display: "flex",
+            alignItems: "center",
+            gap: "10px",
+            border: "1px solid rgba(255, 255, 255, 0.1)",
+          }}
+        >
+          <span style={{ display: "flex", alignItems: "center", gap: "5px" }}>
+            <span>💾</span> Pizarra local (guardada en este navegador)
+          </span>
+          <button
+            onClick={() => setShowAuthModal(true)}
+            style={{
+              backgroundColor: "#6366f1",
+              color: "white",
+              border: "none",
+              padding: "4px 10px",
+              borderRadius: "12px",
+              fontSize: "11px",
+              fontWeight: "600",
+              cursor: "pointer",
+              transition: "all 0.15s ease",
+            }}
+          >
+            ☁️ Guardar en la Nube
+          </button>
+        </div>
+      )}
+
       {activeBoardId && activeBoardId !== "collab_room" && (
         <button
           className={`floating-comment-mode-btn ${
@@ -2637,6 +2689,16 @@ const ExcalidrawWrapper = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {showAuthModal && (
+        <AuthModal
+          onClose={() => setShowAuthModal(false)}
+          onSuccess={() => {
+            setShowAuthModal(false);
+            syncBoardsWithSupabase();
+          }}
+        />
       )}
     </div>
   );

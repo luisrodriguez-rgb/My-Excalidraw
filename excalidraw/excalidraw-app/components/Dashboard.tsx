@@ -707,6 +707,61 @@ export const Dashboard: React.FC<DashboardProps> = ({
         </aside>
 
         <div className="dashboard-main-area">
+          {!session && (
+            <div
+              className="guest-mode-dashboard-banner"
+              style={{
+                backgroundColor: "rgba(99, 102, 241, 0.08)",
+                border: "1px solid rgba(99, 102, 241, 0.25)",
+                borderRadius: "12px",
+                padding: "14px 18px",
+                marginBottom: "20px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: "16px",
+                flexWrap: "wrap",
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                <span style={{ fontSize: "22px" }}>💡</span>
+                <div>
+                  <div
+                    style={{
+                      fontWeight: "700",
+                      fontSize: "14px",
+                      color: "var(--text-primary)",
+                      marginBottom: "2px",
+                    }}
+                  >
+                    Estás en Modo Invitado
+                  </div>
+                  <div style={{ fontSize: "12px", color: "var(--text-secondary)", lineHeight: "1.4" }}>
+                    Puedes dibujar y crear tableros libremente. Tus pizarras se guardan en este navegador. Crea una cuenta para respaldar en la nube y sincronizar entre dispositivos.
+                  </div>
+                </div>
+              </div>
+              <button
+                className="btn-primary"
+                onClick={() => setShowAuthModal(true)}
+                style={{
+                  padding: "8px 16px",
+                  fontSize: "12px",
+                  fontWeight: "600",
+                  backgroundColor: "#6366f1",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "8px",
+                  cursor: "pointer",
+                  whiteSpace: "nowrap",
+                  boxShadow: "0 2px 6px rgba(99, 102, 241, 0.3)",
+                }}
+              >
+                ☁️ Guardar en la Nube
+              </button>
+            </div>
+          )}
+
           <div className="welcome-banner">
             <h2>¡Hola! Gestiona tus espacios de trabajo ilimitados</h2>
             <p>
