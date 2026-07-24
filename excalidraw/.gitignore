@@ -4,6 +4,12 @@
 .env.production.local
 .env.test.local
 .envrc
+# Archivos .env sin sufijo .local — NUNCA versionar (contienen credenciales reales)
+.env.development
+.env.production
+.env.test
+.env
+
 .eslintcache
 .history
 .idea
