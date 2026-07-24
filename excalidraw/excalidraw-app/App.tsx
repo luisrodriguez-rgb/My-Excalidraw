@@ -434,7 +434,11 @@ const ExcalidrawWrapper = () => {
 
   // Workspace Dashboard states
   const [activeBoardId, setActiveBoardId] = useState<string | null>(() => {
-    return isCollaborationLink(window.location.href) ? "collab_room" : null;
+    if (isCollaborationLink(window.location.href)) {
+      return "collab_room";
+    }
+    const params = new URLSearchParams(window.location.search);
+    return params.get("boardId") || null;
   });
   const [activeBoardName, setActiveBoardName] = useState("");
   const presenceChannelRef = useRef<any>(null);
@@ -467,6 +471,54 @@ const ExcalidrawWrapper = () => {
   }
 
   const debugCanvasRef = useRef<HTMLCanvasElement>(null);
+
+  // Update URL search parameters based on activeBoardId
+  useEffect(() => {
+    if (activeBoardId) {
+      if (activeBoardId === "collab_room") {
+        // Keep hash for collab rooms
+      } else {
+        const url = new URL(window.location.href);
+        url.searchParams.set("boardId", activeBoardId);
+        url.hash = "";
+        window.history.pushState({}, "", url.toString());
+      }
+    } else {
+      const url = new URL(window.location.href);
+      url.searchParams.delete("boardId");
+      url.hash = "";
+      window.history.pushState({}, "", url.pathname + url.search);
+    }
+  }, [activeBoardId]);
+
+  // Intercept element link clicks for bi-directional linking
+  useEffect(() => {
+    const handleGlobalClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      const anchor = target.closest("a");
+      if (anchor && anchor.href) {
+        try {
+          const url = new URL(anchor.href);
+          if (url.origin === window.location.origin) {
+            const boardId = url.searchParams.get("boardId") || url.hash.match(/boardId=([^&]+)/)?.[1];
+            if (boardId) {
+              e.preventDefault();
+              e.stopPropagation();
+              getBoard(boardId).then((board) => {
+                setActiveBoardName(board?.name || "Workspace");
+                setActiveBoardId(boardId);
+              });
+            }
+          }
+        } catch (err) {
+          console.error("Error processing link intercept:", err);
+        }
+      }
+    };
+
+    window.addEventListener("click", handleGlobalClick, true);
+    return () => window.removeEventListener("click", handleGlobalClick, true);
+  }, []);
 
   useEffect(() => {
     trackEvent("load", "frame", getFrame());
