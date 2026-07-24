@@ -1403,14 +1403,11 @@ const ExcalidrawWrapper = () => {
       });
     }
 
-    // Render the debug scene if the debug canvas is available
-    if (debugCanvasRef.current && excalidrawAPI) {
-      debugRenderer(
-        debugCanvasRef.current,
-        appState,
-        elements,
-        window.devicePixelRatio,
-      );
+    // Track selected element changes
+    const selectedIds = Object.keys(appState.selectedElementIds);
+    const newSelectedId = selectedIds.length >= 1 ? selectedIds[0] : null;
+    if (newSelectedId !== selectedElementId) {
+      setSelectedElementId(newSelectedId);
     }
   };
 
@@ -2336,7 +2333,7 @@ const ExcalidrawWrapper = () => {
           style={{
             position: "fixed",
             bottom: "200px",
-            right: "20px",
+            right: showNotesSidebar ? "360px" : "20px",
             width: "50px",
             height: "50px",
             borderRadius: "50%",
@@ -2348,7 +2345,7 @@ const ExcalidrawWrapper = () => {
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            zIndex: 9999,
+            zIndex: 10000,
             transition: "all 0.2s ease",
           }}
         >
@@ -2371,7 +2368,7 @@ const ExcalidrawWrapper = () => {
           style={{
             position: "fixed",
             bottom: "140px",
-            right: "20px",
+            right: showNotesSidebar ? "360px" : "20px",
             width: "50px",
             height: "50px",
             borderRadius: "50%",
@@ -2383,7 +2380,7 @@ const ExcalidrawWrapper = () => {
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            zIndex: 9999,
+            zIndex: 10000,
             transition: "all 0.2s ease",
           }}
         >

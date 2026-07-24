@@ -128,3 +128,16 @@
     }
   }
 }
+
+.excalidraw {
+  .excalidraw-ui-top-right {
+    display: flex !important;
+    align-items: center !important;
+    gap: 12px !important;
+  }
+  
+  .UserList {
+    margin-right: 8px !important;
+  }
+}
+
