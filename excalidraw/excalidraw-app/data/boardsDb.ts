@@ -106,18 +106,31 @@ export async function saveBoard(
   supabase.auth.getSession().then(async ({ data: { session } }) => {
     if (session?.user) {
       try {
-        await supabase.from("boards").upsert({
+        // Only persist lightweight subset of app_state to avoid 500/payload-too-large errors
+        const minimalAppState = updatedBoard.appState
+          ? {
+              viewBackgroundColor:
+                (updatedBoard.appState as any).viewBackgroundColor ??
+                "#ffffff",
+              theme: (updatedBoard.appState as any).theme ?? "light",
+            }
+          : { viewBackgroundColor: "#ffffff", theme: "light" };
+
+        const { error } = await supabase.from("boards").upsert({
           id,
           user_id: session.user.id,
           name: updatedBoard.name,
           elements: updatedBoard.elements,
-          app_state: updatedBoard.appState,
+          app_state: minimalAppState,
           files: updatedBoard.files,
           tags: updatedBoard.tags || [],
           folder_id: updatedBoard.folderId || null,
           password: updatedBoard.password || null,
           updated_at: new Date(updatedBoard.updatedAt).toISOString(),
         });
+        if (error) {
+          console.error("Supabase boards upsert error:", error.message, error.code);
+        }
       } catch (err) {
         console.error("Error upserting remote board to Supabase:", err);
       }

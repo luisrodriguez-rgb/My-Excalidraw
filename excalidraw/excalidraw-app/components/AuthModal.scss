@@ -54,6 +54,25 @@
         width: 100%;
         border-radius: 6px;
       }
+
+      .auth-forgot-link {
+        margin-top: -0.75rem;
+        text-align: right;
+
+        button {
+          background: transparent;
+          border: none;
+          color: var(--accent-color);
+          font-size: 0.78rem;
+          cursor: pointer;
+          padding: 0;
+          text-decoration: underline;
+
+          &:hover {
+            color: var(--accent-hover);
+          }
+        }
+      }
     }
 
     .auth-divider {

@@ -51,3 +51,17 @@
     CREATE POLICY "Allow users to manage their own library"
         ON public.libraries FOR ALL
         USING (auth.uid() = user_id);
+
+    -- 4. Habilitar Realtime para tableros (boards) en Supabase de forma segura (evita errores si ya existe)
+    DO $$
+    BEGIN
+      IF NOT EXISTS (
+        SELECT 1 
+        FROM pg_publication_rel pr 
+        JOIN pg_publication p ON p.oid = pr.prpubid 
+        JOIN pg_class c ON c.oid = pr.prrelid 
+        WHERE p.pubname = 'supabase_realtime' AND c.relname = 'boards'
+      ) THEN
+        ALTER PUBLICATION supabase_realtime ADD TABLE public.boards;
+      END IF;
+    END $$;

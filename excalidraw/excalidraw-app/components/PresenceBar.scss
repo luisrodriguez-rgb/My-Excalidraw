@@ -1,0 +1,43 @@
+.presence-bar {
+  position: fixed;
+  top: 10px;
+  right: 12px;
+  display: flex;
+  align-items: center;
+  z-index: 10;
+  pointer-events: none;
+
+  /* Sit below Excalidraw toolbar avatars if any */
+  &:empty {
+    display: none;
+  }
+}
+
+.presence-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: #fff;
+  border: 2px solid var(--bg-primary, #fff);
+  cursor: default;
+  pointer-events: all;
+  transition: transform 0.15s ease;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
+  letter-spacing: 0.02em;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+
+  &:hover {
+    transform: translateY(-3px) scale(1.12);
+    z-index: 100 !important;
+  }
+
+  &--overflow {
+    background-color: #444;
+    font-size: 10px;
+  }
+}

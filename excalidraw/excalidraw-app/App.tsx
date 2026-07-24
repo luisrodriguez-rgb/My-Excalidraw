@@ -149,6 +149,7 @@ import { Dashboard } from "./components/Dashboard";
 import { CollabChat } from "./components/CollabChat";
 import { NotificationManager } from "./components/NotificationManager";
 import { Minimap } from "./components/Minimap";
+import { PresenceBar } from "./components/PresenceBar";
 
 import {
   getBoard,
@@ -399,7 +400,24 @@ const initializeScene = async (opts: {
   return { scene: null, isExternalScene: false };
 };
 
+/** Generates a stable, visually-distinct color from a username string */
+const usernameToColor = (username: string): string => {
+  const PALETTE = [
+    "#e03131", "#c2255c", "#9c36b5", "#3b5bdb", "#1971c2",
+    "#0c8599", "#2f9e44", "#e67700", "#d9480f", "#5c7cfa",
+    "#f03e3e", "#ae3ec9", "#4c6ef5", "#1c7ed6", "#12b886",
+    "#40c057", "#fab005", "#fd7e14", "#7950f2", "#e64980",
+  ];
+  let hash = 0;
+  for (let i = 0; i < username.length; i++) {
+    hash = username.charCodeAt(i) + ((hash << 5) - hash);
+    hash = hash & hash;
+  }
+  return PALETTE[Math.abs(hash) % PALETTE.length];
+};
+
 const ExcalidrawWrapper = () => {
+
   const excalidrawAPI = useExcalidrawAPI();
 
   const [errorMessage, setErrorMessage] = useState("");
@@ -417,7 +435,9 @@ const ExcalidrawWrapper = () => {
   });
   const [activeBoardName, setActiveBoardName] = useState("");
   const presenceChannelRef = useRef<any>(null);
+  const broadcastChannelRef = useRef<any>(null);
   const lastUsernameRef = useRef<string>("Usuario");
+  const lastBroadcastElementsRef = useRef<string>("");
 
   // initial state
   // ---------------------------------------------------------------------------
@@ -514,7 +534,7 @@ const ExcalidrawWrapper = () => {
           const { data: remoteLib } = await supabase
             .from("libraries")
             .select("items")
-            .single();
+            .maybeSingle();
 
           if (remoteLib?.items) {
             await LibraryIndexedDBAdapter.save(remoteLib.items);
@@ -548,36 +568,43 @@ const ExcalidrawWrapper = () => {
     const collaboratorsMap = new Map();
     let isSubscribed = false;
 
-    // 1. Database table changes listener (0-delay canvas sync)
-    const dbChannel = supabase
-      .channel(`board-realtime-${activeBoardId}`)
-      .on(
-        "postgres_changes" as any,
-        {
-          event: "UPDATE",
-          schema: "public",
-          table: "boards",
-          filter: `id=eq.${activeBoardId}`,
-        },
-        (payload: any) => {
+    // Generate a deterministic color for this user (same color every session)
+    const userColor = usernameToColor(currentUser);
+    let isBroadcastSubscribed = false;
+
+    // 1. Broadcast channel — receives canvas changes from other users instantly
+    //    (replaces postgres_changes which is blocked by RLS for non-owners)
+    const broadcastChannel = supabase.channel(
+      `board-canvas-${activeBoardId}`,
+    );
+    broadcastChannelRef.current = broadcastChannel;
+
+    broadcastChannel
+      .on("broadcast", { event: "canvas" }, ({ payload }) => {
+        if (payload && payload.senderId !== socketId) {
           const now = Date.now();
-          // Apply if we were NOT the ones who just saved locally in the last 2 seconds
-          if (now - lastLocalSaveTimeRef.current > 2000) {
-            const remoteElements = payload.new?.elements;
-            const remoteFiles = payload.new?.files;
-            if (remoteElements) {
-              excalidrawAPI.updateScene({
-                elements: restoreElements(remoteElements, null),
-                captureUpdate: CaptureUpdateAction.NEVER,
-              });
-            }
-            if (remoteFiles && Object.keys(remoteFiles).length > 0) {
-              excalidrawAPI.addFiles(Object.values(remoteFiles));
+          // Skip if we ourselves just saved (avoid echo)
+          if (now - lastLocalSaveTimeRef.current > 500) {
+            const elements = restoreElements(payload.elements, null);
+            excalidrawAPI.updateScene({
+              elements,
+              captureUpdate: CaptureUpdateAction.NEVER,
+            });
+            if (payload.files && Object.keys(payload.files).length > 0) {
+              excalidrawAPI.addFiles(Object.values(payload.files));
             }
           }
-        },
-      )
-      .subscribe();
+        }
+      })
+      .subscribe((status) => {
+        if (status === "SUBSCRIBED") {
+          isBroadcastSubscribed = true;
+        }
+      });
+
+    // Expose subscription state and socketId so onChange can check it
+    (broadcastChannelRef.current as any).__subscribed = () => isBroadcastSubscribed;
+    (broadcastChannelRef.current as any).__socketId = socketId;
 
     // 2. Presence & Live Cursor Broadcast Channel
     const presenceChannel = supabase.channel(
@@ -606,10 +633,12 @@ const ExcalidrawWrapper = () => {
             const presences = state[key] as any[];
             if (presences.length > 0) {
               const p = presences[0];
+              const uColor = usernameToColor(p.username || "Usuario");
               collaborators.set(key, {
                 username: p.username || "Usuario",
                 isCurrentUser: false,
                 pointer: p.pointer || { x: 0, y: 0 },
+                color: { background: uColor, stroke: uColor },
               });
             }
           }
@@ -636,10 +665,14 @@ const ExcalidrawWrapper = () => {
       })
       .on("broadcast", { event: "pointer" }, ({ payload }) => {
         if (payload && payload.socketId !== socketId) {
+          const uColor = usernameToColor(payload.username || "Usuario");
           collaboratorsMap.set(payload.socketId, {
             username: payload.username || "Usuario",
             isCurrentUser: false,
             pointer: payload.pointer,
+            button: "up" as const,
+            selectedElementIds: {},
+            color: { background: uColor, stroke: uColor },
           });
           excalidrawAPI.updateScene({
             collaborators: new Map(collaboratorsMap),
@@ -681,7 +714,7 @@ const ExcalidrawWrapper = () => {
 
     return () => {
       window.removeEventListener("pointermove", handlePointerMove);
-      supabase.removeChannel(dbChannel);
+      supabase.removeChannel(broadcastChannel);
       supabase.removeChannel(presenceChannel);
     };
   }, [excalidrawAPI, activeBoardId, newCommentAuthor]);
@@ -1198,6 +1231,28 @@ const ExcalidrawWrapper = () => {
       const boardName = activeBoardName || appState.name || "Workspace";
       // Debounced: write to IndexedDB/Supabase only after user pauses 1.5s
       debouncedSaveBoard(activeBoardId, boardName, elements, appState, files);
+
+      // Instant broadcast for real-time collaboration (bypasses RLS)
+      if (
+        broadcastChannelRef.current &&
+        typeof broadcastChannelRef.current.__subscribed === "function" &&
+        broadcastChannelRef.current.__subscribed()
+      ) {
+        const elementsJson = JSON.stringify(elements.map((el) => el.id));
+        if (elementsJson !== lastBroadcastElementsRef.current) {
+          lastBroadcastElementsRef.current = elementsJson;
+          // Use httpSend to avoid REST fallback warnings
+          broadcastChannelRef.current.send({
+            type: "broadcast",
+            event: "canvas",
+            payload: {
+              senderId: (broadcastChannelRef.current as any).__socketId ?? "anon",
+              elements,
+              files,
+            },
+          });
+        }
+      }
     }
 
     // this check is redundant, but since this is a hot path, it's best
@@ -2107,6 +2162,10 @@ const ExcalidrawWrapper = () => {
         />
       )}
 
+      {activeBoardId && activeBoardId !== "collab_room" && presenceChannelRef && (
+        <PresenceBar presenceChannelRef={presenceChannelRef} currentSocketId="" />
+      )}
+
       {activeBoardId && activeBoardId !== "collab_room" && (
         <button
           className={`floating-comment-mode-btn ${
@@ -2235,7 +2294,7 @@ const ExcalidrawWrapper = () => {
                 fontSize: "14px",
                 fontWeight: "bold",
                 cursor: "pointer",
-                zIndex: 99999,
+                zIndex: 9999,
                 transition: "background-color 0.1s ease, box-shadow 0.1s ease, transform 0.1s ease",
               }}
               title={`Comentario de ${comment.author}`}
@@ -2275,7 +2334,7 @@ const ExcalidrawWrapper = () => {
                 boxShadow: "0 6px 20px rgba(0,0,0,0.2)",
                 padding: "12px",
                 width: "240px",
-                zIndex: 999999,
+                zIndex: 9999,
                 color: "black",
               }}
             >
