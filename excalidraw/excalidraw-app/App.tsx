@@ -151,6 +151,7 @@ import { NotificationManager } from "./components/NotificationManager";
 import { Minimap } from "./components/Minimap";
 import { PresenceBar } from "./components/PresenceBar";
 import { AuthModal } from "./components/AuthModal";
+import { PresentationMode } from "./components/PresentationMode";
 
 import {
   getBoard,
@@ -445,6 +446,7 @@ const ExcalidrawWrapper = () => {
   >([]);
   const [userSession, setUserSession] = useState<any>(null);
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [isPresenting, setIsPresenting] = useState(false);
 
   // initial state
   // ---------------------------------------------------------------------------
@@ -2227,6 +2229,39 @@ const ExcalidrawWrapper = () => {
 
       {activeBoardId && activeBoardId !== "collab_room" && (
         <button
+          className="floating-presentation-btn"
+          onClick={() => setIsPresenting(!isPresenting)}
+          title={
+            isPresenting
+              ? "Salir del modo presentación"
+              : "Iniciar modo presentación (Diapositivas / Marcos)"
+          }
+          style={{
+            position: "fixed",
+            bottom: "140px",
+            right: "20px",
+            width: "50px",
+            height: "50px",
+            borderRadius: "50%",
+            backgroundColor: isPresenting ? "#6366f1" : "white",
+            color: isPresenting ? "white" : "#6366f1",
+            border: "1px solid var(--border-color)",
+            boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 9999,
+            transition: "all 0.2s ease",
+            fontSize: "18px",
+          }}
+        >
+          ▶️
+        </button>
+      )}
+
+      {activeBoardId && activeBoardId !== "collab_room" && (
+        <button
           className={`floating-comment-mode-btn ${
             commentModeActive ? "active" : ""
           }`}
@@ -2698,6 +2733,13 @@ const ExcalidrawWrapper = () => {
             setShowAuthModal(false);
             syncBoardsWithSupabase();
           }}
+        />
+      )}
+
+      {isPresenting && excalidrawAPI && (
+        <PresentationMode
+          excalidrawAPI={excalidrawAPI}
+          onClose={() => setIsPresenting(false)}
         />
       )}
     </div>
