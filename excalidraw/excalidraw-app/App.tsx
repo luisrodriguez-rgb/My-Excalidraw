@@ -438,6 +438,9 @@ const ExcalidrawWrapper = () => {
   const broadcastChannelRef = useRef<any>(null);
   const lastUsernameRef = useRef<string>("Usuario");
   const lastBroadcastElementsRef = useRef<string>("");
+  const [presenceUsers, setPresenceUsers] = useState<
+    Array<{ username: string; color: string }>
+  >([]);
 
   // initial state
   // ---------------------------------------------------------------------------
@@ -628,12 +631,15 @@ const ExcalidrawWrapper = () => {
       .on("presence", { event: "sync" }, () => {
         const state = presenceChannel.presenceState();
         const collaborators = new Map();
+        // Build online users list for PresenceBar
+        const online: Array<{ username: string; color: string }> = [];
         Object.keys(state).forEach((key) => {
-          if (key !== socketId) {
-            const presences = state[key] as any[];
-            if (presences.length > 0) {
-              const p = presences[0];
-              const uColor = usernameToColor(p.username || "Usuario");
+          const presences = state[key] as any[];
+          if (presences.length > 0) {
+            const p = presences[0];
+            const uColor = usernameToColor(p.username || "Usuario");
+            online.push({ username: p.username || "Usuario", color: uColor });
+            if (key !== socketId) {
               collaborators.set(key, {
                 username: p.username || "Usuario",
                 isCurrentUser: false,
@@ -643,6 +649,7 @@ const ExcalidrawWrapper = () => {
             }
           }
         });
+        setPresenceUsers(online);
         excalidrawAPI.updateScene({ collaborators });
       })
       .on("presence", { event: "join" }, ({ key, newPresences }) => {
@@ -2162,8 +2169,8 @@ const ExcalidrawWrapper = () => {
         />
       )}
 
-      {activeBoardId && activeBoardId !== "collab_room" && presenceChannelRef && (
-        <PresenceBar presenceChannelRef={presenceChannelRef} currentSocketId="" />
+      {activeBoardId && activeBoardId !== "collab_room" && presenceUsers.length > 0 && (
+        <PresenceBar users={presenceUsers} />
       )}
 
       {activeBoardId && activeBoardId !== "collab_room" && (
