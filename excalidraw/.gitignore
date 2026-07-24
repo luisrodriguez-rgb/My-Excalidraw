@@ -33,3 +33,5 @@ dev-dist
 html
 meta*.json
 .claude
+temp-scripts/
+

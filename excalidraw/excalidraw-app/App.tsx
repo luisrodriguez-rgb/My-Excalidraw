@@ -1760,7 +1760,13 @@ const ExcalidrawWrapper = () => {
     label: "Excalidraw+",
     category: DEFAULT_CATEGORIES.links,
     predicate: true,
-    icon: <div style={{ width: 14 }}>{ExcalLogo}</div>,
+    icon: (
+      <img
+        src="/logo-custom-small.png"
+        alt="Logo"
+        style={{ width: 14, height: 14, borderRadius: "2px" }}
+      />
+    ),
     keywords: ["plus", "cloud", "server"],
     perform: () => {
       window.open(
@@ -1775,7 +1781,13 @@ const ExcalidrawWrapper = () => {
     label: "Sign up",
     category: DEFAULT_CATEGORIES.links,
     predicate: true,
-    icon: <div style={{ width: 14 }}>{ExcalLogo}</div>,
+    icon: (
+      <img
+        src="/logo-custom-small.png"
+        alt="Logo"
+        style={{ width: 14, height: 14, borderRadius: "2px" }}
+      />
+    ),
     keywords: [
       "excalidraw",
       "plus",

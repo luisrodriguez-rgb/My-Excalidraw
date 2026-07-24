@@ -609,9 +609,11 @@ export const Dashboard: React.FC<DashboardProps> = ({
     <div className={`workspace-dashboard theme-${theme}`}>
       <header className="dashboard-header">
         <div className="logo-section">
-          <svg viewBox="0 0 512 512" width="32" height="32">
-            <path d="M424 64H88C50.5 64 20 94.5 20 132v248c0 37.5 30.5 68 68 68h336c37.5 0 68-30.5 68-68V132c0-37.5-30.5-68-68-68zm-54 132c0 16.6-13.4 30-30 30s-30-13.4-30-30 13.4-30 30-30 30 13.4 30 30zm-114 0c0 16.6-13.4 30-30 30s-30-13.4-30-30 13.4-30 30-30 30 13.4 30 30zm-114 0c0 16.6-13.4 30-30 30s-30-13.4-30-30 13.4-30 30-30 30 13.4 30 30zm288 174H126c-10 0-18-8-18-18s8-18 18-18h218c10 0 18 8 18 18s-8 18-18 18z" />
-          </svg>
+          <img
+            src="/logo-custom-small.png"
+            alt="Logo"
+            style={{ width: "32px", height: "32px", borderRadius: "6px" }}
+          />
           <h1>Excalidraw Workspace</h1>
         </div>
         <div className="header-actions">
