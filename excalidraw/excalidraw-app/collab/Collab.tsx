@@ -508,6 +508,112 @@ class Collab extends PureComponent<CollabProps, CollabState> {
     }
   };
 
+  public handleIncomingEncryptedPayload = async (
+    encryptedData: ArrayBuffer,
+    iv: Uint8Array<ArrayBuffer>,
+    scenePromise?: any,
+  ) => {
+    if (!this.portal.roomKey) {
+      return;
+    }
+
+    const decryptedData = await this.decryptPayload(
+      iv,
+      encryptedData,
+      this.portal.roomKey,
+    );
+
+    switch (decryptedData.type) {
+      case WS_SUBTYPES.INVALID_RESPONSE:
+        return;
+      case WS_SUBTYPES.INIT: {
+        if (!this.portal.socketInitialized) {
+          this.initializeRoom({ fetchScene: false });
+          const remoteElements = toBrandedType<
+            readonly RemoteExcalidrawElement[]
+          >(decryptedData.payload.elements);
+          const reconciledElements =
+            this._reconcileElements(remoteElements);
+          this.handleRemoteSceneUpdate(reconciledElements);
+          if (scenePromise) {
+            scenePromise.resolve({
+              elements: reconciledElements,
+              scrollToContent: true,
+            });
+          }
+        }
+        break;
+      }
+      case WS_SUBTYPES.UPDATE:
+        this.handleRemoteSceneUpdate(
+          this._reconcileElements(
+            toBrandedType<readonly RemoteExcalidrawElement[]>(
+              decryptedData.payload.elements,
+            ),
+          ),
+        );
+        break;
+      case WS_SUBTYPES.MOUSE_LOCATION: {
+        const { pointer, button, username, selectedElementIds } =
+          decryptedData.payload;
+
+        const socketId: SocketUpdateDataSource["MOUSE_LOCATION"]["payload"]["socketId"] =
+          decryptedData.payload.socketId ||
+          // @ts-ignore legacy, see #2094 (#2097)
+          decryptedData.payload.socketID;
+
+        this.updateCollaborator(socketId, {
+          pointer,
+          button,
+          selectedElementIds,
+          username,
+        });
+
+        break;
+      }
+
+      case WS_SUBTYPES.USER_VISIBLE_SCENE_BOUNDS: {
+        const { sceneBounds, socketId } = decryptedData.payload;
+        const appState = this.excalidrawAPI.getAppState();
+
+        if (appState.userToFollow?.socketId !== socketId) {
+          return;
+        }
+
+        if (
+          appState.userToFollow &&
+          appState.followedBy.has(appState.userToFollow.socketId)
+        ) {
+          return;
+        }
+
+        this.excalidrawAPI.updateScene({
+          appState: zoomToFitBounds({
+            appState,
+            bounds: sceneBounds,
+            fit: "contain",
+          }).appState,
+        });
+
+        break;
+      }
+
+      case WS_SUBTYPES.IDLE_STATUS: {
+        const { userState, socketId, username } = decryptedData.payload;
+        this.updateCollaborator(socketId, {
+          userState,
+          username,
+        });
+        break;
+      }
+
+      default: {
+        assertNever(decryptedData, null);
+      }
+    }
+  };
+
+
   private fallbackInitializationHandler: null | (() => any) = null;
 
   startCollaboration = async (
@@ -629,110 +735,7 @@ class Collab extends PureComponent<CollabProps, CollabState> {
     this.portal.socket.on(
       "client-broadcast",
       async (encryptedData: ArrayBuffer, iv: Uint8Array<ArrayBuffer>) => {
-        if (!this.portal.roomKey) {
-          return;
-        }
-
-        const decryptedData = await this.decryptPayload(
-          iv,
-          encryptedData,
-          this.portal.roomKey,
-        );
-
-        switch (decryptedData.type) {
-          case WS_SUBTYPES.INVALID_RESPONSE:
-            return;
-          case WS_SUBTYPES.INIT: {
-            if (!this.portal.socketInitialized) {
-              this.initializeRoom({ fetchScene: false });
-              const remoteElements = toBrandedType<
-                readonly RemoteExcalidrawElement[]
-              >(decryptedData.payload.elements);
-              const reconciledElements =
-                this._reconcileElements(remoteElements);
-              this.handleRemoteSceneUpdate(reconciledElements);
-              // noop if already resolved via init from firebase
-              scenePromise.resolve({
-                elements: reconciledElements,
-                scrollToContent: true,
-              });
-            }
-            break;
-          }
-          case WS_SUBTYPES.UPDATE:
-            this.handleRemoteSceneUpdate(
-              this._reconcileElements(
-                toBrandedType<readonly RemoteExcalidrawElement[]>(
-                  decryptedData.payload.elements,
-                ),
-              ),
-            );
-            break;
-          case WS_SUBTYPES.MOUSE_LOCATION: {
-            const { pointer, button, username, selectedElementIds } =
-              decryptedData.payload;
-
-            const socketId: SocketUpdateDataSource["MOUSE_LOCATION"]["payload"]["socketId"] =
-              decryptedData.payload.socketId ||
-              // @ts-ignore legacy, see #2094 (#2097)
-              decryptedData.payload.socketID;
-
-            this.updateCollaborator(socketId, {
-              pointer,
-              button,
-              selectedElementIds,
-              username,
-            });
-
-            break;
-          }
-
-          case WS_SUBTYPES.USER_VISIBLE_SCENE_BOUNDS: {
-            const { sceneBounds, socketId } = decryptedData.payload;
-
-            const appState = this.excalidrawAPI.getAppState();
-
-            // we're not following the user
-            // (shouldn't happen, but could be late message or bug upstream)
-            if (appState.userToFollow?.socketId !== socketId) {
-              console.warn(
-                `receiving remote client's (from ${socketId}) viewport bounds even though we're not subscribed to it!`,
-              );
-              return;
-            }
-
-            // cross-follow case, ignore updates in this case
-            if (
-              appState.userToFollow &&
-              appState.followedBy.has(appState.userToFollow.socketId)
-            ) {
-              return;
-            }
-
-            this.excalidrawAPI.updateScene({
-              appState: zoomToFitBounds({
-                appState,
-                bounds: sceneBounds,
-                fit: "contain",
-              }).appState,
-            });
-
-            break;
-          }
-
-          case WS_SUBTYPES.IDLE_STATUS: {
-            const { userState, socketId, username } = decryptedData.payload;
-            this.updateCollaborator(socketId, {
-              userState,
-              username,
-            });
-            break;
-          }
-
-          default: {
-            assertNever(decryptedData, null);
-          }
-        }
+        await this.handleIncomingEncryptedPayload(encryptedData, iv, scenePromise);
       },
     );
 

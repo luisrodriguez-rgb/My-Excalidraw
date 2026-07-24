@@ -13,6 +13,7 @@ import type {
 
 import { WS_EVENTS, FILE_UPLOAD_TIMEOUT, WS_SUBTYPES } from "../app_constants";
 import { isSyncableElement } from "../data";
+import { supabase } from "../data/supabaseClient";
 
 import type {
   SocketUpdateData,
@@ -29,6 +30,7 @@ class Portal {
   roomId: string | null = null;
   roomKey: string | null = null;
   broadcastedElementVersions: Map<string, number> = new Map();
+  supabaseChannel: any = null;
 
   constructor(collab: TCollabClass) {
     this.collab = collab;
@@ -38,6 +40,22 @@ class Portal {
     this.socket = socket;
     this.roomId = id;
     this.roomKey = key;
+
+    // Initialize Supabase Broadcast channel for instant 0-delay room collab
+    this.supabaseChannel = supabase.channel(`collab-room-${id}`);
+    this.supabaseChannel
+      .on("broadcast", { event: "collab" }, async ({ payload }: any) => {
+        if (payload && payload.senderId !== this.socket?.id) {
+          try {
+            const encryptedBuffer = new Uint8Array(payload.encryptedBuffer).buffer;
+            const iv = new Uint8Array(payload.iv);
+            await this.collab.handleIncomingEncryptedPayload(encryptedBuffer, iv);
+          } catch (err) {
+            console.error("Error handling broadcast collab message:", err);
+          }
+        }
+      })
+      .subscribe();
 
     // Initialize socket listeners
     this.socket.on("init-room", () => {
@@ -63,6 +81,10 @@ class Portal {
   close() {
     if (!this.socket) {
       return;
+    }
+    if (this.supabaseChannel) {
+      supabase.removeChannel(this.supabaseChannel);
+      this.supabaseChannel = null;
     }
     this.queueFileUpload.flush();
     this.socket.close();
@@ -98,6 +120,19 @@ class Portal {
         encryptedBuffer,
         iv,
       );
+
+      // Broadcast over Supabase Realtime channel as zero-latency fallback
+      if (this.supabaseChannel) {
+        this.supabaseChannel.send({
+          type: "broadcast",
+          event: "collab",
+          payload: {
+            socketId: this.socket?.id || "anon",
+            encryptedBuffer: Array.from(new Uint8Array(encryptedBuffer)),
+            iv: Array.from(iv),
+          },
+        });
+      }
     }
   }
 
