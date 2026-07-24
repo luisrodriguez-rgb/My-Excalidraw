@@ -457,7 +457,7 @@ const ExcalidrawWrapper = () => {
 
   // Markdown parser helper for rich shape notes
   const parseMarkdownToHTML = (markdown: string): string => {
-    if (!markdown) return "<p style='color: #64748b; font-style: italic;'>Sin notas aún...</p>";
+    if (!markdown) return "<p style='color: #64748b; font-style: italic;'>Sin notas...</p>";
     let html = markdown
       .replace(/&/g, "&amp;")
       .replace(/</g, "&lt;")
@@ -2328,7 +2328,7 @@ const ExcalidrawWrapper = () => {
         </div>
       )}
 
-      {activeBoardId && activeBoardId !== "collab_room" && (
+      {activeBoardId && (
         <button
           className="floating-notes-btn"
           onClick={() => setShowNotesSidebar(!showNotesSidebar)}
@@ -2350,14 +2350,16 @@ const ExcalidrawWrapper = () => {
             justifyContent: "center",
             zIndex: 9999,
             transition: "all 0.2s ease",
-            fontSize: "18px",
           }}
         >
-          📝
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12 20h9"/>
+            <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/>
+          </svg>
         </button>
       )}
 
-      {activeBoardId && activeBoardId !== "collab_room" && (
+      {activeBoardId && (
         <button
           className="floating-presentation-btn"
           onClick={() => setIsPresenting(!isPresenting)}
@@ -2383,10 +2385,11 @@ const ExcalidrawWrapper = () => {
             justifyContent: "center",
             zIndex: 9999,
             transition: "all 0.2s ease",
-            fontSize: "18px",
           }}
         >
-          ▶️
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <polygon points="5 3 19 12 5 21 5 3"/>
+          </svg>
         </button>
       )}
 
@@ -2904,7 +2907,7 @@ const ExcalidrawWrapper = () => {
             }}
           >
             <h3 style={{ margin: 0, fontSize: "15px", fontWeight: 700 }}>
-              📝 Notas del Elemento
+              Notas del Elemento
             </h3>
             <button
               onClick={() => setShowNotesSidebar(false)}
@@ -2940,7 +2943,7 @@ const ExcalidrawWrapper = () => {
                       color: notesEditMode === "preview" ? "white" : "inherit",
                     }}
                   >
-                    👁️ Vista Previa
+                    Vista Previa
                   </button>
                   <button
                     onClick={() => setNotesEditMode("edit")}
@@ -2956,7 +2959,7 @@ const ExcalidrawWrapper = () => {
                       color: notesEditMode === "edit" ? "white" : "inherit",
                     }}
                   >
-                    ✏️ Editar
+                    Editar
                   </button>
                 </div>
 
@@ -3009,9 +3012,9 @@ const ExcalidrawWrapper = () => {
                   padding: "0 20px",
                 }}
               >
-                <div style={{ fontSize: "36px", marginBottom: "12px" }}>ℹ️</div>
+                <div style={{ fontSize: "24px", marginBottom: "12px", fontWeight: "bold" }}>i</div>
                 <h4 style={{ margin: "0 0 6px 0", fontSize: "14px", fontWeight: 600, color: "var(--text-primary)" }}>
-                  Ningún elemento seleccionado
+                  Ningun elemento seleccionado
                 </h4>
                 <p style={{ margin: 0, fontSize: "12px" }}>
                   Selecciona una figura, texto o marco en el lienzo para escribir notas detalladas en Markdown asociadas a ella.
