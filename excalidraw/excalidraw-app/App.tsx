@@ -451,6 +451,55 @@ const ExcalidrawWrapper = () => {
   const [userSession, setUserSession] = useState<any>(null);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [isPresenting, setIsPresenting] = useState(false);
+  const [showNotesSidebar, setShowNotesSidebar] = useState(false);
+  const [notesEditMode, setNotesEditMode] = useState<"edit" | "preview">("preview");
+  const [selectedElementId, setSelectedElementId] = useState<string | null>(null);
+
+  // Markdown parser helper for rich shape notes
+  const parseMarkdownToHTML = (markdown: string): string => {
+    if (!markdown) return "<p style='color: #64748b; font-style: italic;'>Sin notas aún...</p>";
+    let html = markdown
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/^### (.*$)/gim, "<h3>$1</h3>")
+      .replace(/^## (.*$)/gim, "<h2>$1</h2>")
+      .replace(/^# (.*$)/gim, "<h1>$1</h1>")
+      .replace(/\*\*(.*)\*\*/gim, "<strong>$1</strong>")
+      .replace(/\*(.*)\*/gim, "<em>$1</em>")
+      .replace(/`(.*?)`/gim, "<code style='background: #f1f5f9; padding: 2px 6px; border-radius: 4px; font-family: monospace; font-size: 12px;'>$1</code>")
+      .replace(/^\s*-\s+(.*$)/gim, "<li>$1</li>");
+    html = html.replace(/(<li>.*<\/li>)/gim, "<ul>$1</ul>");
+    return html.split(/\n\n+/).map(p => {
+      if (p.trim().startsWith("<h") || p.trim().startsWith("<ul") || p.trim().startsWith("<li")) {
+        return p;
+      }
+      return `<p style='margin-bottom: 12px; line-height: 1.5; color: #334155;'>${p.replace(/\n/g, "<br>")}</p>`;
+    }).join("\n");
+  };
+
+  const selectedElement = activeBoardId && selectedElementId && excalidrawAPI
+    ? excalidrawAPI.getSceneElements().find(el => el.id === selectedElementId && !el.isDeleted)
+    : null;
+
+  const handleUpdateNotes = (notesText: string) => {
+    if (!excalidrawAPI || !selectedElementId || !selectedElement) return;
+    const updatedElements = excalidrawAPI.getSceneElements().map(el => {
+      if (el.id === selectedElementId) {
+        return newElementWith(el, {
+          customData: {
+            ...el.customData,
+            notes: notesText
+          }
+        });
+      }
+      return el;
+    });
+    excalidrawAPI.updateScene({
+      elements: updatedElements
+    });
+  };
+
 
   // initial state
   // ---------------------------------------------------------------------------
@@ -2281,6 +2330,35 @@ const ExcalidrawWrapper = () => {
 
       {activeBoardId && activeBoardId !== "collab_room" && (
         <button
+          className="floating-notes-btn"
+          onClick={() => setShowNotesSidebar(!showNotesSidebar)}
+          title={showNotesSidebar ? "Cerrar panel de notas" : "Ver notas del elemento (Markdown)"}
+          style={{
+            position: "fixed",
+            bottom: "200px",
+            right: "20px",
+            width: "50px",
+            height: "50px",
+            borderRadius: "50%",
+            backgroundColor: showNotesSidebar ? "#6366f1" : "white",
+            color: showNotesSidebar ? "white" : "#6366f1",
+            border: "1px solid var(--border-color)",
+            boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 9999,
+            transition: "all 0.2s ease",
+            fontSize: "18px",
+          }}
+        >
+          📝
+        </button>
+      )}
+
+      {activeBoardId && activeBoardId !== "collab_room" && (
+        <button
           className="floating-presentation-btn"
           onClick={() => setIsPresenting(!isPresenting)}
           title={
@@ -2793,6 +2871,155 @@ const ExcalidrawWrapper = () => {
           excalidrawAPI={excalidrawAPI}
           onClose={() => setIsPresenting(false)}
         />
+      )}
+
+      {/* Markdown Notes Sidebar */}
+      {showNotesSidebar && activeBoardId && (
+        <div
+          className="notes-sidebar"
+          style={{
+            position: "fixed",
+            right: 0,
+            top: 0,
+            width: "340px",
+            height: "100vh",
+            backgroundColor: "var(--bg-primary, white)",
+            borderLeft: "1px solid var(--border-color, #e2e8f0)",
+            boxShadow: "-4px 0 20px rgba(0,0,0,0.1)",
+            zIndex: 9999,
+            display: "flex",
+            flexDirection: "column",
+            color: "var(--text-primary, #0f172a)",
+          }}
+        >
+          {/* Header */}
+          <div
+            style={{
+              padding: "16px",
+              borderBottom: "1px solid var(--border-color, #e2e8f0)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              backgroundColor: "var(--bg-secondary, #f8fafc)",
+            }}
+          >
+            <h3 style={{ margin: 0, fontSize: "15px", fontWeight: 700 }}>
+              📝 Notas del Elemento
+            </h3>
+            <button
+              onClick={() => setShowNotesSidebar(false)}
+              style={{
+                background: "none",
+                border: "none",
+                fontSize: "18px",
+                cursor: "pointer",
+                color: "var(--text-secondary, #64748b)",
+              }}
+            >
+              ✕
+            </button>
+          </div>
+
+          {/* Body */}
+          <div style={{ flex: 1, display: "flex", flexDirection: "column", padding: "16px", overflowY: "auto" }}>
+            {selectedElement ? (
+              <>
+                {/* Tabs */}
+                <div style={{ display: "flex", gap: "8px", marginBottom: "14px" }}>
+                  <button
+                    onClick={() => setNotesEditMode("preview")}
+                    style={{
+                      flex: 1,
+                      padding: "6px 12px",
+                      borderRadius: "6px",
+                      border: "none",
+                      fontSize: "12px",
+                      fontWeight: 600,
+                      cursor: "pointer",
+                      backgroundColor: notesEditMode === "preview" ? "#6366f1" : "rgba(0,0,0,0.05)",
+                      color: notesEditMode === "preview" ? "white" : "inherit",
+                    }}
+                  >
+                    👁️ Vista Previa
+                  </button>
+                  <button
+                    onClick={() => setNotesEditMode("edit")}
+                    style={{
+                      flex: 1,
+                      padding: "6px 12px",
+                      borderRadius: "6px",
+                      border: "none",
+                      fontSize: "12px",
+                      fontWeight: 600,
+                      cursor: "pointer",
+                      backgroundColor: notesEditMode === "edit" ? "#6366f1" : "rgba(0,0,0,0.05)",
+                      color: notesEditMode === "edit" ? "white" : "inherit",
+                    }}
+                  >
+                    ✏️ Editar
+                  </button>
+                </div>
+
+                {/* Content area */}
+                {notesEditMode === "edit" ? (
+                  <textarea
+                    value={selectedElement.customData?.notes || ""}
+                    onChange={(e) => handleUpdateNotes(e.target.value)}
+                    placeholder="Escribe tus especificaciones o notas aquí usando Markdown (ej. # Título, **negrita**, - listas)..."
+                    style={{
+                      flex: 1,
+                      width: "100%",
+                      padding: "10px",
+                      borderRadius: "8px",
+                      border: "1px solid var(--border-color, #ccc)",
+                      fontSize: "13px",
+                      lineHeight: "1.4",
+                      fontFamily: "inherit",
+                      resize: "none",
+                      outline: "none",
+                      backgroundColor: "var(--bg-primary, white)",
+                      color: "var(--text-primary, black)",
+                    }}
+                  />
+                ) : (
+                  <div
+                    className="markdown-preview"
+                    dangerouslySetInnerHTML={{
+                      __html: parseMarkdownToHTML(selectedElement.customData?.notes || ""),
+                    }}
+                    style={{
+                      flex: 1,
+                      overflowY: "auto",
+                      fontSize: "13px",
+                      lineHeight: "1.6",
+                    }}
+                  />
+                )}
+              </>
+            ) : (
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  height: "80%",
+                  textAlign: "center",
+                  color: "var(--text-secondary, #64748b)",
+                  padding: "0 20px",
+                }}
+              >
+                <div style={{ fontSize: "36px", marginBottom: "12px" }}>ℹ️</div>
+                <h4 style={{ margin: "0 0 6px 0", fontSize: "14px", fontWeight: 600, color: "var(--text-primary)" }}>
+                  Ningún elemento seleccionado
+                </h4>
+                <p style={{ margin: 0, fontSize: "12px" }}>
+                  Selecciona una figura, texto o marco en el lienzo para escribir notas detalladas en Markdown asociadas a ella.
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
       )}
     </div>
   );
