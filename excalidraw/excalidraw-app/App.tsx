@@ -490,22 +490,35 @@ const ExcalidrawWrapper = () => {
     ? excalidrawAPI.getSceneElements().find(el => el.id === selectedElementId && !el.isDeleted)
     : null;
 
+  const [localNotes, setLocalNotes] = useState("");
+
+  useEffect(() => {
+    setLocalNotes(selectedElement?.customData?.notes || "");
+  }, [selectedElementId, selectedElement?.id]);
+
+  const debouncedUpdateNotes = useRef(
+    debounce((elementId: string, notesText: string, api: any) => {
+      if (!api) return;
+      const updatedElements = api.getSceneElements().map((el: any) => {
+        if (el.id === elementId) {
+          return newElementWith(el, {
+            customData: {
+              ...el.customData,
+              notes: notesText,
+            },
+          });
+        }
+        return el;
+      });
+      api.updateScene({ elements: updatedElements });
+    }, 150)
+  ).current;
+
   const handleUpdateNotes = (notesText: string) => {
-    if (!excalidrawAPI || !selectedElementId || !selectedElement) return;
-    const updatedElements = excalidrawAPI.getSceneElements().map(el => {
-      if (el.id === selectedElementId) {
-        return newElementWith(el, {
-          customData: {
-            ...el.customData,
-            notes: notesText
-          }
-        });
-      }
-      return el;
-    });
-    excalidrawAPI.updateScene({
-      elements: updatedElements
-    });
+    setLocalNotes(notesText);
+    if (selectedElementId) {
+      debouncedUpdateNotes(selectedElementId, notesText, excalidrawAPI);
+    }
   };
 
 
@@ -531,6 +544,16 @@ const ExcalidrawWrapper = () => {
 
   // Update URL search parameters based on activeBoardId
   useEffect(() => {
+    if (
+      activeBoardId === null &&
+      (window.location.hash.includes("addLibrary") ||
+        window.location.search.includes("addLibrary"))
+    ) {
+      setActiveBoardId("board_default");
+      setActiveBoardName("Mi Pizarra");
+      return;
+    }
+
     if (activeBoardId) {
       if (activeBoardId === "collab_room") {
         // Keep hash for collab rooms
@@ -2890,6 +2913,7 @@ const ExcalidrawWrapper = () => {
         <PresentationMode
           excalidrawAPI={excalidrawAPI}
           onClose={() => setIsPresenting(false)}
+          notesSidebarOpen={showNotesSidebar}
         />
       )}
 
@@ -2983,7 +3007,7 @@ const ExcalidrawWrapper = () => {
                 {/* Content area */}
                 {notesEditMode === "edit" ? (
                   <textarea
-                    value={selectedElement.customData?.notes || ""}
+                    value={localNotes}
                     onChange={(e) => handleUpdateNotes(e.target.value)}
                     placeholder="Escribe tus especificaciones o notas aquí usando Markdown (ej. # Título, **negrita**, - listas)..."
                     style={{

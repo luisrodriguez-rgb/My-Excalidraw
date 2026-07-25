@@ -137,7 +137,25 @@
   }
   
   .UserList {
-    margin-right: 8px !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    margin-right: 4px !important;
+    
+    .UserList__wrapper {
+      display: flex !important;
+      align-items: center !important;
+      gap: 4px !important;
+    }
   }
 }
+
+/* Shift Excalidraw top-right controls left when notes sidebar is open to prevent overlap */
+.excalidraw-app.notes-sidebar-open {
+  .excalidraw-ui-top-right {
+    right: 360px !important;
+    transition: right 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  }
+}
+
 

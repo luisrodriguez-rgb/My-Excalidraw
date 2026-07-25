@@ -5,11 +5,13 @@ import "./PresentationMode.scss";
 interface PresentationModeProps {
   excalidrawAPI: ExcalidrawImperativeAPI;
   onClose: () => void;
+  notesSidebarOpen?: boolean;
 }
 
 export const PresentationMode: React.FC<PresentationModeProps> = ({
   excalidrawAPI,
   onClose,
+  notesSidebarOpen = false,
 }) => {
   const [slides, setSlides] = useState<any[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -21,9 +23,10 @@ export const PresentationMode: React.FC<PresentationModeProps> = ({
       if (!slide || !excalidrawAPI) return;
 
       try {
-        const padding = 80;
-        const availableWidth = window.innerWidth - padding;
-        const availableHeight = window.innerHeight - padding - 40;
+        const padding = 60;
+        const sidebarWidth = notesSidebarOpen ? 340 : 0;
+        const availableWidth = window.innerWidth - padding - sidebarWidth;
+        const availableHeight = window.innerHeight - padding - 60;
 
         const slideWidth = Math.max(slide.width || 100, 100);
         const slideHeight = Math.max(slide.height || 100, 100);
@@ -39,8 +42,11 @@ export const PresentationMode: React.FC<PresentationModeProps> = ({
         const centerX = slide.x + slideWidth / 2;
         const centerY = slide.y + slideHeight / 2;
 
-        const scrollX = window.innerWidth / 2 / zoomValue - centerX;
-        const scrollY = window.innerHeight / 2 / zoomValue - centerY;
+        const visibleCenterX = (window.innerWidth - sidebarWidth) / 2;
+        const visibleCenterY = window.innerHeight / 2;
+
+        const scrollX = visibleCenterX / zoomValue - centerX;
+        const scrollY = visibleCenterY / zoomValue - centerY;
 
         excalidrawAPI.updateScene({
           appState: {
@@ -53,7 +59,7 @@ export const PresentationMode: React.FC<PresentationModeProps> = ({
         console.error("Error zooming to presentation slide:", err);
       }
     },
-    [excalidrawAPI],
+    [excalidrawAPI, notesSidebarOpen],
   );
 
   // Discover all slides (Frames or large container shapes)
@@ -179,8 +185,65 @@ export const PresentationMode: React.FC<PresentationModeProps> = ({
     currentSlide?.label?.text ||
     `Diapositiva ${currentIndex + 1}`;
 
+  // Keep track of scroll & zoom to render the framing mask in real time
+  const [viewport, setViewport] = useState({ scrollX: 0, scrollY: 0, zoom: 1, theme: "light" });
+
+  const updateViewport = useCallback(() => {
+    if (!excalidrawAPI) return;
+    const state = excalidrawAPI.getAppState();
+    setViewport({
+      scrollX: state.scrollX,
+      scrollY: state.scrollY,
+      zoom: state.zoom.value,
+      theme: state.theme,
+    });
+  }, [excalidrawAPI]);
+
+  useEffect(() => {
+    updateViewport();
+    const interval = setInterval(updateViewport, 100);
+    return () => clearInterval(interval);
+  }, [updateViewport, currentIndex]);
+
+  // Mask dimensions
+  const left = (currentSlide.x + viewport.scrollX) * viewport.zoom;
+  const top = (currentSlide.y + viewport.scrollY) * viewport.zoom;
+  const width = currentSlide.width * viewport.zoom;
+  const height = currentSlide.height * viewport.zoom;
+  const maskColor = viewport.theme === "dark" ? "#121212" : "#ffffff";
+
   return (
-    <div className="presentation-mode-controls">
+    <>
+      {/* Dimmed cutout overlay to hide everything outside the active frame */}
+      <div
+        style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          width: "100vw",
+          height: "100vh",
+          pointerEvents: "none",
+          zIndex: 999,
+          overflow: "hidden",
+        }}
+      >
+        <div
+          style={{
+            position: "absolute",
+            left: `${left}px`,
+            top: `${top}px`,
+            width: `${width}px`,
+            height: `${height}px`,
+            boxShadow: `0 0 0 9999px ${maskColor}`,
+            border: "2px solid #6366f1",
+            borderRadius: "8px",
+            boxSizing: "border-box",
+            transition: "all 0.15s cubic-bezier(0.4, 0, 0.2, 1)",
+          }}
+        />
+      </div>
+
+      <div className="presentation-mode-controls">
       <div className="presentation-bar">
         <button
           className="presentation-btn"
@@ -228,5 +291,6 @@ export const PresentationMode: React.FC<PresentationModeProps> = ({
         </button>
       </div>
     </div>
+    </>
   );
 };
