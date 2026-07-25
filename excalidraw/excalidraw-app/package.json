@@ -43,6 +43,8 @@
     "socket.io-client": "4.8.3",
     "uqr": "0.1.2",
     "vite": "5.4.21",
+    "dompurify": "3.4.12",
+    "@types/dompurify": "3.2.0",
     "vite-plugin-html": "3.2.2",
     "vitest": "3.2.7"
   },
