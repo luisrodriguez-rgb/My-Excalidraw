@@ -170,38 +170,24 @@
   padding-top: 64px !important;
 }
 
-/* Ensure the native hamburger (☰) and top-center toolbar are always visible below the header */
+/* Ensure the native top controls are always visible below the header */
 .excalidraw {
-  /* Hamburger menu container — push it below the header */
-  .excalidraw-ui-top-left {
+  /* Push the entire top-side controls (Hamburger, Toolbar, Library, Comments) down */
+  .FixedSideContainer_side_top {
     top: 74px !important;
-  }
-
-  /* Top-center toolbar — push it below the header */
-  .App-toolbar-container {
-    position: fixed !important;
-    top: 72px !important;
-    left: 50% !important;
-    transform: translateX(-50%) !important;
-    z-index: 1000 !important;
   }
 
   /* Sidebars and main menu open below the header */
   .sidebar,
+  .excalidraw-sidebar,
   .main-menu,
   .notes-sidebar {
     top: 64px !important;
     height: calc(100vh - 64px) !important;
   }
 
-  /* Position top-right UI below the header and hide only the collaboration trigger */
+  /* Hide the collaboration trigger inside top-right UI */
   .excalidraw-ui-top-right {
-    position: fixed !important;
-    top: 74px !important;
-    right: 12px !important;
-    z-index: 1000 !important;
-    display: flex !important;
-
     .collab-button,
     [data-testid="collab-button"],
     .live-collaboration-trigger {

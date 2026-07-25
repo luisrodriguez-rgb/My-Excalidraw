@@ -75,6 +75,26 @@ export async function getBoard(id: string): Promise<Board | null> {
   }
 }
 
+// Debounce map to handle remote Supabase synchronization
+const pendingSyncs = new Map<string, NodeJS.Timeout>();
+
+function debounceSupabaseSync(
+  id: string,
+  callback: () => Promise<void>,
+  delay: number,
+) {
+  if (pendingSyncs.has(id)) {
+    clearTimeout(pendingSyncs.get(id));
+  }
+  const timer = setTimeout(() => {
+    pendingSyncs.delete(id);
+    callback().catch((err) =>
+      console.error("Error in debounced Supabase sync:", err),
+    );
+  }, delay);
+  pendingSyncs.set(id, timer);
+}
+
 export async function saveBoard(
   id: string,
   data: Partial<Omit<Board, "id">> & { name?: string },
@@ -134,8 +154,9 @@ export async function saveBoard(
     );
   }
 
-  // Trigger remote save to Supabase asynchronously
-  supabase.auth.getSession().then(async ({ data: { session } }) => {
+  // Trigger remote save to Supabase asynchronously with debounce to prevent database write timeouts
+  debounceSupabaseSync(id, async () => {
+    const { data: { session } } = await supabase.auth.getSession();
     if (session?.user) {
       try {
         // Only persist lightweight subset of app_state to avoid 500/payload-too-large errors
@@ -170,7 +191,7 @@ export async function saveBoard(
         console.error("Error upserting remote board to Supabase:", err);
       }
     }
-  });
+  }, 3000);
 
   // Update metadata list
   const metadataList = await getBoardsMetadata();

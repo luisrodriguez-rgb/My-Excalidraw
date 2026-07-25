@@ -390,6 +390,82 @@
           }
         }
 
+        .notification-menu-container {
+          position: relative;
+          display: inline-block;
+
+          .notification-dropdown-menu {
+            position: absolute;
+            top: calc(100% + 8px);
+            right: 0;
+            width: 290px;
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            z-index: 1000;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            animation: fadeInNotification 0.2s ease-out;
+
+            .notification-dropdown-header {
+              font-size: 13px;
+              font-weight: 700;
+              color: var(--text-primary);
+              border-bottom: 1px solid var(--border-color);
+              padding-bottom: 8px;
+            }
+
+            .notification-list {
+              display: flex;
+              flex-direction: column;
+              gap: 8px;
+              max-height: 240px;
+              overflow-y: auto;
+            }
+
+            .notification-item {
+              padding: 8px;
+              border-radius: 6px;
+              display: flex;
+              flex-direction: column;
+              gap: 3px;
+              transition: background-color 0.15s ease;
+              text-align: left;
+
+              &:hover {
+                background-color: var(--bg-secondary);
+              }
+
+              .notif-title {
+                font-size: 11.5px;
+                font-weight: 600;
+                color: var(--text-primary);
+              }
+
+              .notif-desc {
+                font-size: 10.5px;
+                color: var(--text-secondary);
+                line-height: 1.35;
+              }
+
+              .notif-time {
+                font-size: 9px;
+                color: var(--text-secondary);
+                opacity: 0.8;
+                align-self: flex-end;
+              }
+            }
+          }
+        }
+
+        @keyframes fadeInNotification {
+          from { opacity: 0; transform: translateY(4px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+
         // User profile menu trigger
         .user-profile-menu-container {
           position: relative;
@@ -828,17 +904,19 @@
         background-color: var(--bg-card);
         border: 1px solid var(--border-color);
         border-radius: 12px;
-        overflow: hidden;
+        overflow: visible;
         display: flex;
         flex-direction: column;
         transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.15s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.15s ease;
         box-shadow: var(--card-shadow);
         position: relative;
 
-        &:hover {
+        &:hover,
+        &:focus-within {
           transform: translateY(-4px);
           border-color: var(--accent-color);
           box-shadow: 0 12px 24px rgba(0, 0, 0, 0.08);
+          z-index: 50 !important;
 
           .card-preview-container {
             .card-quick-actions-bar {
@@ -855,6 +933,8 @@
           background-color: var(--bg-secondary);
           position: relative;
           cursor: pointer;
+          border-top-left-radius: 11px;
+          border-top-right-radius: 11px;
           overflow: hidden;
           border-bottom: 1px solid var(--border-color);
 
@@ -1721,4 +1801,50 @@
 @keyframes scaleInDialog {
   from { transform: scale(0.95); opacity: 0; }
   to { transform: scale(1); opacity: 1; }
+}
+
+.quota-alert-banner {
+  background-color: #fee2e2;
+  border: 1px solid #fca5a5;
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin-bottom: 24px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  color: #991b1b;
+  animation: slideDownAlert 0.3s ease-out;
+
+  .alert-icon {
+    font-size: 20px;
+  }
+
+  .alert-content {
+    flex: 1;
+    font-size: 13.5px;
+    line-height: 1.5;
+    text-align: left;
+  }
+
+  .btn-upgrade-banner {
+    background-color: #ef4444;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 12.5px;
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+    white-space: nowrap;
+
+    &:hover {
+      background-color: #dc2626;
+    }
+  }
+}
+
+@keyframes slideDownAlert {
+  from { transform: translateY(-10px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
 }

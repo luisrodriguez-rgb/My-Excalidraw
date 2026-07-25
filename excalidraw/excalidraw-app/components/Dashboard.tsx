@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from "react";
 
 import {
   getBoardsMetadata,
+  getBoard,
   saveBoard,
   deleteBoard,
   deleteBoardPermanently,
@@ -303,6 +304,16 @@ export const Dashboard: React.FC<DashboardProps> = ({
   const [boardVersions, setBoardVersions] = useState<BoardVersion[]>([]);
   const [boardIdForHistory, setBoardIdForHistory] = useState<string | null>(null);
 
+  // Help & Notification States
+  const [showHelpModal, setShowHelpModal] = useState(false);
+  const [showNotificationMenu, setShowNotificationMenu] = useState(false);
+  const notificationMenuRef = useRef<HTMLDivElement>(null);
+
+  // Storage & Plan States
+  const [activePlan, setActivePlan] = useState<"free" | "pro" | "enterprise">("free");
+  const [showPlanModal, setShowPlanModal] = useState(false);
+  const [storageUsed, setStorageUsed] = useState(2400000); // 2.4 MB default
+
   // Folders list length management
   const [showAllFolders, setShowAllFolders] = useState(false);
 
@@ -355,6 +366,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
       if (cardMenuRef.current && !cardMenuRef.current.contains(e.target as Node)) {
         setActiveCardMenuId(null);
       }
+      if (notificationMenuRef.current && !notificationMenuRef.current.contains(e.target as Node)) {
+        setShowNotificationMenu(false);
+      }
     };
     window.addEventListener("mousedown", handleOutsideClick);
     return () => window.removeEventListener("mousedown", handleOutsideClick);
@@ -378,14 +392,40 @@ export const Dashboard: React.FC<DashboardProps> = ({
     };
   }, []);
 
+  const PLAN_LIMITS = {
+    free: 10 * 1024 * 1024,        // 10 MB in bytes
+    pro: 100 * 1024 * 1024,       // 100 MB in bytes
+    enterprise: 1024 * 1024 * 1024 // 1 GB in bytes
+  };
+
+  const calculateStorageUsed = async (list: BoardMetadata[]) => {
+    try {
+      let total = 0;
+      for (const item of list) {
+        const board = await getBoard(item.id);
+        if (board) {
+          total += JSON.stringify(board).length;
+        }
+      }
+      setStorageUsed(total > 0 ? total : 2400000);
+    } catch (e) {
+      console.warn("Failed to calculate storage used:", e);
+    }
+  };
+
   const loadBoards = async () => {
     const list = await getBoardsMetadata();
     setBoards(list);
     const folderList = await getFolders();
     setFolders(folderList);
+    calculateStorageUsed(list);
   };
 
   const handleCreateBoard = async (templateId: string | null = null) => {
+    if (storageUsed >= PLAN_LIMITS[activePlan]) {
+      alert("Límite de almacenamiento alcanzado. Por favor, actualiza tu plan en la barra lateral para continuar creando tableros.");
+      return;
+    }
     const id = `board_${crypto.randomUUID().replace(/-/g, "").substring(0, 12)}`;
     let name = `Workspace ${boards.filter(b => !b.isDeleted).length + 1}`;
     let elements: any[] = [];
@@ -833,12 +873,17 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
         {/* Storage status widget */}
         <div className="storage-widget">
-          <span className="storage-title">Almacenamiento</span>
+          <span className="storage-title">Almacenamiento ({activePlan === "free" ? "Gratuito" : activePlan === "pro" ? "Pro" : "Enterprise"})</span>
           <div className="progress-container">
-            <div className="progress-bar" style={{ width: "24%" }} />
+            <div 
+              className={`progress-bar ${storageUsed >= PLAN_LIMITS[activePlan] ? "progress-bar-danger" : ""}`} 
+              style={{ width: `${Math.min((storageUsed / PLAN_LIMITS[activePlan]) * 100, 100)}%` }} 
+            />
           </div>
-          <span className="storage-text">2.4 GB de 10 GB utilizados</span>
-          <button className="storage-link">Gestionar plan →</button>
+          <span className="storage-text">
+            {storageUsed < 1024 * 1024 ? (storageUsed / 1024).toFixed(1) + " KB" : (storageUsed / (1024 * 1024)).toFixed(2) + " MB"} de {PLAN_LIMITS[activePlan] < 1024 * 1024 * 1024 ? (PLAN_LIMITS[activePlan] / (1024 * 1024)).toFixed(0) + " MB" : (PLAN_LIMITS[activePlan] / (1024 * 1024 * 1024)).toFixed(0) + " GB"} utilizados
+          </span>
+          <button className="storage-link" onClick={() => setShowPlanModal(true)}>Gestionar plan →</button>
         </div>
       </aside>
 
@@ -857,11 +902,43 @@ export const Dashboard: React.FC<DashboardProps> = ({
           </div>
 
           <div className="header-actions">
-            <button className="widget-icon-btn" title="Ayuda y atajos"><HelpIcon /></button>
-            <button className="widget-icon-btn notifications-btn" title="Notificaciones">
-              <span><BellIcon /></span>
-              <span className="notification-badge">3</span>
+            <button className="widget-icon-btn" title="Ayuda y atajos" onClick={() => setShowHelpModal(true)}>
+              <HelpIcon />
             </button>
+            
+            <div className="notification-menu-container" ref={notificationMenuRef}>
+              <button 
+                className="widget-icon-btn notifications-btn" 
+                title="Notificaciones"
+                onClick={() => setShowNotificationMenu(!showNotificationMenu)}
+              >
+                <span><BellIcon /></span>
+                <span className="notification-badge">3</span>
+              </button>
+
+              {showNotificationMenu && (
+                <div className="notification-dropdown-menu">
+                  <div className="notification-dropdown-header">Notificaciones</div>
+                  <div className="notification-list">
+                    <div className="notification-item">
+                      <div className="notif-title">Conexión a la Nube Exitosa</div>
+                      <div className="notif-desc">Se ha establecido una conexión segura con la base de datos de Supabase.</div>
+                      <div className="notif-time">Hace un momento</div>
+                    </div>
+                    <div className="notification-item">
+                      <div className="notif-title">Sincronización Completada</div>
+                      <div className="notif-desc">Tus tableros locales se han sincronizado con la nube de forma segura.</div>
+                      <div className="notif-time">Hace 5 min</div>
+                    </div>
+                    <div className="notification-item">
+                      <div className="notif-title">Nueva Plantilla Disponible</div>
+                      <div className="notif-desc">Usa el nuevo template Kanban de Retrospectiva para organizar tus tareas.</div>
+                      <div className="notif-time">Hace 1 hora</div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
             <button className="widget-icon-btn" onClick={toggleTheme} title="Cambiar tema">
               {theme === "light" ? <MoonIcon /> : <SunIcon />}
             </button>
@@ -982,6 +1059,18 @@ export const Dashboard: React.FC<DashboardProps> = ({
             </div>
           </div>
         </div>
+
+        {storageUsed >= PLAN_LIMITS[activePlan] && (
+          <div className="quota-alert-banner">
+            <span className="alert-icon">⚠️</span>
+            <div className="alert-content">
+              <strong>Límite de Almacenamiento Excedido:</strong> Estás utilizando {storageUsed < 1024 * 1024 ? (storageUsed / 1024).toFixed(1) + " KB" : (storageUsed / (1024 * 1024)).toFixed(2) + " MB"} de tu plan actual ({PLAN_LIMITS[activePlan] / (1024 * 1024)} MB). La creación de tableros y la sincronización con la nube están bloqueadas.
+            </div>
+            <button className="btn-upgrade-banner" onClick={() => setShowPlanModal(true)}>
+              Actualizar Plan
+            </button>
+          </div>
+        )}
 
         {/* Welcome Section */}
         <div className="welcome-banner-premium">
@@ -1766,6 +1855,132 @@ export const Dashboard: React.FC<DashboardProps> = ({
             </div>
             <div className="dialog-buttons">
               <button className="btn-cancel" onClick={() => setShowHistoryModal(false)}>
+                Cerrar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Help Modal */}
+      {showHelpModal && (
+        <div className="dialog-overlay">
+          <div className="dialog-box" style={{ maxWidth: "480px" }}>
+            <h3>Centro de Ayuda y Atajos</h3>
+            <p className="dialog-desc">Guía rápida de uso del Espacio de Trabajo:</p>
+            <div style={{ display: "flex", flexDirection: "column", gap: "10px", fontSize: "13px", maxHeight: "300px", overflowY: "auto", paddingRight: "4px" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", borderBottom: "1px solid var(--border-color)", paddingBottom: "6px" }}>
+                <strong>Acción</strong>
+                <strong>Atajo</strong>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <span>Activar Modo Presentación</span>
+                <kbd style={{ background: "#eee", padding: "2px 6px", borderRadius: "4px", border: "1px solid #ccc", color: "#333", fontSize: "11px" }}>Ctrl + P</kbd>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <span>Abrir / Buscar Librería</span>
+                <kbd style={{ background: "#eee", padding: "2px 6px", borderRadius: "4px", border: "1px solid #ccc", color: "#333", fontSize: "11px" }}>Ctrl + Shift + L</kbd>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <span>Herramienta Mano (Arrastrar Canvas)</span>
+                <kbd style={{ background: "#eee", padding: "2px 6px", borderRadius: "4px", border: "1px solid #ccc", color: "#333", fontSize: "11px" }}>Espacio</kbd>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <span>Duplicar Elemento</span>
+                <kbd style={{ background: "#eee", padding: "2px 6px", borderRadius: "4px", border: "1px solid #ccc", color: "#333", fontSize: "11px" }}>Alt + Arrastrar / Ctrl + D</kbd>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <span>Zoom Acercar / Alejar</span>
+                <kbd style={{ background: "#eee", padding: "2px 6px", borderRadius: "4px", border: "1px solid #ccc", color: "#333", fontSize: "11px" }}>Rueda ratón / Ctrl + +/-</kbd>
+              </div>
+            </div>
+            <div className="dialog-buttons">
+              <button className="btn-cancel" onClick={() => setShowHelpModal(false)}>
+                Entendido
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Plan Selector Modal */}
+      {showPlanModal && (
+        <div className="dialog-overlay">
+          <div className="dialog-box" style={{ maxWidth: "520px" }}>
+            <h3>Gestión de Planes de Almacenamiento</h3>
+            <p className="dialog-desc">Elige un plan para aumentar tu límite de almacenamiento y habilitar todas las funciones:</p>
+            <div style={{ display: "flex", flexDirection: "column", gap: "12px", margin: "18px 0" }}>
+              <div 
+                style={{ 
+                  display: "flex", 
+                  justifyContent: "space-between", 
+                  alignItems: "center", 
+                  padding: "12px", 
+                  borderRadius: "8px", 
+                  border: activePlan === "free" ? "2px solid #6366f1" : "1px solid var(--border-color)",
+                  backgroundColor: activePlan === "free" ? "rgba(99, 102, 241, 0.05)" : "transparent",
+                  cursor: "pointer"
+                }}
+                onClick={() => setActivePlan("free")}
+              >
+                <div>
+                  <div style={{ fontWeight: 700, fontSize: "14px" }}>Plan Gratuito</div>
+                  <div style={{ fontSize: "11px", color: "var(--text-secondary)" }}>Límite de 10 MB. Características básicas locales.</div>
+                </div>
+                <div style={{ textAlign: "right" }}>
+                  <div style={{ fontWeight: 700, fontSize: "14px" }}>$0 / mes</div>
+                  {activePlan === "free" && <span style={{ fontSize: "10px", color: "#6366f1", fontWeight: 600 }}>Activo</span>}
+                </div>
+              </div>
+
+              <div 
+                style={{ 
+                  display: "flex", 
+                  justifyContent: "space-between", 
+                  alignItems: "center", 
+                  padding: "12px", 
+                  borderRadius: "8px", 
+                  border: activePlan === "pro" ? "2px solid #6366f1" : "1px solid var(--border-color)",
+                  backgroundColor: activePlan === "pro" ? "rgba(99, 102, 241, 0.05)" : "transparent",
+                  cursor: "pointer"
+                }}
+                onClick={() => setActivePlan("pro")}
+              >
+                <div>
+                  <div style={{ fontWeight: 700, fontSize: "14px" }}>Plan Pro</div>
+                  <div style={{ fontSize: "11px", color: "var(--text-secondary)" }}>Límite de 100 MB. Soporte prioritario y copias de seguridad.</div>
+                </div>
+                <div style={{ textAlign: "right" }}>
+                  <div style={{ fontWeight: 700, fontSize: "14px" }}>$9 / mes</div>
+                  {activePlan === "pro" && <span style={{ fontSize: "10px", color: "#6366f1", fontWeight: 600 }}>Activo</span>}
+                </div>
+              </div>
+
+              <div 
+                style={{ 
+                  display: "flex", 
+                  justifyContent: "space-between", 
+                  alignItems: "center", 
+                  padding: "12px", 
+                  borderRadius: "8px", 
+                  border: activePlan === "enterprise" ? "2px solid #6366f1" : "1px solid var(--border-color)",
+                  backgroundColor: activePlan === "enterprise" ? "rgba(99, 102, 241, 0.05)" : "transparent",
+                  cursor: "pointer"
+                }}
+                onClick={() => setActivePlan("enterprise")}
+              >
+                <div>
+                  <div style={{ fontWeight: 700, fontSize: "14px" }}>Plan Empresarial</div>
+                  <div style={{ fontSize: "11px", color: "var(--text-secondary)" }}>Límite de 1 GB. Espacio ilimitado de tableros y colaboración mutua.</div>
+                </div>
+                <div style={{ textAlign: "right" }}>
+                  <div style={{ fontWeight: 700, fontSize: "14px" }}>$29 / mes</div>
+                  {activePlan === "enterprise" && <span style={{ fontSize: "10px", color: "#6366f1", fontWeight: 600 }}>Activo</span>}
+                </div>
+              </div>
+            </div>
+            <div className="dialog-buttons">
+              <button className="btn-cancel" onClick={() => setShowPlanModal(false)}>
                 Cerrar
               </button>
             </div>
