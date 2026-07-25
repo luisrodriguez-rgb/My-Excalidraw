@@ -330,5 +330,401 @@
   }
 }
 
+/* Shift Excalidraw UI overlays down to accommodate the custom top header bar */
+.excalidraw .layer-ui__wrapper {
+  padding-top: 64px !important;
+}
+
+/* Ensure Excalidraw menus/sidebars start below the top header bar */
+.excalidraw {
+  .sidebar,
+  .main-menu,
+  .notes-sidebar {
+    top: 64px !important;
+    height: calc(100vh - 64px) !important;
+  }
+
+  /* Hide default top-left menu trigger */
+  .menu-trigger,
+  [data-testid="main-menu-trigger"] {
+    display: none !important;
+  }
+
+  /* Hide default top-right controls and UserList */
+  .excalidraw-ui-top-right,
+  .UserList__wrapper {
+    display: none !important;
+  }
+}
+
+/* ---------- Custom Workspace Top Header Bar ---------- */
+.workspace-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 64px;
+  background: #ffffff;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 20px;
+  z-index: 99999;
+  box-sizing: border-box;
+
+  &__left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  &__btn-back {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    background: #ffffff;
+    color: #475569;
+    cursor: pointer;
+    transition: all 0.15s ease;
+
+    &:hover {
+      background: #f1f5f9;
+      color: #0f172a;
+      border-color: rgba(0, 0, 0, 0.15);
+    }
+  }
+
+  &__title-container {
+    display: flex;
+    align-items: center;
+  }
+
+  &__title {
+    font-size: 15px;
+    font-weight: 600;
+    color: #0f172a;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 8px;
+    border-radius: 6px;
+    transition: background 0.15s ease;
+
+    &:hover {
+      background: #f1f5f9;
+    }
+  }
+
+  &__title-input {
+    font-size: 15px;
+    font-weight: 600;
+    color: #0f172a;
+    border: 1.5px solid var(--color-primary, #e03131);
+    border-radius: 6px;
+    padding: 3px 8px;
+    outline: none;
+    background: #ffffff;
+    width: 180px;
+  }
+
+  &__status {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: #16a34a;
+    font-weight: 500;
+    background: #f0fdf4;
+    padding: 4px 10px;
+    border-radius: 12px;
+    border: 1px solid #dcfce7;
+
+    .cloud-icon {
+      font-size: 13px;
+    }
+  }
+
+  &__right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  &__icon-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    border: none;
+    background: transparent;
+    color: #475569;
+    cursor: pointer;
+    position: relative;
+    transition: all 0.15s ease;
+
+    &:hover {
+      background: #f1f5f9;
+      color: #0f172a;
+    }
+
+    &.notification-btn {
+      .notification-badge {
+        position: absolute;
+        top: 2px;
+        right: 2px;
+        background: #ef4444;
+        color: #ffffff;
+        font-size: 9px;
+        font-weight: 700;
+        min-width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 1.5px solid #ffffff;
+      }
+    }
+  }
+
+  &__profile {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 4px 8px;
+    border-radius: 8px;
+    transition: background 0.15s ease;
+
+    .profile-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: #ef4444;
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 14px;
+    }
+
+    .profile-info {
+      display: flex;
+      flex-direction: column;
+      text-align: left;
+
+      .profile-name {
+        font-size: 13px;
+        font-weight: 600;
+        color: #0f172a;
+        line-height: 1.2;
+      }
+
+      .profile-email {
+        font-size: 11px;
+        color: #64748b;
+        line-height: 1.2;
+      }
+    }
+  }
+
+  &__btn-share {
+    display: flex;
+    align-items: center;
+    background: var(--color-primary, #e03131);
+    color: #ffffff;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 13px;
+    padding: 0 16px;
+    height: 36px;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(224, 49, 49, 0.25);
+    transition: all 0.15s ease;
+
+    &:hover {
+      background: #c92a2a;
+      box-shadow: 0 4px 12px rgba(224, 49, 49, 0.35);
+      transform: translateY(-1px);
+    }
+
+    &:active {
+      transform: translateY(0);
+    }
+  }
+
+  &__menu-container {
+    position: relative;
+  }
+
+  &__dropdown {
+    position: absolute;
+    top: 44px;
+    right: 0;
+    width: 180px;
+    background: #ffffff;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    border-radius: 10px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    padding: 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    z-index: 100000;
+
+    button {
+      background: transparent;
+      border: none;
+      text-align: left;
+      padding: 8px 12px;
+      font-size: 13px;
+      font-weight: 500;
+      color: #334155;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+
+      &:hover {
+        background: #f1f5f9;
+        color: #0f172a;
+      }
+    }
+  }
+}
+
+/* Grouped Right Floating Buttons Docking & Positioning */
+.excalidraw-app {
+  .floating-notes-btn {
+    bottom: 260px !important;
+    right: 20px !important;
+  }
+
+  .floating-presentation-btn {
+    bottom: 200px !important;
+    right: 20px !important;
+  }
+
+  .floating-comment-mode-btn {
+    bottom: 140px !important;
+    right: 20px !important;
+  }
+
+  .minimap-toggle-btn {
+    bottom: 80px !important;
+    right: 20px !important;
+  }
+
+  .minimap-panel {
+    bottom: 80px !important;
+    right: 80px !important;
+    z-index: 99999 !important;
+  }
+}
+
+/* Adjust all right-side floating components when the notes sidebar is open */
+.excalidraw-app.notes-sidebar-open {
+  .floating-notes-btn {
+    right: 360px !important;
+  }
+
+  .floating-presentation-btn {
+    right: 360px !important;
+  }
+
+  .floating-comment-mode-btn {
+    right: 360px !important;
+  }
+
+  .minimap-toggle-btn {
+    right: 360px !important;
+  }
+
+  .minimap-panel {
+    right: 420px !important;
+  }
+}
+
+/* Dark mode support for Workspace Header */
+.excalidraw.theme--dark ~ .workspace-header,
+.excalidraw.theme--dark + .workspace-header,
+.excalidraw-app:has(.theme--dark) .workspace-header,
+.excalidraw-app.theme--dark .workspace-header {
+  background: #1c1c1e;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+
+  .workspace-header__btn-back {
+    background: #1c1c1e;
+    border-color: rgba(255, 255, 255, 0.15);
+    color: #cbd5e1;
+
+    &:hover {
+      background: #2c2c2e;
+      color: #ffffff;
+    }
+  }
+
+  .workspace-header__title {
+    color: #f1f5f9;
+
+    &:hover {
+      background: #2c2c2e;
+    }
+  }
+
+  .workspace-header__title-input {
+    color: #f1f5f9;
+    background: #1c1c1e;
+  }
+
+  .workspace-header__status {
+    background: rgba(22, 163, 74, 0.1);
+    border-color: rgba(22, 163, 74, 0.2);
+  }
+
+  .workspace-header__icon-btn {
+    color: #cbd5e1;
+
+    &:hover {
+      background: #2c2c2e;
+      color: #ffffff;
+    }
+  }
+
+  .workspace-header__profile {
+    .profile-info {
+      .profile-name {
+        color: #f1f5f9;
+      }
+      .profile-email {
+        color: #94a3b8;
+      }
+    }
+  }
+
+  .workspace-header__dropdown {
+    background: #1c1c1e;
+    border-color: rgba(255, 255, 255, 0.1);
+
+    button {
+      color: #cbd5e1;
+
+      &:hover {
+        background: #2c2c2e;
+        color: #ffffff;
+      }
+    }
+  }
+}
+
+
 
 

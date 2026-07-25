@@ -421,7 +421,138 @@ const usernameToColor = (username: string): string => {
   return PALETTE[Math.abs(hash) % PALETTE.length];
 };
 
+const WorkspaceHeader: React.FC<{
+  boardName: string;
+  userEmail: string | null;
+  onBack: () => void;
+  onShare: () => void;
+  onRename: (newName: string) => void;
+}> = ({ boardName, userEmail, onBack, onShare, onRename }) => {
+  const [isEditing, setIsEditing] = useState(false);
+  const [tempName, setTempName] = useState(boardName);
+  const [showDropdown, setShowDropdown] = useState(false);
+
+  useEffect(() => {
+    setTempName(boardName);
+  }, [boardName]);
+
+  const handleRenameSubmit = () => {
+    setIsEditing(false);
+    if (tempName.trim()) {
+      onRename(tempName.trim());
+    }
+  };
+
+  const userInitial = userEmail ? userEmail.charAt(0).toUpperCase() : "U";
+  const userDisplayName = userEmail ? userEmail.split("@")[0] : "Invitado";
+
+  return (
+    <div className="workspace-header">
+      <div className="workspace-header__left">
+        <button className="workspace-header__btn-back" onClick={onBack} title="Volver a Workspaces">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="19" y1="12" x2="5" y2="12"></line>
+            <polyline points="12 19 5 12 12 5"></polyline>
+          </svg>
+        </button>
+        
+        <div className="workspace-header__title-container">
+          {isEditing ? (
+            <input
+              type="text"
+              className="workspace-header__title-input"
+              value={tempName}
+              onChange={(e) => setTempName(e.target.value)}
+              onBlur={handleRenameSubmit}
+              onKeyDown={(e) => e.key === "Enter" && handleRenameSubmit()}
+              autoFocus
+            />
+          ) : (
+            <div 
+              className="workspace-header__title" 
+              onClick={() => setIsEditing(true)}
+              title="Haz clic para renombrar"
+            >
+              <span>{boardName}</span>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+            </div>
+          )}
+        </div>
+
+        <div className="workspace-header__status">
+          <span className="cloud-icon">☁️</span>
+          <span className="status-text">Guardado en la nube</span>
+        </div>
+      </div>
+
+      <div className="workspace-header__right">
+        <button className="workspace-header__icon-btn" title="Ayuda" onClick={() => {
+          // Open help dialog in Excalidraw
+          document.querySelector<HTMLButtonElement>('.excalidraw [data-testid="help-icon"]')?.click();
+        }}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+            <line x1="12" y1="17" x2="12.01" y2="17"></line>
+          </svg>
+        </button>
+
+        <button className="workspace-header__icon-btn notification-btn" title="Notificaciones">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+            <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+          </svg>
+          <span className="notification-badge">3</span>
+        </button>
+
+        <div className="workspace-header__profile" title={userEmail || ""}>
+          <div className="profile-avatar">{userInitial}</div>
+          <div className="profile-info">
+            <span className="profile-name">{userDisplayName}</span>
+            <span className="profile-email">{userEmail || "Invitado"}</span>
+          </div>
+        </div>
+
+        <button className="workspace-header__btn-share" onClick={onShare}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: "6px" }}>
+            <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+            <circle cx="8.5" cy="7" r="4"></circle>
+            <line x1="20" y1="8" x2="20" y2="14"></line>
+            <line x1="23" y1="11" x2="17" y2="11"></line>
+          </svg>
+          Compartir
+        </button>
+
+        <div className="workspace-header__menu-container">
+          <button className="workspace-header__icon-btn" onClick={() => setShowDropdown(!showDropdown)}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="1"></circle>
+              <circle cx="12" cy="5" r="1"></circle>
+              <circle cx="12" cy="19" r="1"></circle>
+            </svg>
+          </button>
+          
+          {showDropdown && (
+            <div className="workspace-header__dropdown">
+              <button onClick={() => { 
+                setShowDropdown(false); 
+                // Programmatically trigger hamburger menu click in Excalidraw to open sidebar
+                document.querySelector<HTMLButtonElement>('.excalidraw .menu-trigger, .excalidraw [data-testid="main-menu-trigger"]')?.click();
+              }}>Menú principal</button>
+              <button onClick={() => { setShowDropdown(false); setIsEditing(true); }}>Renombrar pizarra</button>
+              <button onClick={() => { setShowDropdown(false); onBack(); }}>Volver a tableros</button>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const ExcalidrawWrapper = () => {
+
 
   const excalidrawAPI = useExcalidrawAPI();
 
@@ -520,6 +651,35 @@ const ExcalidrawWrapper = () => {
       debouncedUpdateNotes(selectedElementId, notesText, excalidrawAPI);
     }
   };
+
+  const handleBackToWorkspaces = useCallback(() => {
+    if (
+      activeBoardId &&
+      activeBoardId !== "collab_room" &&
+      excalidrawAPI
+    ) {
+      const elements = excalidrawAPI.getSceneElementsIncludingDeleted();
+      const appState = excalidrawAPI.getAppState();
+      const files = excalidrawAPI.getFiles();
+      saveBoard(
+        activeBoardId,
+        { name: appState.name || activeBoardName || "Workspace" },
+        elements,
+        appState,
+        files,
+      ).then(() => {
+        window.history.replaceState(
+          {},
+          APP_NAME,
+          window.location.origin,
+        );
+        setActiveBoardId(null);
+      });
+    } else {
+      window.history.replaceState({}, APP_NAME, window.location.origin);
+      setActiveBoardId(null);
+    }
+  }, [activeBoardId, activeBoardName, excalidrawAPI]);
 
 
   // initial state
@@ -1895,8 +2055,23 @@ const ExcalidrawWrapper = () => {
       style={{ height: "100%" }}
       className={clsx("excalidraw-app", {
         "is-collaborating": isCollaborating,
+        "notes-sidebar-open": showNotesSidebar,
       })}
     >
+      {activeBoardId && (
+        <WorkspaceHeader
+          boardName={activeBoardName || "Mi Pizarra"}
+          userEmail={userSession?.user?.email || null}
+          onBack={handleBackToWorkspaces}
+          onShare={() => setShareDialogState({ isOpen: true, type: "share" })}
+          onRename={(newName) => {
+            setActiveBoardName(newName);
+            if (activeBoardId) {
+              saveBoard(activeBoardId, { name: newName });
+            }
+          }}
+        />
+      )}
       <Excalidraw
         onChange={onChange}
         onExport={onExport}
@@ -2040,34 +2215,7 @@ const ExcalidrawWrapper = () => {
           isCollabEnabled={!isCollabDisabled}
           theme={appTheme}
           refresh={() => forceRefresh((prev) => !prev)}
-          onBackToWorkspaces={() => {
-            if (
-              activeBoardId &&
-              activeBoardId !== "collab_room" &&
-              excalidrawAPI
-            ) {
-              const elements = excalidrawAPI.getSceneElementsIncludingDeleted();
-              const appState = excalidrawAPI.getAppState();
-              const files = excalidrawAPI.getFiles();
-              saveBoard(
-                activeBoardId,
-                { name: appState.name || activeBoardName || "Workspace" },
-                elements,
-                appState,
-                files,
-              ).then(() => {
-                window.history.replaceState(
-                  {},
-                  APP_NAME,
-                  window.location.origin,
-                );
-                setActiveBoardId(null);
-              });
-            } else {
-              window.history.replaceState({}, APP_NAME, window.location.origin);
-              setActiveBoardId(null);
-            }
-          }}
+          onBackToWorkspaces={handleBackToWorkspaces}
         />
         <AppWelcomeScreen
           onCollabDialogOpen={onCollabDialogOpen}

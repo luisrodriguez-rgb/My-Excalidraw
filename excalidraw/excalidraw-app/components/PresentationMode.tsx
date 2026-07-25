@@ -180,13 +180,20 @@ export const PresentationMode: React.FC<PresentationModeProps> = ({
   }
 
   const currentSlide = slides[currentIndex];
-  const slideTitle =
-    currentSlide?.name ||
-    currentSlide?.label?.text ||
-    `Diapositiva ${currentIndex + 1}`;
 
   // Keep track of scroll & zoom to render the framing mask in real time
-  const [viewport, setViewport] = useState({ scrollX: 0, scrollY: 0, zoom: 1, theme: "light" });
+  const [viewport, setViewport] = useState(() => {
+    if (excalidrawAPI) {
+      const state = excalidrawAPI.getAppState();
+      return {
+        scrollX: state.scrollX,
+        scrollY: state.scrollY,
+        zoom: state.zoom.value,
+        theme: state.theme,
+      };
+    }
+    return { scrollX: 0, scrollY: 0, zoom: 1, theme: "light" };
+  });
 
   const updateViewport = useCallback(() => {
     if (!excalidrawAPI) return;
@@ -205,6 +212,32 @@ export const PresentationMode: React.FC<PresentationModeProps> = ({
     return () => clearInterval(interval);
   }, [updateViewport, currentIndex]);
 
+  if (!currentSlide) {
+    return (
+      <div className="presentation-no-slides-overlay">
+        <div className="presentation-no-slides-card">
+          <div className="no-slides-icon">🖼️</div>
+          <h3>Modo Presentación</h3>
+          <p>
+            No se encontraron <strong>Marcos (Frames)</strong> ni secciones en
+            este lienzo o la diapositiva seleccionada no es válida.
+          </p>
+          <p className="no-slides-tip">
+            💡 <em>Consejo:</em> Selecciona la herramienta <strong>Frame (Marco)</strong> en la barra de herramientas para agrupar tu contenido en diapositivas.
+          </p>
+          <button className="btn-close-presentation" onClick={onClose}>
+            Entendido
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  const slideTitle =
+    currentSlide.name ||
+    currentSlide.label?.text ||
+    `Diapositiva ${currentIndex + 1}`;
+
   // Mask dimensions
   const left = (currentSlide.x + viewport.scrollX) * viewport.zoom;
   const top = (currentSlide.y + viewport.scrollY) * viewport.zoom;
@@ -213,6 +246,7 @@ export const PresentationMode: React.FC<PresentationModeProps> = ({
   const maskColor = viewport.theme === "dark" ? "#121212" : "#ffffff";
 
   return (
+
     <>
       {/* Dimmed cutout overlay to hide everything outside the active frame */}
       <div
