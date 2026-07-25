@@ -15,6 +15,12 @@ export interface BoardMetadata {
   folderId?: string;
   password?: string;
   isTemplate?: boolean;
+  preview?: string;
+  notesCount?: number;
+  commentsCount?: number;
+  collaboratorsCount?: number;
+  isFavorite?: boolean;
+  isDeleted?: boolean;
 }
 
 export interface Board {
@@ -32,6 +38,12 @@ export interface Board {
   folderId?: string;
   password?: string;
   isTemplate?: boolean;
+  preview?: string;
+  notesCount?: number;
+  commentsCount?: number;
+  collaboratorsCount?: number;
+  isFavorite?: boolean;
+  isDeleted?: boolean;
 }
 
 const boardsStore = createStore("excalidraw-boards-db", "boards-store");
@@ -100,6 +112,18 @@ export async function saveBoard(
       data.password !== undefined ? data.password : currentBoard?.password,
     isTemplate:
       data.isTemplate !== undefined ? data.isTemplate : currentBoard?.isTemplate || false,
+    preview:
+      data.preview !== undefined ? data.preview : currentBoard?.preview,
+    notesCount:
+      data.notesCount !== undefined ? data.notesCount : currentBoard?.notesCount || 0,
+    commentsCount:
+      data.commentsCount !== undefined ? data.commentsCount : currentBoard?.commentsCount || 0,
+    collaboratorsCount:
+      data.collaboratorsCount !== undefined ? data.collaboratorsCount : currentBoard?.collaboratorsCount || 0,
+    isFavorite:
+      data.isFavorite !== undefined ? data.isFavorite : currentBoard?.isFavorite || false,
+    isDeleted:
+      data.isDeleted !== undefined ? data.isDeleted : currentBoard?.isDeleted || false,
   };
 
   await set(`board_content_${id}`, updatedBoard, boardsStore);
@@ -121,6 +145,7 @@ export async function saveBoard(
                 (updatedBoard.appState as any).viewBackgroundColor ??
                 "#ffffff",
               theme: (updatedBoard.appState as any).theme ?? "light",
+              preview: updatedBoard.preview, // Keep thumbnail synchronized
             }
           : { viewBackgroundColor: "#ffffff", theme: "light" };
 
@@ -135,6 +160,7 @@ export async function saveBoard(
           folder_id: updatedBoard.folderId || null,
           password: updatedBoard.password || null,
           is_template: updatedBoard.isTemplate || false,
+          is_deleted: updatedBoard.isDeleted || false,
           updated_at: new Date(updatedBoard.updatedAt).toISOString(),
         });
         if (error) {
@@ -161,6 +187,12 @@ export async function saveBoard(
     folderId: updatedBoard.folderId,
     password: updatedBoard.password,
     isTemplate: updatedBoard.isTemplate,
+    preview: updatedBoard.preview,
+    notesCount: updatedBoard.notesCount,
+    commentsCount: updatedBoard.commentsCount,
+    collaboratorsCount: updatedBoard.collaboratorsCount,
+    isFavorite: updatedBoard.isFavorite,
+    isDeleted: updatedBoard.isDeleted,
   };
 
   if (index > -1) {
@@ -175,18 +207,77 @@ export async function saveBoard(
 }
 
 export async function deleteBoard(id: string): Promise<void> {
+  // Soft delete: set isDeleted = true locally and in Supabase
+  const board = await getBoard(id);
+  if (board) {
+    board.isDeleted = true;
+    await set(`board_content_${id}`, board, boardsStore);
+  }
+
+  const metadataList = await getBoardsMetadata();
+  const index = metadataList.findIndex((item) => item.id === id);
+  if (index > -1) {
+    metadataList[index].isDeleted = true;
+    await saveBoardsMetadata(metadataList);
+  }
+
+  // Trigger remote soft delete asynchronously
+  supabase.auth.getSession().then(async ({ data: { session } }) => {
+    if (session?.user) {
+      try {
+        await supabase.from("boards").update({
+          is_deleted: true,
+          updated_at: new Date().toISOString(),
+        }).eq("id", id);
+      } catch (err) {
+        console.error("Error soft-deleting remote board from Supabase:", err);
+      }
+    }
+  });
+}
+
+export async function deleteBoardPermanently(id: string): Promise<void> {
   await del(`board_content_${id}`, boardsStore);
   const metadataList = await getBoardsMetadata();
   const filtered = metadataList.filter((item) => item.id !== id);
   await saveBoardsMetadata(filtered);
 
-  // Trigger remote delete asynchronously
+  // Trigger remote hard delete asynchronously
   supabase.auth.getSession().then(async ({ data: { session } }) => {
     if (session?.user) {
       try {
         await supabase.from("boards").delete().eq("id", id);
       } catch (err) {
-        console.error("Error deleting remote board from Supabase:", err);
+        console.error("Error deleting remote board permanently from Supabase:", err);
+      }
+    }
+  });
+}
+
+export async function restoreBoard(id: string): Promise<void> {
+  const board = await getBoard(id);
+  if (board) {
+    board.isDeleted = false;
+    await set(`board_content_${id}`, board, boardsStore);
+  }
+
+  const metadataList = await getBoardsMetadata();
+  const index = metadataList.findIndex((item) => item.id === id);
+  if (index > -1) {
+    metadataList[index].isDeleted = false;
+    await saveBoardsMetadata(metadataList);
+  }
+
+  // Trigger remote restore asynchronously
+  supabase.auth.getSession().then(async ({ data: { session } }) => {
+    if (session?.user) {
+      try {
+        await supabase.from("boards").update({
+          is_deleted: false,
+          updated_at: new Date().toISOString(),
+        }).eq("id", id);
+      } catch (err) {
+        console.error("Error restoring remote board in Supabase:", err);
       }
     }
   });
@@ -490,12 +581,12 @@ export async function syncBoardsWithSupabase(): Promise<void> {
 
     const { data: remoteBoards } = await supabase
       .from("boards")
-      .select("id, name, created_at, updated_at, tags, folder_id, password, is_template");
+      .select("id, name, created_at, updated_at, tags, folder_id, password, is_template, is_deleted");
     if (remoteBoards) {
       const localMetadata = await getBoardsMetadata();
       let changed = false;
       const mergedMetadata = [...localMetadata];
-
+ 
       for (const rb of remoteBoards) {
         const index = mergedMetadata.findIndex((m) => m.id === rb.id);
         const remoteUpdated = new Date(rb.updated_at).getTime();
@@ -508,6 +599,7 @@ export async function syncBoardsWithSupabase(): Promise<void> {
           folderId: rb.folder_id || undefined,
           password: rb.password || undefined,
           isTemplate: rb.is_template || false,
+          isDeleted: rb.is_deleted || false,
         };
 
         if (index === -1) {
@@ -535,6 +627,8 @@ export async function syncBoardsWithSupabase(): Promise<void> {
                 folderId: remoteMeta.folderId,
                 password: remoteMeta.password,
                 isTemplate: remoteMeta.isTemplate,
+                isDeleted: remoteMeta.isDeleted,
+                preview: (boardContent.app_state as any)?.preview || undefined,
               },
               boardsStore,
             );
@@ -573,6 +667,8 @@ export async function syncBoardsWithSupabase(): Promise<void> {
                   folderId: remoteMeta.folderId,
                   password: remoteMeta.password,
                   isTemplate: remoteMeta.isTemplate,
+                  isDeleted: remoteMeta.isDeleted,
+                  preview: (boardContent.app_state as any)?.preview || undefined,
                 },
                 boardsStore,
               );

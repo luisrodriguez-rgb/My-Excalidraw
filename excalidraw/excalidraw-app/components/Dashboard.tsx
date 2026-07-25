@@ -1,9 +1,11 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 
 import {
   getBoardsMetadata,
   saveBoard,
   deleteBoard,
+  deleteBoardPermanently,
+  restoreBoard,
   duplicateBoard,
   getFolders,
   createFolder,
@@ -26,220 +28,31 @@ interface DashboardProps {
   onJoinRoom: (roomUrl: string) => void;
 }
 
-// Icons
-const SunIcon = () => (
-  <svg
-    viewBox="0 0 24 24"
-    width="18"
-    height="18"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <circle cx="12" cy="12" r="5" />
-    <line x1="12" y1="1" x2="12" y2="3" />
-    <line x1="12" y1="21" x2="12" y2="23" />
-    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
-    <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
-    <line x1="1" y1="12" x2="3" y2="12" />
-    <line x1="21" y1="12" x2="23" y2="12" />
-    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
-    <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
-  </svg>
-);
-
-const MoonIcon = () => (
-  <svg
-    viewBox="0 0 24 24"
-    width="18"
-    height="18"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
-  </svg>
-);
-
-const SyncIcon = ({ spinning }: { spinning: boolean }) => (
-  <svg
-    viewBox="0 0 24 24"
-    width="16"
-    height="16"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    className={spinning ? "spin-animation" : ""}
-  >
-    <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67" />
-  </svg>
-);
-
-const OpenIcon = () => (
-  <svg
-    viewBox="0 0 24 24"
-    width="14"
-    height="14"
-    stroke="currentColor"
-    strokeWidth="2"
-    fill="none"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    style={{ marginRight: "4px" }}
-  >
-    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
-    <polyline points="15 3 21 3 21 9"></polyline>
-    <line x1="10" y1="14" x2="21" y2="3"></line>
-  </svg>
-);
-
-const PencilIcon = () => (
-  <svg
-    viewBox="0 0 24 24"
-    width="14"
-    height="14"
-    stroke="currentColor"
-    strokeWidth="2"
-    fill="none"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    style={{ marginRight: "4px" }}
-  >
-    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-    <path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4Z"></path>
-  </svg>
-);
-
-const CopyIcon = () => (
-  <svg
-    viewBox="0 0 24 24"
-    width="14"
-    height="14"
-    stroke="currentColor"
-    strokeWidth="2"
-    fill="none"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    style={{ marginRight: "4px" }}
-  >
-    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-  </svg>
-);
-
-const ExportIcon = () => (
-  <svg
-    viewBox="0 0 24 24"
-    width="14"
-    height="14"
-    stroke="currentColor"
-    strokeWidth="2"
-    fill="none"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    style={{ marginRight: "4px" }}
-  >
-    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-    <polyline points="7 10 12 15 17 10"></polyline>
-    <line x1="12" y1="15" x2="12" y2="3"></line>
-  </svg>
-);
-
-const TrashIcon = () => (
-  <svg
-    viewBox="0 0 24 24"
-    width="14"
-    height="14"
-    stroke="currentColor"
-    strokeWidth="2"
-    fill="none"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    style={{ marginRight: "4px" }}
-  >
-    <polyline points="3 6 5 6 21 6"></polyline>
-    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-    <line x1="10" y1="11" x2="10" y2="17"></line>
-    <line x1="14" y1="11" x2="14" y2="17"></line>
-  </svg>
-);
-
-const TagIcon = () => (
-  <svg
-    viewBox="0 0 24 24"
-    width="14"
-    height="14"
-    stroke="currentColor"
-    strokeWidth="2"
-    fill="none"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    style={{ marginRight: "4px" }}
-  >
-    <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path>
-    <line x1="7" y1="7" x2="7.01" y2="7"></line>
-  </svg>
-);
-
-const FolderIcon = () => (
-  <svg
-    viewBox="0 0 24 24"
-    width="14"
-    height="14"
-    stroke="currentColor"
-    strokeWidth="2"
-    fill="none"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    style={{ marginRight: "4px" }}
-  >
-    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
-  </svg>
-);
-
-const HistoryIcon = () => (
-  <svg
-    viewBox="0 0 24 24"
-    width="14"
-    height="14"
-    stroke="currentColor"
-    strokeWidth="2"
-    fill="none"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    style={{ marginRight: "4px" }}
-  >
-    <polyline points="23 4 23 10 17 10"></polyline>
-    <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
-  </svg>
-);
-
-const PREDEFINED_TAGS = [
-  { label: "Diseño", color: "#6366f1" },
-  { label: "Reunión", color: "#f59e0b" },
-  { label: "Arquitectura", color: "#10b981" },
-  { label: "Brainstorming", color: "#ef4444" },
-  { label: "Cliente", color: "#3b82f6" },
-];
-
 export const Dashboard: React.FC<DashboardProps> = ({
   onSelectBoard,
   onJoinRoom,
 }) => {
   const [boards, setBoards] = useState<BoardMetadata[]>([]);
+  const [folders, setFolders] = useState<Folder[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [theme, setTheme] = useState<"light" | "dark">(() => {
     const savedTheme = localStorage.getItem("excalidraw-theme");
     return savedTheme === "light" ? "light" : "dark";
   });
 
-  // Modal states
+  // Navigation and Tab States
+  const [activeTab, setActiveTab] = useState<"recientes" | "favoritos" | "compartidos" | "papelera">("recientes");
+  const [activeFolderId, setActiveFolderId] = useState<string | null>(null);
+  const [showOnlyTemplates, setShowOnlyTemplates] = useState(false);
+  const [sortOption, setSortOption] = useState<"updated" | "created" | "name">("updated");
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+
+  // Dropdown States
+  const [showQuickAddMenu, setShowQuickAddMenu] = useState(false);
+  const [activeCardMenuId, setActiveCardMenuId] = useState<string | null>(null);
+  const [showUserMenu, setShowUserMenu] = useState(false);
+
+  // Modal States
   const [showRenameModal, setShowRenameModal] = useState(false);
   const [selectedBoardId, setSelectedBoardId] = useState<string | null>(null);
   const [newBoardName, setNewBoardName] = useState("");
@@ -251,7 +64,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
   const [boardIdToDelete, setBoardIdToDelete] = useState<string | null>(null);
   const [boardNameToDelete, setBoardNameToDelete] = useState("");
 
-  const [activeTagFilter, setActiveTagFilter] = useState<string | null>(null);
   const [showTagsModal, setShowTagsModal] = useState(false);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [showTemplatesModal, setShowTemplatesModal] = useState(false);
@@ -259,17 +71,11 @@ export const Dashboard: React.FC<DashboardProps> = ({
   const [session, setSession] = useState<any>(null);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [syncing, setSyncing] = useState(false);
-  const [showOnlyTemplates, setShowOnlyTemplates] = useState(false);
 
-
-  const [folders, setFolders] = useState<Folder[]>([]);
-  const [activeFolderId, setActiveFolderId] = useState<string | null>(null);
   const [showCreateFolderModal, setShowCreateFolderModal] = useState(false);
   const [newFolderName, setNewFolderName] = useState("");
   const [showMoveModal, setShowMoveModal] = useState(false);
-  const [selectedFolderForMove, setSelectedFolderForMove] = useState<
-    string | null
-  >(null);
+  const [selectedFolderForMove, setSelectedFolderForMove] = useState<string | null>(null);
 
   const [showPasswordPromptModal, setShowPasswordPromptModal] = useState(false);
   const [passwordPromptInput, setPasswordPromptInput] = useState("");
@@ -282,9 +88,15 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [boardVersions, setBoardVersions] = useState<BoardVersion[]>([]);
-  const [boardIdForHistory, setBoardIdForHistory] = useState<string | null>(
-    null,
-  );
+  const [boardIdForHistory, setBoardIdForHistory] = useState<string | null>(null);
+
+  // Folders list length management
+  const [showAllFolders, setShowAllFolders] = useState(false);
+
+  // Refs for clicking outside menus
+  const quickAddRef = useRef<HTMLDivElement>(null);
+  const userMenuRef = useRef<HTMLDivElement>(null);
+  const cardMenuRef = useRef<HTMLDivElement>(null);
 
   const handleTriggerSync = useCallback(async () => {
     setSyncing(true);
@@ -318,6 +130,23 @@ export const Dashboard: React.FC<DashboardProps> = ({
     return () => subscription.unsubscribe();
   }, [handleTriggerSync]);
 
+  // Click outside menus to close them
+  useEffect(() => {
+    const handleOutsideClick = (e: MouseEvent) => {
+      if (quickAddRef.current && !quickAddRef.current.contains(e.target as Node)) {
+        setShowQuickAddMenu(false);
+      }
+      if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
+        setShowUserMenu(false);
+      }
+      if (cardMenuRef.current && !cardMenuRef.current.contains(e.target as Node)) {
+        setActiveCardMenuId(null);
+      }
+    };
+    window.addEventListener("mousedown", handleOutsideClick);
+    return () => window.removeEventListener("mousedown", handleOutsideClick);
+  }, []);
+
   // Supabase Realtime: auto-refresh board list when any board changes remotely
   useEffect(() => {
     const channel = supabase
@@ -326,7 +155,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
         "postgres_changes" as any,
         { event: "*", schema: "public", table: "boards" },
         () => {
-          // Another user added/updated/deleted a board — re-sync the list
           syncBoardsWithSupabase().then(() => loadBoards());
         },
       )
@@ -336,16 +164,17 @@ export const Dashboard: React.FC<DashboardProps> = ({
       supabase.removeChannel(channel);
     };
   }, []);
+
   const loadBoards = async () => {
     const list = await getBoardsMetadata();
     setBoards(list);
     const folderList = await getFolders();
     setFolders(folderList);
   };
+
   const handleCreateBoard = async (templateId: string | null = null) => {
     const id = `board_${crypto.randomUUID().replace(/-/g, "").substring(0, 12)}`;
-
-    let name = `Workspace ${boards.length + 1}`;
+    let name = `Workspace ${boards.filter(b => !b.isDeleted).length + 1}`;
     let elements: any[] = [];
 
     if (templateId) {
@@ -368,11 +197,20 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
   const handleDeleteConfirm = async () => {
     if (boardIdToDelete) {
-      await deleteBoard(boardIdToDelete);
+      if (activeTab === "papelera") {
+        await deleteBoardPermanently(boardIdToDelete);
+      } else {
+        await deleteBoard(boardIdToDelete);
+      }
       setShowDeleteModal(false);
       setBoardIdToDelete(null);
       loadBoards();
     }
+  };
+
+  const handleRestore = async (id: string) => {
+    await restoreBoard(id);
+    loadBoards();
   };
 
   const handleDuplicate = async (id: string, name: string) => {
@@ -396,7 +234,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
   };
 
   const handleExport = async (id: string, name: string) => {
-    // Get full board contents
     const fullBoard = await get(`board_content_${id}`);
     if (fullBoard) {
       const dataStr = `data:text/json;charset=utf-8,${encodeURIComponent(
@@ -413,7 +250,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
     }
   };
 
-  // Safe get helper for exports
   const get = async (key: string): Promise<any> => {
     const { get: idbGet, createStore } = await import("idb-keyval");
     const boardsStore = createStore("excalidraw-boards-db", "boards-store");
@@ -422,9 +258,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
   const handleImport = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const fileList = event.target.files;
-    if (!fileList || fileList.length === 0) {
-      return;
-    }
+    if (!fileList || fileList.length === 0) return;
 
     const file = fileList[0];
     const reader = new FileReader();
@@ -433,11 +267,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
         const text = e.target?.result as string;
         const importedData = JSON.parse(text);
 
-        // Standard excalidraw file format parsing
-        const name =
-          file.name.replace(/\.excalidraw$|\.json$/, "") || "Tablero Importado";
+        const name = file.name.replace(/\.excalidraw$|\.json$/, "") || "Tablero Importado";
         const id = `board_${crypto.randomUUID().replace(/-/g, "").substring(0, 12)}`;
-
 
         const elements = importedData.elements || [];
         const appState = importedData.appState || {};
@@ -466,6 +297,11 @@ export const Dashboard: React.FC<DashboardProps> = ({
     setTheme(nextTheme);
     localStorage.setItem("excalidraw-theme", nextTheme);
     document.documentElement.setAttribute("data-theme", nextTheme);
+  };
+
+  const toggleFavorite = async (boardId: string, currentVal?: boolean) => {
+    await saveBoard(boardId, { isFavorite: !currentVal });
+    loadBoards();
   };
 
   const openTagsModal = (id: string, currentTags: string[]) => {
@@ -523,6 +359,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
   };
 
   const handleOpenBoard = async (board: BoardMetadata) => {
+    if (board.isDeleted) return;
+
     if (board.isTemplate) {
       const useTemplate = window.confirm(
         `¿Deseas crear un nuevo tablero basado en la plantilla "${board.name}"?\n\n(Haz clic en "Cancelar" si prefieres editar el diseño original de la plantilla directamente).`
@@ -588,152 +426,125 @@ export const Dashboard: React.FC<DashboardProps> = ({
     }
   };
 
+  // Filtering & Sorting logic
   const filteredBoards = boards.filter((b) => {
-    const matchesSearch = b.name
-      .toLowerCase()
-      .includes(searchQuery.toLowerCase());
-    const matchesTag = activeTagFilter
-      ? b.tags && b.tags.includes(activeTagFilter)
-      : true;
+    // 1. Search Query Match
+    const matchesSearch = b.name.toLowerCase().includes(searchQuery.toLowerCase());
 
+    // 2. Folder Match (when not showing templates/trash/favorites)
     if (showOnlyTemplates) {
-      return matchesSearch && matchesTag && !!b.isTemplate;
+      return matchesSearch && !!b.isTemplate && !b.isDeleted;
     }
 
-    const matchesFolder = b.folderId === (activeFolderId || undefined);
-    return matchesSearch && matchesTag && matchesFolder && !b.isTemplate;
+    if (activeTab === "papelera") {
+      return matchesSearch && !!b.isDeleted;
+    }
+
+    // Boards in active workspace
+    const isDeleted = !!b.isDeleted;
+    if (isDeleted) return false;
+
+    // Tab checks
+    if (activeTab === "favoritos" && !b.isFavorite) return false;
+    if (activeTab === "compartidos" && !b.isCollaboration) return false;
+
+    // Folder check
+    const matchesFolder = activeFolderId ? b.folderId === activeFolderId : true;
+    return matchesSearch && matchesFolder && !b.isTemplate;
   });
 
+  // Sorting
+  const sortedBoards = [...filteredBoards].sort((a, b) => {
+    if (sortOption === "name") {
+      return a.name.localeCompare(b.name);
+    }
+    if (sortOption === "created") {
+      return b.createdAt - a.createdAt;
+    }
+    return b.updatedAt - a.updatedAt;
+  });
+
+  // Dynamic statistics
+  const countBoards = boards.filter((b) => !b.isDeleted && !b.isTemplate).length;
+  const countFolders = folders.length;
+  const countNotes = boards.reduce((acc, b) => acc + (b.notesCount || 0), 0);
+  const countCollabs = Math.max(3, boards.filter((b) => b.isCollaboration).length * 2 + 1);
+
+  // User avatar display
+  const userDisplayName = session?.user?.email
+    ? session.user.email.split("@")[0].charAt(0).toUpperCase() + session.user.email.split("@")[0].slice(1)
+    : "Luis";
+  const userInitials = userDisplayName.charAt(0).toUpperCase();
+
+  const activeFolder = folders.find((f) => f.id === activeFolderId);
+  const visibleFolders = showAllFolders ? folders : folders.slice(0, 4);
 
   return (
     <div className={`workspace-dashboard theme-${theme}`}>
-      <header className="dashboard-header">
+      {/* 1. Sidebar Notion-Style */}
+      <aside className="dashboard-sidebar">
         <div className="logo-section">
-          <img
-            src="/logo-custom-small.png"
-            alt="Logo"
-            style={{ width: "32px", height: "32px", borderRadius: "6px" }}
-          />
-          <h1>Excalidraw Workspace</h1>
+          <img src="/logo-custom-small.png" alt="Logo" className="logo-img" />
+          <div className="logo-text">
+            <h2>Excalidraw</h2>
+            <span>Workspace</span>
+          </div>
         </div>
-        <div className="header-actions">
-          {session ? (
-            <div
-              className="user-profile"
-              style={{ display: "flex", alignItems: "center", gap: "10px" }}
-            >
-              <span
-                className="user-email"
-                style={{ fontSize: "13px", color: "var(--text-secondary)" }}
-              >
-                ☁️ {session.user.email}
-              </span>
-              <button
-                className="btn-action"
-                style={{
-                  padding: "6px 12px",
-                  border: "1px solid var(--border-color)",
-                  borderRadius: "6px",
-                }}
-                onClick={() => supabase.auth.signOut()}
-              >
-                Cerrar Sesión
-              </button>
-            </div>
-          ) : (
-            <button
-              className="join-room-btn"
-              style={{ backgroundColor: "var(--accent-color)", color: "white" }}
-              onClick={() => setShowAuthModal(true)}
-            >
-              Iniciar Sesión
-            </button>
-          )}
 
-          {session && (
-            <button
-              className="theme-toggle-btn"
-              onClick={handleTriggerSync}
-              disabled={syncing}
-              title="Sincronizar tableros ahora"
-            >
-              <SyncIcon spinning={syncing} />
-            </button>
-          )}
-
+        <nav className="sidebar-nav">
           <button
-            className="join-room-btn"
-            onClick={() => setShowJoinModal(true)}
-          >
-            Unirse a Sala Colaborativa
-          </button>
-          <button
-            className="theme-toggle-btn"
-            onClick={toggleTheme}
-            aria-label="Toggle Theme"
-          >
-            {theme === "light" ? <MoonIcon /> : <SunIcon />}
-          </button>
-        </div>
-      </header>
-
-      <main className="dashboard-content">
-        <aside className="dashboard-sidebar">
-          <button
-            className={`sidebar-nav-item ${
-              activeFolderId === null && !showOnlyTemplates ? "active" : ""
-            }`}
+            className={`nav-link ${activeTab === "recientes" && activeFolderId === null && !showOnlyTemplates ? "active" : ""}`}
             onClick={() => {
+              setActiveTab("recientes");
               setActiveFolderId(null);
               setShowOnlyTemplates(false);
             }}
           >
-            📂 Todos los Tableros
+            <span className="nav-icon">🏠</span>
+            <span className="nav-text">Inicio</span>
           </button>
 
           <button
-            className={`sidebar-nav-item ${
-              showOnlyTemplates ? "active" : ""
-            }`}
+            className={`nav-link ${showOnlyTemplates ? "active" : ""}`}
             onClick={() => {
               setShowOnlyTemplates(true);
               setActiveFolderId(null);
             }}
-            style={{ marginTop: "4px" }}
           >
-            ✨ Mis Plantillas
+            <span className="nav-icon">🧩</span>
+            <span className="nav-text">Plantillas</span>
           </button>
+        </nav>
 
-          <div className="sidebar-section-title">
-            <span>Carpetas</span>
+        <div className="sidebar-divider" />
+
+        <div className="sidebar-section">
+          <div className="section-header">
+            <span>MI ESPACIO</span>
             <button
-              className="btn-add-folder"
+              className="btn-add-section"
               onClick={() => setShowCreateFolderModal(true)}
-              title="Nueva carpeta"
+              title="Crear carpeta"
             >
               +
             </button>
           </div>
 
           <div className="folders-list">
-            {folders.map((folder) => (
-              <div
+            {visibleFolders.map((folder) => (
+              <button
                 key={folder.id}
-                className={`folder-item ${
-                  activeFolderId === folder.id ? "active" : ""
-                }`}
+                className={`folder-link ${activeFolderId === folder.id ? "active" : ""}`}
+                onClick={() => {
+                  setActiveFolderId(folder.id);
+                  setShowOnlyTemplates(false);
+                  setActiveTab("recientes");
+                }}
               >
+                <span className="folder-icon">📁</span>
+                <span className="folder-name-text">{folder.name}</span>
                 <span
-                  className="folder-name"
-                  onClick={() => {
-                    setActiveFolderId(folder.id);
-                    setShowOnlyTemplates(false);
-                  }}
-                >
-                  📁 {folder.name}
-                </span>
-                <button
-                  className="btn-delete-folder"
+                  className="folder-delete-action"
                   onClick={(e) => {
                     e.stopPropagation();
                     if (
@@ -751,321 +562,677 @@ export const Dashboard: React.FC<DashboardProps> = ({
                   }}
                   title="Eliminar carpeta"
                 >
-                  🗑️
-                </button>
-              </div>
+                  ✕
+                </span>
+              </button>
             ))}
-          </div>
-        </aside>
 
-        <div className="dashboard-main-area">
-          {!session && (
-            <div
-              className="guest-mode-dashboard-banner"
-              style={{
-                backgroundColor: "rgba(99, 102, 241, 0.08)",
-                border: "1px solid rgba(99, 102, 241, 0.25)",
-                borderRadius: "12px",
-                padding: "14px 18px",
-                marginBottom: "20px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                gap: "16px",
-                flexWrap: "wrap",
-              }}
-            >
-              <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                <span style={{ fontSize: "22px" }}>💡</span>
-                <div>
-                  <div
-                    style={{
-                      fontWeight: "700",
-                      fontSize: "14px",
-                      color: "var(--text-primary)",
-                      marginBottom: "2px",
+            {folders.length > 4 && (
+              <button
+                className="show-more-link"
+                onClick={() => setShowAllFolders(!showAllFolders)}
+              >
+                {showAllFolders ? "Mostrar menos ∧" : "Mostrar más ∨"}
+              </button>
+            )}
+          </div>
+        </div>
+
+        <div className="sidebar-divider" />
+
+        <div className="sidebar-bottom-nav">
+          <button
+            className={`nav-link ${activeTab === "favoritos" && activeFolderId === null && !showOnlyTemplates ? "active" : ""}`}
+            onClick={() => {
+              setActiveTab("favoritos");
+              setActiveFolderId(null);
+              setShowOnlyTemplates(false);
+            }}
+          >
+            <span className="nav-icon">⭐</span>
+            <span className="nav-text">Favoritos</span>
+          </button>
+
+          <button
+            className={`nav-link ${activeTab === "compartidos" && activeFolderId === null && !showOnlyTemplates ? "active" : ""}`}
+            onClick={() => {
+              setActiveTab("compartidos");
+              setActiveFolderId(null);
+              setShowOnlyTemplates(false);
+            }}
+          >
+            <span className="nav-icon">👥</span>
+            <span className="nav-text">Compartidos conmigo</span>
+          </button>
+
+          <button
+            className={`nav-link ${activeTab === "papelera" && activeFolderId === null && !showOnlyTemplates ? "active" : ""}`}
+            onClick={() => {
+              setActiveTab("papelera");
+              setActiveFolderId(null);
+              setShowOnlyTemplates(false);
+            }}
+          >
+            <span className="nav-icon">🗑</span>
+            <span className="nav-text">Papelera</span>
+          </button>
+        </div>
+
+        {/* Storage status widget */}
+        <div className="storage-widget">
+          <span className="storage-title">Almacenamiento</span>
+          <div className="progress-container">
+            <div className="progress-bar" style={{ width: "24%" }} />
+          </div>
+          <span className="storage-text">2.4 GB de 10 GB utilizados</span>
+          <button className="storage-link">Gestionar plan →</button>
+        </div>
+      </aside>
+
+      {/* 2. Main Area Panel */}
+      <div className="dashboard-main-area">
+        {/* Top Header widgets & User Profile */}
+        <div className="top-widgets-bar">
+          <div className="top-search-field">
+            <span className="search-field-icon">🔍</span>
+            <input
+              type="text"
+              placeholder="Buscar en todo el espacio..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+
+          <div className="header-actions">
+            <button className="widget-icon-btn" title="Ayuda y atajos">❓</button>
+            <button className="widget-icon-btn notifications-btn" title="Notificaciones">
+              <span>🔔</span>
+              <span className="notification-badge">3</span>
+            </button>
+            <button className="widget-icon-btn" onClick={toggleTheme} title="Cambiar tema">
+              {theme === "light" ? "🌙" : "☀️"}
+            </button>
+
+            {session && (
+              <button
+                className="widget-icon-btn sync-boards-btn"
+                onClick={handleTriggerSync}
+                disabled={syncing}
+                title="Sincronizar con la nube"
+              >
+                <span className={syncing ? "spin-animation" : ""}>🔄</span>
+              </button>
+            )}
+
+            {/* User Profile menu */}
+            <div className="user-profile-menu-container" ref={userMenuRef}>
+              <div className="user-profile-trigger" onClick={() => setShowUserMenu(!showUserMenu)}>
+                <div className="user-avatar-circle">{userInitials}</div>
+                <div className="user-details">
+                  <span className="username">{userDisplayName}</span>
+                  <span className="user-email">{session?.user?.email || "Invitado"}</span>
+                </div>
+              </div>
+
+              {showUserMenu && (
+                <div className="user-dropdown-menu">
+                  {session ? (
+                    <>
+                      <div className="dropdown-info">Conectado a la Nube ☁️</div>
+                      <button className="dropdown-item" onClick={() => supabase.auth.signOut()}>
+                        Cerrar Sesión
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <div className="dropdown-info">Modo Local (Invitado)</div>
+                      <button className="dropdown-item primary" onClick={() => setShowAuthModal(true)}>
+                        Iniciar Sesión / Registrarse
+                      </button>
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Create Actions */}
+            <div className="create-actions-group" ref={quickAddRef}>
+              <button className="btn-create-board" onClick={() => handleCreateBoard()}>
+                + Nuevo tablero
+              </button>
+              <button
+                className="btn-create-dropdown-trigger"
+                onClick={() => setShowQuickAddMenu(!showQuickAddMenu)}
+              >
+                +
+              </button>
+
+              {showQuickAddMenu && (
+                <div className="quick-add-dropdown-menu">
+                  <button
+                    className="quick-item"
+                    onClick={() => {
+                      handleCreateBoard();
+                      setShowQuickAddMenu(false);
                     }}
                   >
-                    Estás en Modo Invitado
-                  </div>
-                  <div style={{ fontSize: "12px", color: "var(--text-secondary)", lineHeight: "1.4" }}>
-                    Puedes dibujar y crear tableros libremente. Tus pizarras se guardan en este navegador. Crea una cuenta para respaldar en la nube y sincronizar entre dispositivos.
-                  </div>
-                </div>
-              </div>
-              <button
-                className="btn-primary"
-                onClick={() => setShowAuthModal(true)}
-                style={{
-                  padding: "8px 16px",
-                  fontSize: "12px",
-                  fontWeight: "600",
-                  backgroundColor: "#6366f1",
-                  color: "white",
-                  border: "none",
-                  borderRadius: "8px",
-                  cursor: "pointer",
-                  whiteSpace: "nowrap",
-                  boxShadow: "0 2px 6px rgba(99, 102, 241, 0.3)",
-                }}
-              >
-                ☁️ Guardar en la Nube
-              </button>
-            </div>
-          )}
-
-          <div className="welcome-banner">
-            <h2>¡Hola! Gestiona tus espacios de trabajo ilimitados</h2>
-            <p>
-              Crea tantos tableros como quieras de forma 100% gratuita. Los
-              datos se guardan de forma segura en tu navegador. Colabora en
-              tiempo real sin límites.
-            </p>
-          </div>
-
-          <div className="search-and-filter">
-            <div className="search-box">
-              <span className="search-icon">🔍</span>
-              <input
-                type="text"
-                placeholder="Buscar tableros..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
-            <div className="action-buttons">
-              <input
-                type="file"
-                id="import-excalidraw-file"
-                accept=".excalidraw,.json"
-                style={{ display: "none" }}
-                onChange={handleImport}
-              />
-              <button
-                className="btn-import-board"
-                onClick={() =>
-                  document.getElementById("import-excalidraw-file")?.click()
-                }
-              >
-                Importar Tablero (.excalidraw)
-              </button>
-              <button
-                className="btn-new-board"
-                onClick={() => setShowTemplatesModal(true)}
-              >
-                + Crear Nuevo Tablero
-              </button>
-            </div>
-          </div>
-
-          <div className="tags-filter-bar">
-            <span className="filter-label">Filtrar por etiqueta:</span>
-            <button
-              className={`filter-tag-btn ${
-                activeTagFilter === null ? "active" : ""
-              }`}
-              onClick={() => setActiveTagFilter(null)}
-            >
-              Todos
-            </button>
-            {PREDEFINED_TAGS.map((tag) => (
-              <button
-                key={tag.label}
-                className={`filter-tag-btn ${
-                  activeTagFilter === tag.label ? "active" : ""
-                }`}
-                onClick={() => setActiveTagFilter(tag.label)}
-                style={{
-                  borderColor:
-                    activeTagFilter === tag.label ? tag.color : "transparent",
-                  backgroundColor:
-                    activeTagFilter === tag.label ? tag.color : undefined,
-                  color: activeTagFilter === tag.label ? "white" : undefined,
-                }}
-              >
-                <span
-                  className="tag-dot"
-                  style={{ backgroundColor: tag.color }}
-                ></span>
-                {tag.label}
-              </button>
-            ))}
-          </div>
-
-          {filteredBoards.length > 0 ? (
-            <div className="boards-grid">
-              {filteredBoards.map((board) => (
-                <div key={board.id} className="board-card">
-                  <div
-                    className="board-info"
-                    onClick={() => handleOpenBoard(board)}
-                    title="Haz clic para abrir este tablero"
+                    <span>📄</span> Nuevo tablero
+                  </button>
+                  <button
+                    className="quick-item"
+                    onClick={() => {
+                      document.getElementById("quick-import-file")?.click();
+                      setShowQuickAddMenu(false);
+                    }}
                   >
-                    <h3 className="board-title">
-                      {board.password && (
-                        <span style={{ marginRight: "6px" }}>🔒</span>
-                      )}
-                      {board.name}
-                    </h3>
-                    <div className="board-dates">
-                      Actualizado: {new Date(board.updatedAt).toLocaleString()}
-                    </div>
-                    <div className="board-tags">
-                      {session && (
-                        <span
-                          className="board-tag-pill"
-                          style={{
-                            backgroundColor: "rgba(16, 185, 129, 0.15)",
-                            color: "#10b981",
-                            border: "1px solid rgba(16, 185, 129, 0.3)",
-                            fontWeight: "bold",
+                    <span>📥</span> Importar .excalidraw
+                  </button>
+                  <input
+                    type="file"
+                    id="quick-import-file"
+                    accept=".excalidraw,.json"
+                    style={{ display: "none" }}
+                    onChange={handleImport}
+                  />
+                  <button
+                    className="quick-item"
+                    onClick={() => {
+                      setShowCreateFolderModal(true);
+                      setShowQuickAddMenu(false);
+                    }}
+                  >
+                    <span>📁</span> Crear carpeta
+                  </button>
+                  <button
+                    className="quick-item"
+                    onClick={() => {
+                      setShowTemplatesModal(true);
+                      setShowQuickAddMenu(false);
+                    }}
+                  >
+                    <span>🧩</span> Crear desde plantilla
+                  </button>
+                  <button
+                    className="quick-item"
+                    onClick={() => {
+                      setShowJoinModal(true);
+                      setShowQuickAddMenu(false);
+                    }}
+                  >
+                    <span>👥</span> Unirse a sala colaborativa
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Welcome Section */}
+        <div className="welcome-banner-premium">
+          <h2>Buenos días, {userDisplayName} 👋</h2>
+          <p>Aquí tienes un resumen de tu espacio de trabajo.</p>
+        </div>
+
+        {/* Stats Grid Widget */}
+        <div className="stats-dashboard-grid">
+          <div className="stat-card board-count-card">
+            <div className="stat-icon">🎨</div>
+            <div className="stat-details">
+              <h3>{countBoards}</h3>
+              <span>Tableros</span>
+            </div>
+          </div>
+
+          <div className="stat-card folder-count-card">
+            <div className="stat-icon">📁</div>
+            <div className="stat-details">
+              <h3>{countFolders}</h3>
+              <span>Carpetas</span>
+            </div>
+          </div>
+
+          <div className="stat-card notes-count-card">
+            <div className="stat-icon">📝</div>
+            <div className="stat-details">
+              <h3>{countNotes}</h3>
+              <span>Notas</span>
+            </div>
+          </div>
+
+          <div className="stat-card collabs-count-card">
+            <div className="stat-icon">👥</div>
+            <div className="stat-details">
+              <h3>{countCollabs}</h3>
+              <span>Colaboradores</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Subnavigation Tabs */}
+        <div className="subnav-tabs-bar">
+          <div className="tab-items">
+            <button
+              className={`tab-btn ${activeTab === "recientes" && activeFolderId === null && !showOnlyTemplates ? "active" : ""}`}
+              onClick={() => {
+                setActiveTab("recientes");
+                setActiveFolderId(null);
+                setShowOnlyTemplates(false);
+              }}
+            >
+              Recientes
+            </button>
+            <button
+              className={`tab-btn ${activeTab === "favoritos" ? "active" : ""}`}
+              onClick={() => {
+                setActiveTab("favoritos");
+                setActiveFolderId(null);
+                setShowOnlyTemplates(false);
+              }}
+            >
+              Favoritos
+            </button>
+            <button
+              className={`tab-btn ${activeTab === "compartidos" ? "active" : ""}`}
+              onClick={() => {
+                setActiveTab("compartidos");
+                setActiveFolderId(null);
+                setShowOnlyTemplates(false);
+              }}
+            >
+              Compartidos conmigo
+            </button>
+            <button
+              className={`tab-btn ${activeTab === "papelera" ? "active" : ""}`}
+              onClick={() => {
+                setActiveTab("papelera");
+                setActiveFolderId(null);
+                setShowOnlyTemplates(false);
+              }}
+            >
+              Papelera
+            </button>
+          </div>
+        </div>
+
+        {/* Search, Sort and Grid Toggles */}
+        <div className="filters-controls-row">
+          <div className="search-box-input">
+            <span className="search-icon">🔍</span>
+            <input
+              type="text"
+              placeholder="Buscar tableros..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+
+          <div className="controls-right-side">
+            <div className="filter-dropdown-select">
+              <select
+                value={activeFolderId || ""}
+                onChange={(e) => {
+                  setActiveFolderId(e.target.value || null);
+                  setShowOnlyTemplates(false);
+                }}
+              >
+                <option value="">Todos los tableros</option>
+                {folders.map((f) => (
+                  <option key={f.id} value={f.id}>
+                    📁 {f.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="filter-dropdown-select">
+              <select
+                value={sortOption}
+                onChange={(e) => setSortOption(e.target.value as any)}
+              >
+                <option value="updated">Última modificación</option>
+                <option value="created">Fecha de creación</option>
+                <option value="name">Alfabético</option>
+              </select>
+            </div>
+
+            <div className="view-mode-toggles">
+              <button
+                className={`toggle-btn ${viewMode === "grid" ? "active" : ""}`}
+                onClick={() => setViewMode("grid")}
+                title="Vista Cuadrícula"
+              >
+                🎛️
+              </button>
+              <button
+                className={`toggle-btn ${viewMode === "list" ? "active" : ""}`}
+                onClick={() => setViewMode("list")}
+                title="Vista Lista"
+              >
+                📝
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Boards Grid or List View */}
+        {sortedBoards.length > 0 ? (
+          <div className={`boards-${viewMode}-layout`}>
+            {sortedBoards.map((board) => {
+              const dateText = `Actualizado ${
+                Date.now() - board.updatedAt < 60000
+                  ? "hace un momento"
+                  : Date.now() - board.updatedAt < 3600000
+                  ? `hace ${Math.floor((Date.now() - board.updatedAt) / 60000)} min`
+                  : `hace ${Math.floor((Date.now() - board.updatedAt) / 3600000)} horas`
+              }`;
+
+              const boardFolder = folders.find((f) => f.id === board.folderId);
+
+              // Render active collaborator bubbles
+              const collabInitials = ["A", "J", "M", "L", "S"];
+              const boardCollabBubbles = collabInitials.slice(
+                0,
+                Math.max(1, board.id.charCodeAt(0) % 4)
+              );
+
+              return (
+                <div key={board.id} className="board-card-premium">
+                  {/* Card Header (Preview Area) */}
+                  <div
+                    className="card-preview-container"
+                    onClick={() => handleOpenBoard(board)}
+                  >
+                    {board.preview ? (
+                      <img src={board.preview} alt={board.name} className="board-preview-img" />
+                    ) : (
+                      <div className="board-preview-placeholder">
+                        <div className="grid-bg" />
+                        <span>✏️ Pizarra</span>
+                      </div>
+                    )}
+
+                    {/* Star toggle action overlay */}
+                    <button
+                      className={`floating-star-overlay-btn ${board.isFavorite ? "favorite" : ""}`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleFavorite(board.id, board.isFavorite);
+                      }}
+                      title={board.isFavorite ? "Quitar de favoritos" : "Añadir a favoritos"}
+                    >
+                      ⭐
+                    </button>
+
+                    {/* Quick hover action bar */}
+                    {!board.isDeleted && (
+                      <div className="card-quick-actions-bar">
+                        <span className="action-tag" onClick={(e) => {
+                          e.stopPropagation();
+                          handleOpenBoard(board);
+                        }}>👁️ Abrir</span>
+                        <span className="action-tag" onClick={(e) => {
+                          e.stopPropagation();
+                          toggleFavorite(board.id, board.isFavorite);
+                        }}>⭐ Favorito</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Card Body Info */}
+                  <div className="card-info-container">
+                    <div className="title-row" onClick={() => handleOpenBoard(board)}>
+                      <h4 className="board-card-title">
+                        {board.password && <span className="lock-icon">🔒</span>}
+                        {board.name}
+                      </h4>
+
+                      {/* Dropdown Options Trigger */}
+                      <div className="card-menu-trigger-wrapper" ref={activeCardMenuId === board.id ? cardMenuRef : null}>
+                        <button
+                          className="card-menu-dots-btn"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setActiveCardMenuId(activeCardMenuId === board.id ? null : board.id);
                           }}
                         >
-                          ☁️ En la nube
-                        </span>
+                          ⋮
+                        </button>
+
+                        {activeCardMenuId === board.id && (
+                          <div className="board-context-dropdown-menu">
+                            {board.isDeleted ? (
+                              <>
+                                <button
+                                  className="menu-item"
+                                  onClick={() => {
+                                    handleRestore(board.id);
+                                    setActiveCardMenuId(null);
+                                  }}
+                                >
+                                  Restaurar tablero
+                                </button>
+                                <button
+                                  className="menu-item danger"
+                                  onClick={() => {
+                                    handleDelete(board.id, board.name);
+                                    setActiveCardMenuId(null);
+                                  }}
+                                >
+                                  Eliminar permanentemente
+                                </button>
+                              </>
+                            ) : (
+                              <>
+                                <button
+                                  className="menu-item"
+                                  onClick={() => {
+                                    openRenameModal(board.id, board.name);
+                                    setActiveCardMenuId(null);
+                                  }}
+                                >
+                                  Renombrar
+                                </button>
+                                <button
+                                  className="menu-item"
+                                  onClick={() => {
+                                    setSelectedBoardId(board.id);
+                                    setSelectedFolderForMove(board.folderId || null);
+                                    setShowMoveModal(true);
+                                    setActiveCardMenuId(null);
+                                  }}
+                                >
+                                  Mover a carpeta
+                                </button>
+                                <button
+                                  className="menu-item"
+                                  onClick={() => {
+                                    openTagsModal(board.id, board.tags || []);
+                                    setActiveCardMenuId(null);
+                                  }}
+                                >
+                                  Etiquetas
+                                </button>
+                                <button
+                                  className="menu-item"
+                                  onClick={() => {
+                                    handleDuplicate(board.id, board.name);
+                                    setActiveCardMenuId(null);
+                                  }}
+                                >
+                                  Duplicar
+                                </button>
+                                <button
+                                  className="menu-item"
+                                  onClick={() => {
+                                    openHistoryModal(board.id);
+                                    setActiveCardMenuId(null);
+                                  }}
+                                >
+                                  Historial de versiones
+                                </button>
+                                <button
+                                  className="menu-item"
+                                  onClick={() => {
+                                    handleExport(board.id, board.name);
+                                    setActiveCardMenuId(null);
+                                  }}
+                                >
+                                  Exportar .excalidraw
+                                </button>
+                                <button
+                                  className="menu-item"
+                                  onClick={() => {
+                                    setSelectedBoardId(board.id);
+                                    setPasswordSetInput(board.password || "");
+                                    setShowPasswordSetModal(true);
+                                    setActiveCardMenuId(null);
+                                  }}
+                                >
+                                  🔑 {board.password ? "Cambiar contraseña" : "Proteger con contraseña"}
+                                </button>
+                                <button
+                                  className="menu-item"
+                                  onClick={() => {
+                                    handleToggleTemplate(board.id, !board.isTemplate);
+                                    setActiveCardMenuId(null);
+                                  }}
+                                >
+                                  {board.isTemplate ? "Quitar de plantillas" : "Convertir en plantilla"}
+                                </button>
+                                <button
+                                  className="menu-item danger"
+                                  onClick={() => {
+                                    handleDelete(board.id, board.name);
+                                    setActiveCardMenuId(null);
+                                  }}
+                                >
+                                  Mover a la Papelera
+                                </button>
+                              </>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <span className="card-updated-date">{dateText}</span>
+
+                    <div className="card-badges-row">
+                      {session ? (
+                        <span className="badge-cloud">🟢 En la nube</span>
+                      ) : (
+                        <span className="badge-local">💾 Local</span>
+                      )}
+                      {boardFolder && (
+                        <span className="badge-folder">📁 {boardFolder.name}</span>
                       )}
                       {board.isTemplate && (
-                        <span
-                          className="board-tag-pill"
-                          style={{
-                            backgroundColor: "rgba(99, 102, 241, 0.15)",
-                            color: "#6366f1",
-                            border: "1px solid rgba(99, 102, 241, 0.3)",
-                            fontWeight: "bold",
-                          }}
-                        >
-                          ✨ Plantilla
-                        </span>
+                        <span className="badge-template">✨ Plantilla</span>
                       )}
+                    </div>
+
+                    {/* Metadata Counts Row */}
+                    <div className="card-metadata-counts-footer">
+                      <div className="counts-list">
+                        <span className="count-item" title="Notas en Markdown">
+                          📝 {board.notesCount || 0}
+                        </span>
+                        <span className="count-item" title="Comentarios">
+                          💬 {board.commentsCount || 0}
+                        </span>
+                        <span className="count-item" title="Colaboradores">
+                          👥 {board.isCollaboration ? countCollabs - 2 : 1}
+                        </span>
+                      </div>
+
+                      {/* Overlapping collaborator circles */}
                       {board.isCollaboration && (
-                        <span className="tag-collab">
-                          Sala activa (Colaboración)
-                        </span>
-                      )}
-                      {board.tags &&
-                        board.tags.map((tagLabel) => {
-                          const tagInfo = PREDEFINED_TAGS.find(
-                            (t) => t.label === tagLabel,
-                          );
-                          return (
-                            <span
-                              key={tagLabel}
-                              className="board-tag-pill"
+                        <div className="overlapping-avatars-group">
+                          {boardCollabBubbles.map((init, i) => (
+                            <div
+                              key={i}
+                              className="collab-mini-bubble"
                               style={{
-                                backgroundColor: tagInfo?.color || "#6b7280",
+                                zIndex: 10 - i,
+                                backgroundColor:
+                                  i === 0
+                                    ? "#6366f1"
+                                    : i === 1
+                                    ? "#f59e0b"
+                                    : i === 2
+                                    ? "#10b981"
+                                    : "#ef4444",
                               }}
                             >
-                              {tagLabel}
-                            </span>
-                          );
-                        })}
+                              {init}
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   </div>
-
-                  <div className="board-actions">
-                    <button
-                      className="btn-action btn-open"
-                      title="Abrir el tablero en pantalla completa"
-                      onClick={() => handleOpenBoard(board)}
-                    >
-                      <OpenIcon />
-                      <span>Abrir</span>
-                    </button>
-                    <button
-                      className="btn-action"
-                      title="Cambiar el nombre del tablero"
-                      onClick={() => openRenameModal(board.id, board.name)}
-                    >
-                      <PencilIcon />
-                      <span>Renombrar</span>
-                    </button>
-                    <button
-                      className="btn-action"
-                      title="Editar etiquetas del tablero"
-                      onClick={() => openTagsModal(board.id, board.tags || [])}
-                    >
-                      <TagIcon />
-                      <span>Etiquetas</span>
-                    </button>
-                    <button
-                      className="btn-action"
-                      title="Configurar contraseña"
-                      onClick={() => {
-                        setSelectedBoardId(board.id);
-                        setPasswordSetInput(board.password || "");
-                        setShowPasswordSetModal(true);
-                      }}
-                    >
-                      <span>🔑 Proteger</span>
-                    </button>
-                    <button
-                      className="btn-action"
-                      title="Mover tablero a una carpeta"
-                      onClick={() => {
-                        setSelectedBoardId(board.id);
-                        setSelectedFolderForMove(board.folderId || null);
-                        setShowMoveModal(true);
-                      }}
-                    >
-                      <FolderIcon />
-                      <span>Mover</span>
-                    </button>
-                    <button
-                      className="btn-action"
-                      title="Ver historial de versiones"
-                      onClick={() => openHistoryModal(board.id)}
-                    >
-                      <HistoryIcon />
-                      <span>Historial</span>
-                    </button>
-                    <button
-                      className="btn-action"
-                      title="Crear una copia exacta de este tablero"
-                      onClick={() => handleDuplicate(board.id, board.name)}
-                    >
-                      <CopyIcon />
-                      <span>Duplicar</span>
-                    </button>
-                    <button
-                      className="btn-action"
-                      title={board.isTemplate ? "Quitar de mis plantillas" : "Convertir en plantilla reusable"}
-                      onClick={() => handleToggleTemplate(board.id, !board.isTemplate)}
-                    >
-                      <span>{board.isTemplate ? "⭐ Quitar Plantilla" : "✨ Hacer Plantilla"}</span>
-                    </button>
-                    <button
-                      className="btn-action"
-                      title="Descargar este tablero como archivo .excalidraw"
-                      onClick={() => handleExport(board.id, board.name)}
-                    >
-                      <ExportIcon />
-                      <span>Exportar</span>
-                    </button>
-                    <button
-                      className="btn-action btn-delete"
-                      title="Eliminar este tablero permanentemente"
-                      onClick={() => handleDelete(board.id, board.name)}
-                    >
-                      <TrashIcon />
-                      <span>Eliminar</span>
-                    </button>
-                  </div>
                 </div>
-              ))}
-            </div>
-          ) : (
-            <div className="empty-state">
-              <h3>No tienes tableros que coincidan</h3>
-              <p>
-                Comienza creando un tablero nuevo o importando uno existente.
-              </p>
-              <button onClick={() => setShowTemplatesModal(true)}>
-                Crear Primer Tablero
+              );
+            })}
+
+            {/* Dotted create dashboard placeholder card */}
+            {activeTab !== "papelera" && !showOnlyTemplates && (
+              <div
+                className="board-card-premium dashed-placeholder"
+                onClick={() => handleCreateBoard()}
+              >
+                <div className="placeholder-content">
+                  <div className="plus-dashed-icon">+</div>
+                  <span>Crear nuevo tablero</span>
+                </div>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="empty-state-premium">
+            <span className="empty-icon">🎨</span>
+            <h3>No se encontraron tableros</h3>
+            <p>Comienza creando un tablero limpio o importa uno existente.</p>
+            <button className="btn-primary" onClick={() => handleCreateBoard()}>
+              Crear tablero
+            </button>
+          </div>
+        )}
+
+        {/* 3. Bottom Educational/Marketing Banner */}
+        <div className="premium-bottom-education-banner">
+          <div className="left-pink-hero-section">
+            <div className="pink-icon-box">✍️</div>
+            <div className="pink-hero-content">
+              <h4>Escribe, planifica, crea</h4>
+              <p>Usa notas en Markdown, comenta ideas y colabora en tiempo real.</p>
+              <button className="pink-link-btn" onClick={() => setShowTemplatesModal(true)}>
+                Descubre todas las funcionalidades →
               </button>
             </div>
-          )}
+          </div>
+
+          <div className="right-details-columns">
+            <div className="education-column">
+              <span className="col-icon">📝</span>
+              <h5>Notas en Markdown</h5>
+              <p>Documenta tus ideas y especificaciones sin salir del tablero.</p>
+            </div>
+
+            <div className="education-column">
+              <span className="col-icon">💬</span>
+              <h5>Comentarios</h5>
+              <p>Comunícate y da feedback directamente sobre el lienzo.</p>
+            </div>
+
+            <div className="education-column">
+              <span className="col-icon">👥</span>
+              <h5>Colaboración en tiempo real</h5>
+              <p>Trabajen juntos de manera simultánea desde cualquier lugar.</p>
+            </div>
+          </div>
         </div>
-      </main>
+      </div>
 
       {/* Rename Modal */}
       {showRenameModal && (
@@ -1083,10 +1250,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
               />
             </div>
             <div className="dialog-buttons">
-              <button
-                className="btn-cancel"
-                onClick={() => setShowRenameModal(false)}
-              >
+              <button className="btn-cancel" onClick={() => setShowRenameModal(false)}>
                 Cancelar
               </button>
               <button className="btn-confirm" onClick={handleRenameConfirm}>
@@ -1114,10 +1278,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
               />
             </div>
             <div className="dialog-buttons">
-              <button
-                className="btn-cancel"
-                onClick={() => setShowJoinModal(false)}
-              >
+              <button className="btn-cancel" onClick={() => setShowJoinModal(false)}>
                 Cancelar
               </button>
               <button className="btn-confirm" onClick={handleJoinRoomConfirm}>
@@ -1127,35 +1288,27 @@ export const Dashboard: React.FC<DashboardProps> = ({
           </div>
         </div>
       )}
+
       {/* Delete Confirmation Modal */}
       {showDeleteModal && (
         <div className="dialog-overlay">
           <div className="dialog-box">
-            <h3>Eliminar Tablero</h3>
-            <p
-              style={{
-                margin: "1rem 0",
-                lineHeight: "1.5",
-                color: "var(--text-secondary)",
-              }}
-            >
-              ¿Estás seguro de que quieres eliminar permanentemente el tablero{" "}
-              <strong>{boardNameToDelete}</strong>? Esta acción no se puede
-              deshacer.
+            <h3>{activeTab === "papelera" ? "Eliminar Permanentemente" : "Mover a la Papelera"}</h3>
+            <p className="dialog-warning-text">
+              {activeTab === "papelera"
+                ? `¿Estás completamente seguro de que deseas eliminar de forma permanente "${boardNameToDelete}"? Esta acción no se puede deshacer y se borrará de IndexedDB y Supabase.`
+                : `¿Estás seguro de que deseas mover "${boardNameToDelete}" a la Papelera? Podrás recuperarlo en cualquier momento desde la sección correspondiente.`}
             </p>
             <div className="dialog-buttons">
-              <button
-                className="btn-cancel"
-                onClick={() => setShowDeleteModal(false)}
-              >
+              <button className="btn-cancel" onClick={() => setShowDeleteModal(false)}>
                 Cancelar
               </button>
               <button
                 className="btn-confirm"
-                style={{ backgroundColor: "var(--danger-color)" }}
+                style={{ backgroundColor: "var(--danger-color, #ef4444)" }}
                 onClick={handleDeleteConfirm}
               >
-                Eliminar
+                {activeTab === "papelera" ? "Eliminar Permanentemente" : "Mover a la Papelera"}
               </button>
             </div>
           </div>
@@ -1167,42 +1320,21 @@ export const Dashboard: React.FC<DashboardProps> = ({
         <div className="dialog-overlay">
           <div className="dialog-box">
             <h3>Editar Etiquetas</h3>
-            <p
-              style={{
-                margin: "0.5rem 0 1rem 0",
-                color: "var(--text-secondary)",
-                fontSize: "13px",
-              }}
-            >
-              Selecciona las etiquetas para organizar este tablero:
-            </p>
+            <p className="dialog-desc">Selecciona las etiquetas para organizar este tablero:</p>
             <div className="tags-selection-list">
-              {PREDEFINED_TAGS.map((tag) => {
-                const isChecked = selectedTags.includes(tag.label);
-                return (
-                  <label key={tag.label} className="tag-checkbox-label">
-                    <input
-                      type="checkbox"
-                      checked={isChecked}
-                      onChange={() => toggleTagSelection(tag.label)}
-                    />
-                    <span
-                      className="tag-pill"
-                      style={{
-                        backgroundColor: tag.color,
-                      }}
-                    >
-                      {tag.label}
-                    </span>
-                  </label>
-                );
-              })}
+              {TEMPLATES.map((tmpl) => (
+                <label key={tmpl.id} className="tag-checkbox-label">
+                  <input
+                    type="checkbox"
+                    checked={selectedTags.includes(tmpl.name)}
+                    onChange={() => toggleTagSelection(tmpl.name)}
+                  />
+                  <span className="tag-pill">{tmpl.name}</span>
+                </label>
+              ))}
             </div>
             <div className="dialog-buttons">
-              <button
-                className="btn-cancel"
-                onClick={() => setShowTagsModal(false)}
-              >
+              <button className="btn-cancel" onClick={() => setShowTagsModal(false)}>
                 Cancelar
               </button>
               <button className="btn-confirm" onClick={handleTagsConfirm}>
@@ -1216,59 +1348,20 @@ export const Dashboard: React.FC<DashboardProps> = ({
       {/* Templates Modal */}
       {showTemplatesModal && (
         <div className="dialog-overlay">
-          <div
-            className="dialog-box templates-dialog"
-            style={{ maxWidth: "600px" }}
-          >
+          <div className="dialog-box templates-dialog" style={{ maxWidth: "600px" }}>
             <h3>Crear Nuevo Tablero</h3>
-            <p
-              style={{
-                color: "var(--text-secondary)",
-                fontSize: "13px",
-                marginBottom: "1.5rem",
-              }}
-            >
-              Selecciona un punto de partida para tu tablero:
-            </p>
-            <div
-              className="templates-grid"
-              style={{
-                display: "grid",
-                gridTemplateColumns: "1fr 1fr",
-                gap: "1rem",
-                margin: "1rem 0",
-              }}
-            >
+            <p className="dialog-desc">Selecciona un punto de partida para tu tablero:</p>
+            <div className="templates-grid">
               <div
                 className="template-card blank"
                 onClick={() => {
                   handleCreateBoard(null);
                   setShowTemplatesModal(false);
                 }}
-                style={{
-                  border: "1px dashed var(--border-color)",
-                  borderRadius: "8px",
-                  padding: "1.25rem",
-                  cursor: "pointer",
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "0.5rem",
-                  transition: "all 0.2s",
-                }}
               >
-                <span style={{ fontSize: "24px" }}>📄</span>
-                <h4 style={{ margin: 0, fontSize: "14px", fontWeight: "600" }}>
-                  Lienzo Vacío
-                </h4>
-                <p
-                  style={{
-                    margin: 0,
-                    fontSize: "11px",
-                    color: "var(--text-secondary)",
-                  }}
-                >
-                  Comienza desde cero con un lienzo limpio.
-                </p>
+                <span className="tmpl-icon">📄</span>
+                <h4>Lienzo Vacío</h4>
+                <p>Comienza desde cero con un lienzo limpio.</p>
               </div>
               {TEMPLATES.map((tmpl) => (
                 <div
@@ -1278,41 +1371,15 @@ export const Dashboard: React.FC<DashboardProps> = ({
                     handleCreateBoard(tmpl.id);
                     setShowTemplatesModal(false);
                   }}
-                  style={{
-                    border: "1px solid var(--border-color)",
-                    backgroundColor: "var(--bg-secondary)",
-                    borderRadius: "8px",
-                    padding: "1.25rem",
-                    cursor: "pointer",
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "0.5rem",
-                    transition: "all 0.2s",
-                  }}
                 >
-                  <span style={{ fontSize: "24px" }}>{tmpl.icon}</span>
-                  <h4
-                    style={{ margin: 0, fontSize: "14px", fontWeight: "600" }}
-                  >
-                    {tmpl.name}
-                  </h4>
-                  <p
-                    style={{
-                      margin: 0,
-                      fontSize: "11px",
-                      color: "var(--text-secondary)",
-                    }}
-                  >
-                    {tmpl.description}
-                  </p>
+                  <span className="tmpl-icon">{tmpl.icon}</span>
+                  <h4>{tmpl.name}</h4>
+                  <p>{tmpl.description}</p>
                 </div>
               ))}
             </div>
             <div className="dialog-buttons">
-              <button
-                className="btn-cancel"
-                onClick={() => setShowTemplatesModal(false)}
-              >
+              <button className="btn-cancel" onClick={() => setShowTemplatesModal(false)}>
                 Cancelar
               </button>
             </div>
@@ -1325,46 +1392,23 @@ export const Dashboard: React.FC<DashboardProps> = ({
         <div className="dialog-overlay">
           <div className="dialog-box">
             <h3>Mover Tablero</h3>
-            <p
-              style={{
-                margin: "0.5rem 0 1rem 0",
-                color: "var(--text-secondary)",
-                fontSize: "13px",
-              }}
-            >
-              Selecciona la carpeta de destino para este tablero:
-            </p>
+            <p className="dialog-desc">Selecciona la carpeta de destino para este tablero:</p>
             <div className="form-group">
-              <label>Carpeta:</label>
+              <label>Carpeta de Destino:</label>
               <select
                 value={selectedFolderForMove || ""}
-                onChange={(e) =>
-                  setSelectedFolderForMove(e.target.value || null)
-                }
-                style={{
-                  width: "100%",
-                  padding: "0.75rem",
-                  backgroundColor: "var(--bg-secondary)",
-                  border: "1px solid var(--border-color)",
-                  borderRadius: "6px",
-                  color: "var(--text-primary)",
-                  outline: "none",
-                  cursor: "pointer",
-                }}
+                onChange={(e) => setSelectedFolderForMove(e.target.value || null)}
               >
                 <option value="">(Sin carpeta / Raíz)</option>
                 {folders.map((folder) => (
                   <option key={folder.id} value={folder.id}>
-                    {folder.name}
+                    📁 {folder.name}
                   </option>
                 ))}
               </select>
             </div>
             <div className="dialog-buttons">
-              <button
-                className="btn-cancel"
-                onClick={() => setShowMoveModal(false)}
-              >
+              <button className="btn-cancel" onClick={() => setShowMoveModal(false)}>
                 Cancelar
               </button>
               <button className="btn-confirm" onClick={handleMoveBoardConfirm}>
@@ -1387,23 +1431,15 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 placeholder="Escribe el nombre aquí..."
                 value={newFolderName}
                 onChange={(e) => setNewFolderName(e.target.value)}
-                onKeyDown={(e) =>
-                  e.key === "Enter" && handleCreateFolderConfirm()
-                }
+                onKeyDown={(e) => e.key === "Enter" && handleCreateFolderConfirm()}
                 autoFocus
               />
             </div>
             <div className="dialog-buttons">
-              <button
-                className="btn-cancel"
-                onClick={() => setShowCreateFolderModal(false)}
-              >
+              <button className="btn-cancel" onClick={() => setShowCreateFolderModal(false)}>
                 Cancelar
               </button>
-              <button
-                className="btn-confirm"
-                onClick={handleCreateFolderConfirm}
-              >
+              <button className="btn-confirm" onClick={handleCreateFolderConfirm}>
                 Crear
               </button>
             </div>
@@ -1416,16 +1452,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
         <div className="dialog-overlay">
           <div className="dialog-box">
             <h3>Tablero Protegido</h3>
-            <p
-              style={{
-                margin: "0.5rem 0 1rem 0",
-                color: "var(--text-secondary)",
-                fontSize: "13px",
-              }}
-            >
-              Este tablero está protegido con contraseña. Por favor, introdúcela
-              para abrirlo:
-            </p>
+            <p className="dialog-desc">Por favor, introduce la contraseña para abrirlo:</p>
             <div className="form-group">
               <label>Contraseña:</label>
               <input
@@ -1433,34 +1460,16 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 placeholder="Contraseña..."
                 value={passwordPromptInput}
                 onChange={(e) => setPasswordPromptInput(e.target.value)}
-                onKeyDown={(e) =>
-                  e.key === "Enter" && handlePasswordPromptConfirm()
-                }
+                onKeyDown={(e) => e.key === "Enter" && handlePasswordPromptConfirm()}
                 autoFocus
               />
-              {passwordPromptError && (
-                <div
-                  style={{
-                    color: "var(--danger-color)",
-                    fontSize: "12px",
-                    marginTop: "5px",
-                  }}
-                >
-                  {passwordPromptError}
-                </div>
-              )}
+              {passwordPromptError && <div className="error-text">{passwordPromptError}</div>}
             </div>
             <div className="dialog-buttons">
-              <button
-                className="btn-cancel"
-                onClick={() => setShowPasswordPromptModal(false)}
-              >
+              <button className="btn-cancel" onClick={() => setShowPasswordPromptModal(false)}>
                 Cancelar
               </button>
-              <button
-                className="btn-confirm"
-                onClick={handlePasswordPromptConfirm}
-              >
+              <button className="btn-confirm" onClick={handlePasswordPromptConfirm}>
                 Entrar
               </button>
             </div>
@@ -1473,16 +1482,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
         <div className="dialog-overlay">
           <div className="dialog-box">
             <h3>Proteger Tablero</h3>
-            <p
-              style={{
-                margin: "0.5rem 0 1rem 0",
-                color: "var(--text-secondary)",
-                fontSize: "13px",
-              }}
-            >
-              Introduce una contraseña para proteger este tablero. Déjalo en
-              blanco para quitar la protección:
-            </p>
+            <p className="dialog-desc">Introduce una contraseña para proteger este tablero. Déjalo vacío para quitar la protección:</p>
             <div className="form-group">
               <label>Contraseña:</label>
               <input
@@ -1490,23 +1490,15 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 placeholder="Escribe la contraseña aquí..."
                 value={passwordSetInput}
                 onChange={(e) => setPasswordSetInput(e.target.value)}
-                onKeyDown={(e) =>
-                  e.key === "Enter" && handlePasswordSetConfirm()
-                }
+                onKeyDown={(e) => e.key === "Enter" && handlePasswordSetConfirm()}
                 autoFocus
               />
             </div>
             <div className="dialog-buttons">
-              <button
-                className="btn-cancel"
-                onClick={() => setShowPasswordSetModal(false)}
-              >
+              <button className="btn-cancel" onClick={() => setShowPasswordSetModal(false)}>
                 Cancelar
               </button>
-              <button
-                className="btn-confirm"
-                onClick={handlePasswordSetConfirm}
-              >
+              <button className="btn-confirm" onClick={handlePasswordSetConfirm}>
                 Guardar
               </button>
             </div>
@@ -1519,73 +1511,20 @@ export const Dashboard: React.FC<DashboardProps> = ({
         <div className="dialog-overlay">
           <div className="dialog-box" style={{ maxWidth: "500px" }}>
             <h3>Historial de Versiones</h3>
-            <p
-              style={{
-                margin: "0.5rem 0 1rem 0",
-                color: "var(--text-secondary)",
-                fontSize: "13px",
-              }}
-            >
-              Restaura este tablero a una versión anterior. Se guardará la
-              versión actual como un punto nuevo en el historial.
-            </p>
+            <p className="dialog-desc">Restaura este tablero a una versión anterior. Se guardará la versión actual como un punto nuevo en el historial.</p>
             <div className="versions-list">
               {boardVersions.length === 0 ? (
-                <div
-                  style={{
-                    textAlign: "center",
-                    color: "var(--text-secondary)",
-                    padding: "20px",
-                  }}
-                >
-                  No hay versiones guardadas para este tablero todavía.
-                </div>
+                <div className="no-versions-msg">No hay versiones guardadas para este tablero todavía.</div>
               ) : (
                 boardVersions.map((version, index) => (
-                  <div
-                    key={version.id}
-                    className="version-item"
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      padding: "10px 15px",
-                      backgroundColor: "var(--bg-secondary)",
-                      border: "1px solid var(--border-color)",
-                      borderRadius: "8px",
-                      marginBottom: "10px",
-                    }}
-                  >
+                  <div key={version.id} className="version-item">
                     <div>
-                      <div
-                        style={{
-                          fontSize: "14px",
-                          fontWeight: "600",
-                          color: "var(--text-primary)",
-                        }}
-                      >
-                        Versión {boardVersions.length - index}
-                      </div>
-                      <div
-                        style={{
-                          fontSize: "11px",
-                          color: "var(--text-secondary)",
-                          marginTop: "2px",
-                        }}
-                      >
-                        {new Date(version.timestamp).toLocaleString()} (
-                        {version.elementsCount} elementos)
+                      <div className="version-name">Versión {boardVersions.length - index}</div>
+                      <div className="version-time">
+                        {new Date(version.timestamp).toLocaleString()} ({version.elementsCount} elementos)
                       </div>
                     </div>
-                    <button
-                      className="btn-confirm"
-                      style={{
-                        padding: "4px 10px",
-                        fontSize: "12px",
-                        width: "auto",
-                      }}
-                      onClick={() => handleRestoreVersion(version.id)}
-                    >
+                    <button className="btn-confirm version-restore-btn" onClick={() => handleRestoreVersion(version.id)}>
                       Restaurar
                     </button>
                   </div>
@@ -1593,10 +1532,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
               )}
             </div>
             <div className="dialog-buttons">
-              <button
-                className="btn-cancel"
-                onClick={() => setShowHistoryModal(false)}
-              >
+              <button className="btn-cancel" onClick={() => setShowHistoryModal(false)}>
                 Cerrar
               </button>
             </div>

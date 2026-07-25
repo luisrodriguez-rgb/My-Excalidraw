@@ -26,9 +26,13 @@
         folder_id TEXT REFERENCES public.folders(id) ON DELETE SET NULL,
         password TEXT,
         is_template BOOLEAN NOT NULL DEFAULT FALSE,
+        is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
         created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
         updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
+
+    -- Asegurar que la columna is_deleted existe en caso de que la tabla ya estuviera creada
+    ALTER TABLE public.boards ADD COLUMN IF NOT EXISTS is_deleted BOOLEAN NOT NULL DEFAULT FALSE;
 
     -- Habilitar RLS para tableros
     ALTER TABLE public.boards ENABLE ROW LEVEL SECURITY;

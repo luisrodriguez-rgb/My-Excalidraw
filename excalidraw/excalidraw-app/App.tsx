@@ -625,6 +625,10 @@ const ExcalidrawWrapper = () => {
   const [, forceRefresh] = useState(false);
 
   const [comments, setComments] = useState<BoardComment[]>([]);
+  const commentsRef = useRef<BoardComment[]>([]);
+  useEffect(() => {
+    commentsRef.current = comments;
+  }, [comments]);
   const [commentModeActive, setCommentModeActive] = useState(false);
   const [activeCommentPopupId, setActiveCommentPopupId] = useState<
     string | null
@@ -1333,7 +1337,7 @@ const ExcalidrawWrapper = () => {
   // Debounced board save - only writes to DB after 1.5s of inactivity
   const debouncedSaveBoard = useRef(
     debounce(
-      (
+      async (
         boardId: string,
         boardName: string,
         els: readonly OrderedExcalidrawElement[],
@@ -1341,7 +1345,42 @@ const ExcalidrawWrapper = () => {
         fs: BinaryFiles,
       ) => {
         lastLocalSaveTimeRef.current = Date.now();
-        saveBoard(boardId, { name: boardName }, els, state, fs);
+
+        let preview = "";
+        try {
+          const visibleElements = els.filter((el) => !el.isDeleted);
+          if (visibleElements.length > 0) {
+            const canvas = await exportToCanvas({
+              elements: visibleElements,
+              appState: {
+                ...state,
+                exportBackground: true,
+                viewBackgroundColor: state.viewBackgroundColor || "#ffffff",
+              },
+              files: fs,
+              getDimensions: () => ({ width: 320, height: 200 }),
+            });
+            preview = canvas.toDataURL("image/jpeg", 0.3); // 30% quality JPEG is extremely lightweight (~3-4KB)
+          }
+        } catch (err) {
+          console.warn("Failed to generate board preview:", err);
+        }
+
+        const notesCount = els.filter((el) => el.customData?.notes).length;
+        const commentsCount = commentsRef.current.length;
+
+        saveBoard(
+          boardId,
+          {
+            name: boardName,
+            preview,
+            notesCount,
+            commentsCount,
+          },
+          els,
+          state,
+          fs,
+        );
       },
       1500,
     ),
