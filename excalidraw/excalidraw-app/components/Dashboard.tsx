@@ -398,7 +398,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
       }
     }
 
-    await saveBoard(id, { name, folderId: activeFolderId }, elements, {}, {});
+    await saveBoard(id, { name, folderId: activeFolderId || undefined }, elements, {}, {});
     onSelectBoard(id);
   };
 
