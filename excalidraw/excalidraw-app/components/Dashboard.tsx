@@ -130,6 +130,28 @@ const DocumentIcon = () => (
   </svg>
 );
 
+const KanbanIcon = () => (
+  <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+    <line x1="9" y1="3" x2="9" y2="21" />
+    <line x1="15" y1="3" x2="15" y2="21" />
+    <line x1="3" y1="9" x2="21" y2="9" />
+  </svg>
+);
+
+const RetroIcon = () => (
+  <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67" />
+  </svg>
+);
+
+const MatrixIcon = () => (
+  <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M3 3v18h18" />
+    <polyline points="18.7 8 13.6 13.1 10.8 10.4 7 14.3" />
+  </svg>
+);
+
 const ImportIcon = () => (
   <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
@@ -1157,14 +1179,15 @@ export const Dashboard: React.FC<DashboardProps> = ({
                     {/* Quick hover action bar */}
                     {!board.isDeleted && (
                       <div className="card-quick-actions-bar">
-                        <span className="action-tag" onClick={(e) => {
-                          e.stopPropagation();
-                          handleOpenBoard(board);
-                        }}><EyeIcon /> Abrir</span>
-                        <span className="action-tag" onClick={(e) => {
-                          e.stopPropagation();
-                          toggleFavorite(board.id, board.isFavorite);
-                        }}><StarIcon /> Favorito</span>
+                        <button
+                          className="btn-open-overlay"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleOpenBoard(board);
+                          }}
+                        >
+                          <EyeIcon /> Abrir
+                        </button>
                       </div>
                     )}
                   </div>
@@ -1190,7 +1213,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                         </button>
 
                         {activeCardMenuId === board.id && (
-                          <div className="board-context-dropdown-menu">
+                          <div className="board-context-dropdown-menu" onClick={(e) => e.stopPropagation()}>
                             {board.isDeleted ? (
                               <>
                                 <button
@@ -1563,7 +1586,11 @@ export const Dashboard: React.FC<DashboardProps> = ({
                     setShowTemplatesModal(false);
                   }}
                 >
-                  <span className="tmpl-icon">{tmpl.icon}</span>
+                  <span className="tmpl-icon">
+                    {tmpl.id === "kanban" && <KanbanIcon />}
+                    {tmpl.id === "retro" && <RetroIcon />}
+                    {tmpl.id === "matrix" && <MatrixIcon />}
+                  </span>
                   <h4>{tmpl.name}</h4>
                   <p>{tmpl.description}</p>
                 </div>
