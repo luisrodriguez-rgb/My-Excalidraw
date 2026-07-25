@@ -1351,7 +1351,7 @@ const ExcalidrawWrapper = () => {
           const visibleElements = els.filter((el) => !el.isDeleted);
           if (visibleElements.length > 0) {
             const canvas = await exportToCanvas({
-              elements: visibleElements,
+              elements: visibleElements as any,
               appState: {
                 ...state,
                 exportBackground: true,
