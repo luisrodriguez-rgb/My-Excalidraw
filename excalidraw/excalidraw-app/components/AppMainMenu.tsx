@@ -104,13 +104,15 @@ export const AppMainMenu: React.FC<{
         <>
           <div
             style={{
-              padding: "8px 16px",
-              fontSize: "12px",
-              color: "#666",
-              fontWeight: "600",
+              padding: "6px 14px 4px",
+              fontSize: "11.5px",
+              color: "var(--color-text-secondary, #888)",
+              fontWeight: 500,
+              letterSpacing: "0.01em",
+              userSelect: "none",
             }}
           >
-            Cuenta: {userEmail}
+            {userEmail}
           </div>
           <MainMenu.Item
             icon={LogOutIcon}
