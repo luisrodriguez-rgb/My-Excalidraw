@@ -28,6 +28,205 @@ interface DashboardProps {
   onJoinRoom: (roomUrl: string) => void;
 }
 
+// Vector SVG Icons replacing all emojis for professional workspace UI
+const HomeIcon = () => (
+  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+    <polyline points="9 22 9 12 15 12 15 22" />
+  </svg>
+);
+
+const TemplateIcon = () => (
+  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="3" y="3" width="7" height="9" rx="1" />
+    <rect x="14" y="3" width="7" height="5" rx="1" />
+    <rect x="14" y="12" width="7" height="9" rx="1" />
+    <rect x="3" y="16" width="7" height="5" rx="1" />
+  </svg>
+);
+
+const FolderIcon = () => (
+  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
+  </svg>
+);
+
+const StarIcon = () => (
+  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+  </svg>
+);
+
+const GroupIcon = () => (
+  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+    <circle cx="9" cy="7" r="4" />
+    <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+    <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+  </svg>
+);
+
+const TrashIcon = () => (
+  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="3 6 5 6 21 6" />
+    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+    <line x1="10" y1="11" x2="10" y2="17" />
+    <line x1="14" y1="11" x2="14" y2="17" />
+  </svg>
+);
+
+const SearchIcon = () => (
+  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="11" cy="11" r="8" />
+    <line x1="21" y1="21" x2="16.65" y2="16.65" />
+  </svg>
+);
+
+const HelpIcon = () => (
+  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="10" />
+    <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+    <line x1="12" y1="17" x2="12.01" y2="17" />
+  </svg>
+);
+
+const BellIcon = () => (
+  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+    <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+  </svg>
+);
+
+const SunIcon = () => (
+  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="5" />
+    <line x1="12" y1="1" x2="12" y2="3" />
+    <line x1="12" y1="21" x2="12" y2="23" />
+    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
+    <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+    <line x1="1" y1="12" x2="3" y2="12" />
+    <line x1="21" y1="12" x2="23" y2="12" />
+    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
+    <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+  </svg>
+);
+
+const MoonIcon = () => (
+  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+  </svg>
+);
+
+const SyncIcon = () => (
+  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67" />
+  </svg>
+);
+
+const DocumentIcon = () => (
+  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+    <polyline points="14 2 14 8 20 8" />
+  </svg>
+);
+
+const ImportIcon = () => (
+  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+    <polyline points="7 10 12 15 17 10" />
+    <line x1="12" y1="15" x2="12" y2="3" />
+  </svg>
+);
+
+const LockIcon = () => (
+  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+  </svg>
+);
+
+const CloudIcon = () => (
+  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z" />
+  </svg>
+);
+
+const LaptopIcon = () => (
+  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="2" y="3" width="20" height="14" rx="2" ry="2" />
+    <line x1="2" y1="20" x2="22" y2="20" />
+    <line x1="12" y1="17" x2="12" y2="20" />
+  </svg>
+);
+
+const NotesIcon = () => (
+  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+    <polyline points="14 2 14 8 20 8" />
+    <line x1="16" y1="13" x2="8" y2="13" />
+    <line x1="16" y1="17" x2="8" y2="17" />
+    <polyline points="10 9 9 9 8 9" />
+  </svg>
+);
+
+const ChatIcon = () => (
+  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+  </svg>
+);
+
+const GridIcon = () => (
+  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="3" y="3" width="7" height="7" />
+    <rect x="14" y="3" width="7" height="7" />
+    <rect x="14" y="14" width="7" height="7" />
+    <rect x="3" y="14" width="7" height="7" />
+  </svg>
+);
+
+const ListIcon = () => (
+  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="8" y1="6" x2="21" y2="6" />
+    <line x1="8" y1="12" x2="21" y2="12" />
+    <line x1="8" y1="18" x2="21" y2="18" />
+    <line x1="3" y1="6" x2="3.01" y2="6" />
+    <line x1="3" y1="12" x2="3.01" y2="12" />
+    <line x1="3" y1="18" x2="3.01" y2="18" />
+  </svg>
+);
+
+const CanvasIcon = () => (
+  <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="3" y="3" width="18" height="18" rx="2" />
+    <line x1="9" y1="3" x2="9" y2="21" />
+    <line x1="15" y1="3" x2="15" y2="21" />
+    <line x1="3" y1="9" x2="21" y2="9" />
+    <line x1="3" y1="15" x2="21" y2="15" />
+  </svg>
+);
+
+const PenIcon = () => (
+  <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M12 20h9" />
+    <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
+  </svg>
+);
+
+const EyeIcon = () => (
+  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+    <circle cx="12" cy="12" r="3" />
+  </svg>
+);
+
+const InfoIcon = () => (
+  <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="10" />
+    <line x1="12" y1="16" x2="12" y2="12" />
+    <line x1="12" y1="8" x2="12.01" y2="8" />
+  </svg>
+);
+
 export const Dashboard: React.FC<DashboardProps> = ({
   onSelectBoard,
   onJoinRoom,
@@ -500,7 +699,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
               setShowOnlyTemplates(false);
             }}
           >
-            <span className="nav-icon">🏠</span>
+            <span className="nav-icon"><HomeIcon /></span>
             <span className="nav-text">Inicio</span>
           </button>
 
@@ -511,7 +710,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
               setActiveFolderId(null);
             }}
           >
-            <span className="nav-icon">🧩</span>
+            <span className="nav-icon"><TemplateIcon /></span>
             <span className="nav-text">Plantillas</span>
           </button>
         </nav>
@@ -541,7 +740,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                   setActiveTab("recientes");
                 }}
               >
-                <span className="folder-icon">📁</span>
+                <span className="folder-icon"><FolderIcon /></span>
                 <span className="folder-name-text">{folder.name}</span>
                 <span
                   className="folder-delete-action"
@@ -572,7 +771,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 className="show-more-link"
                 onClick={() => setShowAllFolders(!showAllFolders)}
               >
-                {showAllFolders ? "Mostrar menos ∧" : "Mostrar más ∨"}
+                {showAllFolders ? "Mostrar menos" : "Mostrar más"}
               </button>
             )}
           </div>
@@ -589,7 +788,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
               setShowOnlyTemplates(false);
             }}
           >
-            <span className="nav-icon">⭐</span>
+            <span className="nav-icon"><StarIcon /></span>
             <span className="nav-text">Favoritos</span>
           </button>
 
@@ -601,7 +800,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
               setShowOnlyTemplates(false);
             }}
           >
-            <span className="nav-icon">👥</span>
+            <span className="nav-icon"><GroupIcon /></span>
             <span className="nav-text">Compartidos conmigo</span>
           </button>
 
@@ -613,7 +812,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
               setShowOnlyTemplates(false);
             }}
           >
-            <span className="nav-icon">🗑</span>
+            <span className="nav-icon"><TrashIcon /></span>
             <span className="nav-text">Papelera</span>
           </button>
         </div>
@@ -634,7 +833,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
         {/* Top Header widgets & User Profile */}
         <div className="top-widgets-bar">
           <div className="top-search-field">
-            <span className="search-field-icon">🔍</span>
+            <span className="search-field-icon"><SearchIcon /></span>
             <input
               type="text"
               placeholder="Buscar en todo el espacio..."
@@ -644,13 +843,13 @@ export const Dashboard: React.FC<DashboardProps> = ({
           </div>
 
           <div className="header-actions">
-            <button className="widget-icon-btn" title="Ayuda y atajos">❓</button>
+            <button className="widget-icon-btn" title="Ayuda y atajos"><HelpIcon /></button>
             <button className="widget-icon-btn notifications-btn" title="Notificaciones">
-              <span>🔔</span>
+              <span><BellIcon /></span>
               <span className="notification-badge">3</span>
             </button>
             <button className="widget-icon-btn" onClick={toggleTheme} title="Cambiar tema">
-              {theme === "light" ? "🌙" : "☀️"}
+              {theme === "light" ? <MoonIcon /> : <SunIcon />}
             </button>
 
             {session && (
@@ -660,7 +859,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 disabled={syncing}
                 title="Sincronizar con la nube"
               >
-                <span className={syncing ? "spin-animation" : ""}>🔄</span>
+                <span className={syncing ? "spin-animation" : ""}><SyncIcon /></span>
               </button>
             )}
 
@@ -678,7 +877,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 <div className="user-dropdown-menu">
                   {session ? (
                     <>
-                      <div className="dropdown-info">Conectado a la Nube ☁️</div>
+                      <div className="dropdown-info">Conectado a la Nube <CloudIcon /></div>
                       <button className="dropdown-item" onClick={() => supabase.auth.signOut()}>
                         Cerrar Sesión
                       </button>
@@ -716,7 +915,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                       setShowQuickAddMenu(false);
                     }}
                   >
-                    <span>📄</span> Nuevo tablero
+                    <span><DocumentIcon /></span> Nuevo tablero
                   </button>
                   <button
                     className="quick-item"
@@ -725,7 +924,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                       setShowQuickAddMenu(false);
                     }}
                   >
-                    <span>📥</span> Importar .excalidraw
+                    <span><ImportIcon /></span> Importar .excalidraw
                   </button>
                   <input
                     type="file"
@@ -741,7 +940,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                       setShowQuickAddMenu(false);
                     }}
                   >
-                    <span>📁</span> Crear carpeta
+                    <span><FolderIcon /></span> Crear carpeta
                   </button>
                   <button
                     className="quick-item"
@@ -750,7 +949,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                       setShowQuickAddMenu(false);
                     }}
                   >
-                    <span>🧩</span> Crear desde plantilla
+                    <span><TemplateIcon /></span> Crear desde plantilla
                   </button>
                   <button
                     className="quick-item"
@@ -759,7 +958,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                       setShowQuickAddMenu(false);
                     }}
                   >
-                    <span>👥</span> Unirse a sala colaborativa
+                    <span><GroupIcon /></span> Unirse a sala colaborativa
                   </button>
                 </div>
               )}
@@ -769,14 +968,14 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
         {/* Welcome Section */}
         <div className="welcome-banner-premium">
-          <h2>Buenos días, {userDisplayName} 👋</h2>
+          <h2>Buenos días, {userDisplayName}</h2>
           <p>Aquí tienes un resumen de tu espacio de trabajo.</p>
         </div>
 
         {/* Stats Grid Widget */}
         <div className="stats-dashboard-grid">
           <div className="stat-card board-count-card">
-            <div className="stat-icon">🎨</div>
+            <div className="stat-icon"><CanvasIcon /></div>
             <div className="stat-details">
               <h3>{countBoards}</h3>
               <span>Tableros</span>
@@ -784,7 +983,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
           </div>
 
           <div className="stat-card folder-count-card">
-            <div className="stat-icon">📁</div>
+            <div className="stat-icon"><FolderIcon /></div>
             <div className="stat-details">
               <h3>{countFolders}</h3>
               <span>Carpetas</span>
@@ -792,7 +991,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
           </div>
 
           <div className="stat-card notes-count-card">
-            <div className="stat-icon">📝</div>
+            <div className="stat-icon"><NotesIcon /></div>
             <div className="stat-details">
               <h3>{countNotes}</h3>
               <span>Notas</span>
@@ -800,7 +999,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
           </div>
 
           <div className="stat-card collabs-count-card">
-            <div className="stat-icon">👥</div>
+            <div className="stat-icon"><GroupIcon /></div>
             <div className="stat-details">
               <h3>{countCollabs}</h3>
               <span>Colaboradores</span>
@@ -857,7 +1056,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
         {/* Search, Sort and Grid Toggles */}
         <div className="filters-controls-row">
           <div className="search-box-input">
-            <span className="search-icon">🔍</span>
+            <span className="search-icon"><SearchIcon /></span>
             <input
               type="text"
               placeholder="Buscar tableros..."
@@ -878,7 +1077,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 <option value="">Todos los tableros</option>
                 {folders.map((f) => (
                   <option key={f.id} value={f.id}>
-                    📁 {f.name}
+                    {f.name}
                   </option>
                 ))}
               </select>
@@ -901,14 +1100,14 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 onClick={() => setViewMode("grid")}
                 title="Vista Cuadrícula"
               >
-                🎛️
+                <GridIcon />
               </button>
               <button
                 className={`toggle-btn ${viewMode === "list" ? "active" : ""}`}
                 onClick={() => setViewMode("list")}
                 title="Vista Lista"
               >
-                📝
+                <ListIcon />
               </button>
             </div>
           </div>
@@ -947,7 +1146,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                     ) : (
                       <div className="board-preview-placeholder">
                         <div className="grid-bg" />
-                        <span>✏️ Pizarra</span>
+                        <span>Pizarra</span>
                       </div>
                     )}
 
@@ -960,7 +1159,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                       }}
                       title={board.isFavorite ? "Quitar de favoritos" : "Añadir a favoritos"}
                     >
-                      ⭐
+                      <StarIcon />
                     </button>
 
                     {/* Quick hover action bar */}
@@ -969,11 +1168,11 @@ export const Dashboard: React.FC<DashboardProps> = ({
                         <span className="action-tag" onClick={(e) => {
                           e.stopPropagation();
                           handleOpenBoard(board);
-                        }}>👁️ Abrir</span>
+                        }}><EyeIcon /> Abrir</span>
                         <span className="action-tag" onClick={(e) => {
                           e.stopPropagation();
                           toggleFavorite(board.id, board.isFavorite);
-                        }}>⭐ Favorito</span>
+                        }}><StarIcon /> Favorito</span>
                       </div>
                     )}
                   </div>
@@ -982,7 +1181,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                   <div className="card-info-container">
                     <div className="title-row" onClick={() => handleOpenBoard(board)}>
                       <h4 className="board-card-title">
-                        {board.password && <span className="lock-icon">🔒</span>}
+                        {board.password && <span className="lock-icon"><LockIcon /></span>}
                         {board.name}
                       </h4>
 
@@ -1088,7 +1287,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                                     setActiveCardMenuId(null);
                                   }}
                                 >
-                                  🔑 {board.password ? "Cambiar contraseña" : "Proteger con contraseña"}
+                                  <LockIcon /> {board.password ? "Cambiar contraseña" : "Proteger con contraseña"}
                                 </button>
                                 <button
                                   className="menu-item"
@@ -1119,15 +1318,15 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
                     <div className="card-badges-row">
                       {session ? (
-                        <span className="badge-cloud">🟢 En la nube</span>
+                        <span className="badge-cloud"><CloudIcon /> En la nube</span>
                       ) : (
-                        <span className="badge-local">💾 Local</span>
+                        <span className="badge-local"><LaptopIcon /> Local</span>
                       )}
                       {boardFolder && (
-                        <span className="badge-folder">📁 {boardFolder.name}</span>
+                        <span className="badge-folder"><FolderIcon /> {boardFolder.name}</span>
                       )}
                       {board.isTemplate && (
-                        <span className="badge-template">✨ Plantilla</span>
+                        <span className="badge-template"><TemplateIcon /> Plantilla</span>
                       )}
                     </div>
 
@@ -1135,13 +1334,13 @@ export const Dashboard: React.FC<DashboardProps> = ({
                     <div className="card-metadata-counts-footer">
                       <div className="counts-list">
                         <span className="count-item" title="Notas en Markdown">
-                          📝 {board.notesCount || 0}
+                          <NotesIcon /> {board.notesCount || 0}
                         </span>
                         <span className="count-item" title="Comentarios">
-                          💬 {board.commentsCount || 0}
+                          <ChatIcon /> {board.commentsCount || 0}
                         </span>
                         <span className="count-item" title="Colaboradores">
-                          👥 {board.isCollaboration ? countCollabs - 2 : 1}
+                          <GroupIcon /> {board.isCollaboration ? countCollabs - 2 : 1}
                         </span>
                       </div>
 
@@ -1190,7 +1389,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
           </div>
         ) : (
           <div className="empty-state-premium">
-            <span className="empty-icon">🎨</span>
+            <span className="empty-icon"><CanvasIcon /></span>
             <h3>No se encontraron tableros</h3>
             <p>Comienza creando un tablero limpio o importa uno existente.</p>
             <button className="btn-primary" onClick={() => handleCreateBoard()}>
@@ -1202,7 +1401,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
         {/* 3. Bottom Educational/Marketing Banner */}
         <div className="premium-bottom-education-banner">
           <div className="left-pink-hero-section">
-            <div className="pink-icon-box">✍️</div>
+            <div className="pink-icon-box"><PenIcon /></div>
             <div className="pink-hero-content">
               <h4>Escribe, planifica, crea</h4>
               <p>Usa notas en Markdown, comenta ideas y colabora en tiempo real.</p>
@@ -1214,19 +1413,19 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
           <div className="right-details-columns">
             <div className="education-column">
-              <span className="col-icon">📝</span>
+              <span className="col-icon"><NotesIcon /></span>
               <h5>Notas en Markdown</h5>
               <p>Documenta tus ideas y especificaciones sin salir del tablero.</p>
             </div>
 
             <div className="education-column">
-              <span className="col-icon">💬</span>
+              <span className="col-icon"><ChatIcon /></span>
               <h5>Comentarios</h5>
               <p>Comunícate y da feedback directamente sobre el lienzo.</p>
             </div>
 
             <div className="education-column">
-              <span className="col-icon">👥</span>
+              <span className="col-icon"><GroupIcon /></span>
               <h5>Colaboración en tiempo real</h5>
               <p>Trabajen juntos de manera simultánea desde cualquier lugar.</p>
             </div>
@@ -1359,7 +1558,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                   setShowTemplatesModal(false);
                 }}
               >
-                <span className="tmpl-icon">📄</span>
+                <span className="tmpl-icon"><DocumentIcon /></span>
                 <h4>Lienzo Vacío</h4>
                 <p>Comienza desde cero con un lienzo limpio.</p>
               </div>
@@ -1402,7 +1601,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 <option value="">(Sin carpeta / Raíz)</option>
                 {folders.map((folder) => (
                   <option key={folder.id} value={folder.id}>
-                    📁 {folder.name}
+                    {folder.name}
                   </option>
                 ))}
               </select>
