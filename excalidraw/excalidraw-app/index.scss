@@ -159,195 +159,24 @@
 }
 
 /* ============================================================
-   CANVAS VIEW UI REDESIGN
-   Modern styling aligned with the dashboard aesthetic
+   CANVAS VIEW WORKSPACE HEADER & FLOATING CONTROLS
+   Custom styled header at the top and right-side vertical dock
    ============================================================ */
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-
-.excalidraw-app {
-  font-family: 'Inter', system-ui, sans-serif;
-}
-
-.excalidraw {
-  font-family: 'Inter', system-ui, sans-serif;
-
-  /* Toolbar pill */
-  .App-toolbar {
-    background: rgba(255, 255, 255, 0.88) !important;
-    backdrop-filter: blur(14px) !important;
-    -webkit-backdrop-filter: blur(14px) !important;
-    border: 1px solid rgba(0, 0, 0, 0.08) !important;
-    border-radius: 14px !important;
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08) !important;
-
-    .ToolIcon__icon:hover,
-    .toolbar-item:hover {
-      background: rgba(0, 0, 0, 0.06) !important;
-      border-radius: 9px !important;
-    }
-
-    .ToolIcon__icon.active,
-    .toolbar-item[aria-pressed="true"] {
-      background: var(--color-primary, #e03131) !important;
-      color: #fff !important;
-      border-radius: 9px !important;
-    }
-  }
-
-  /* Main menu dropdown */
-  .dropdown-menu-container,
-  .dropdown-menu {
-    background: rgba(255, 255, 255, 0.97) !important;
-    backdrop-filter: blur(18px) !important;
-    -webkit-backdrop-filter: blur(18px) !important;
-    border: 1px solid rgba(0, 0, 0, 0.08) !important;
-    border-radius: 16px !important;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12) !important;
-    padding: 6px !important;
-
-    .dropdown-menu-item {
-      border-radius: 10px !important;
-      font-weight: 500 !important;
-      transition: background 0.12s ease !important;
-
-      &:hover {
-        background: rgba(0, 0, 0, 0.05) !important;
-      }
-
-      &.highlighted {
-        color: var(--color-primary, #e03131) !important;
-        font-weight: 600 !important;
-
-        &:hover {
-          background: rgba(224, 49, 49, 0.08) !important;
-        }
-      }
-    }
-
-    .dropdown-menu-item-separator {
-      background: rgba(0, 0, 0, 0.07) !important;
-      margin: 5px 6px !important;
-    }
-  }
-
-  /* Share / Collab button */
-  .collab-button,
-  [data-testid="collab-button"],
-  .live-collaboration-trigger {
-    background: var(--color-primary, #e03131) !important;
-    color: #fff !important;
-    border: none !important;
-    border-radius: 10px !important;
-    font-weight: 600 !important;
-    font-size: 13px !important;
-    padding: 0 16px !important;
-    height: 36px !important;
-    box-shadow: 0 2px 8px rgba(224, 49, 49, 0.3) !important;
-    transition: background 0.14s ease, box-shadow 0.14s ease, transform 0.1s ease !important;
-
-    &:hover {
-      background: #c92a2a !important;
-      box-shadow: 0 4px 14px rgba(224, 49, 49, 0.4) !important;
-      transform: translateY(-1px) !important;
-    }
-
-    &:active {
-      transform: translateY(0) !important;
-    }
-  }
-
-  /* Right properties Island panel */
-  .layer-ui__wrapper__top-right .Island {
-    background: rgba(255, 255, 255, 0.92) !important;
-    backdrop-filter: blur(14px) !important;
-    border: 1px solid rgba(0, 0, 0, 0.07) !important;
-    border-radius: 14px !important;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.09) !important;
-  }
-
-  /* Color swatches */
-  .color-picker-swatch {
-    border-radius: 7px !important;
-    transition: transform 0.12s ease, box-shadow 0.12s ease !important;
-
-    &:hover {
-      transform: scale(1.15) !important;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2) !important;
-    }
-  }
-
-  /* Opacity slider */
-  input[type="range"] {
-    accent-color: var(--color-primary, #e03131);
-  }
-
-  /* Dark mode */
-  &.theme--dark {
-    .App-toolbar {
-      background: rgba(28, 28, 30, 0.9) !important;
-      border-color: rgba(255, 255, 255, 0.1) !important;
-      box-shadow: 0 2px 16px rgba(0, 0, 0, 0.4) !important;
-
-      .ToolIcon__icon:hover,
-      .toolbar-item:hover {
-        background: rgba(255, 255, 255, 0.08) !important;
-      }
-    }
-
-    .dropdown-menu-container,
-    .dropdown-menu {
-      background: rgba(28, 28, 30, 0.97) !important;
-      border-color: rgba(255, 255, 255, 0.1) !important;
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5) !important;
-
-      .dropdown-menu-item {
-        color: #e5e5e7 !important;
-
-        &:hover {
-          background: rgba(255, 255, 255, 0.07) !important;
-        }
-
-        &.highlighted:hover {
-          background: rgba(224, 49, 49, 0.15) !important;
-        }
-      }
-
-      .dropdown-menu-item-separator {
-        background: rgba(255, 255, 255, 0.1) !important;
-      }
-    }
-
-    .layer-ui__wrapper__top-right .Island {
-      background: rgba(28, 28, 30, 0.93) !important;
-      border-color: rgba(255, 255, 255, 0.08) !important;
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.45) !important;
-    }
-
-    input[type="range"] {
-      accent-color: #ff6b6b;
-    }
-  }
-}
 
 /* Shift Excalidraw UI overlays down to accommodate the custom top header bar */
 .excalidraw .layer-ui__wrapper {
   padding-top: 64px !important;
 }
 
-/* Ensure Excalidraw menus/sidebars start below the top header bar */
+/* Ensure Excalidraw sidebars start below the top header bar */
 .excalidraw {
   .sidebar,
   .main-menu,
   .notes-sidebar {
     top: 64px !important;
     height: calc(100vh - 64px) !important;
-  }
-
-  /* Hide default top-left menu trigger */
-  .menu-trigger,
-  [data-testid="main-menu-trigger"] {
-    display: none !important;
   }
 
   /* Hide default top-right controls and UserList */
@@ -359,6 +188,7 @@
 
 /* ---------- Custom Workspace Top Header Bar ---------- */
 .workspace-header {
+  font-family: 'Inter', system-ui, sans-serif !important;
   position: fixed;
   top: 0;
   left: 0;
@@ -561,44 +391,6 @@
       transform: translateY(0);
     }
   }
-
-  &__menu-container {
-    position: relative;
-  }
-
-  &__dropdown {
-    position: absolute;
-    top: 44px;
-    right: 0;
-    width: 180px;
-    background: #ffffff;
-    border: 1px solid rgba(0, 0, 0, 0.08);
-    border-radius: 10px;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-    padding: 6px;
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    z-index: 100000;
-
-    button {
-      background: transparent;
-      border: none;
-      text-align: left;
-      padding: 8px 12px;
-      font-size: 13px;
-      font-weight: 500;
-      color: #334155;
-      border-radius: 6px;
-      cursor: pointer;
-      transition: all 0.15s ease;
-
-      &:hover {
-        background: #f1f5f9;
-        color: #0f172a;
-      }
-    }
-  }
 }
 
 /* Grouped Right Floating Buttons Docking & Positioning */
@@ -627,6 +419,11 @@
     bottom: 80px !important;
     right: 80px !important;
     z-index: 99999 !important;
+
+    canvas {
+      width: 130px !important;
+      height: 87px !important;
+    }
   }
 }
 
@@ -706,20 +503,6 @@
       }
       .profile-email {
         color: #94a3b8;
-      }
-    }
-  }
-
-  .workspace-header__dropdown {
-    background: #1c1c1e;
-    border-color: rgba(255, 255, 255, 0.1);
-
-    button {
-      color: #cbd5e1;
-
-      &:hover {
-        background: #2c2c2e;
-        color: #ffffff;
       }
     }
   }
