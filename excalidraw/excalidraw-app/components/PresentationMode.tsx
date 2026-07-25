@@ -162,14 +162,25 @@ export const PresentationMode: React.FC<PresentationModeProps> = ({
     return (
       <div className="presentation-no-slides-overlay">
         <div className="presentation-no-slides-card">
-          <div className="no-slides-icon">🖼️</div>
+          <div className="no-slides-icon">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ color: "#6366f1", marginBottom: "8px" }}>
+              <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+              <line x1="8" y1="21" x2="16" y2="21"></line>
+              <line x1="12" y1="17" x2="12" y2="21"></line>
+            </svg>
+          </div>
           <h3>Modo Presentación</h3>
           <p>
             No se encontraron <strong>Marcos (Frames)</strong> ni secciones en
             este lienzo.
           </p>
           <p className="no-slides-tip">
-            💡 <em>Consejo:</em> Selecciona la herramienta <strong>Frame (Marco)</strong> en la barra de herramientas para agrupar tu contenido en diapositivas.
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: "#eab308", marginRight: "6px", verticalAlign: "middle" }}>
+              <path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .5 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"></path>
+              <line x1="9" y1="18" x2="15" y2="18"></line>
+              <line x1="10" y1="22" x2="14" y2="22"></line>
+            </svg>
+            <em>Consejo:</em> Selecciona la herramienta <strong>Frame (Marco)</strong> en la barra de herramientas para agrupar tu contenido en diapositivas.
           </p>
           <button className="btn-close-presentation" onClick={onClose}>
             Entendido
@@ -186,10 +197,10 @@ export const PresentationMode: React.FC<PresentationModeProps> = ({
     if (excalidrawAPI) {
       const state = excalidrawAPI.getAppState();
       return {
-        scrollX: state.scrollX,
-        scrollY: state.scrollY,
-        zoom: state.zoom.value,
-        theme: state.theme,
+        scrollX: state?.scrollX ?? 0,
+        scrollY: state?.scrollY ?? 0,
+        zoom: state?.zoom?.value ?? state?.zoom ?? 1,
+        theme: state?.theme ?? "light",
       };
     }
     return { scrollX: 0, scrollY: 0, zoom: 1, theme: "light" };
@@ -198,11 +209,12 @@ export const PresentationMode: React.FC<PresentationModeProps> = ({
   const updateViewport = useCallback(() => {
     if (!excalidrawAPI) return;
     const state = excalidrawAPI.getAppState();
+    if (!state) return;
     setViewport({
-      scrollX: state.scrollX,
-      scrollY: state.scrollY,
-      zoom: state.zoom.value,
-      theme: state.theme,
+      scrollX: state.scrollX ?? 0,
+      scrollY: state.scrollY ?? 0,
+      zoom: state.zoom?.value ?? state.zoom ?? 1,
+      theme: state.theme ?? "light",
     });
   }, [excalidrawAPI]);
 
@@ -216,14 +228,25 @@ export const PresentationMode: React.FC<PresentationModeProps> = ({
     return (
       <div className="presentation-no-slides-overlay">
         <div className="presentation-no-slides-card">
-          <div className="no-slides-icon">🖼️</div>
+          <div className="no-slides-icon">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ color: "#6366f1", marginBottom: "8px" }}>
+              <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+              <line x1="8" y1="21" x2="16" y2="21"></line>
+              <line x1="12" y1="17" x2="12" y2="21"></line>
+            </svg>
+          </div>
           <h3>Modo Presentación</h3>
           <p>
             No se encontraron <strong>Marcos (Frames)</strong> ni secciones en
             este lienzo o la diapositiva seleccionada no es válida.
           </p>
           <p className="no-slides-tip">
-            💡 <em>Consejo:</em> Selecciona la herramienta <strong>Frame (Marco)</strong> en la barra de herramientas para agrupar tu contenido en diapositivas.
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: "#eab308", marginRight: "6px", verticalAlign: "middle" }}>
+              <path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .5 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"></path>
+              <line x1="9" y1="18" x2="15" y2="18"></line>
+              <line x1="10" y1="22" x2="14" y2="22"></line>
+            </svg>
+            <em>Consejo:</em> Selecciona la herramienta <strong>Frame (Marco)</strong> en la barra de herramientas para agrupar tu contenido en diapositivas.
           </p>
           <button className="btn-close-presentation" onClick={onClose}>
             Entendido
@@ -246,7 +269,6 @@ export const PresentationMode: React.FC<PresentationModeProps> = ({
   const maskColor = viewport.theme === "dark" ? "#121212" : "#ffffff";
 
   return (
-
     <>
       {/* Dimmed cutout overlay to hide everything outside the active frame */}
       <div
@@ -278,53 +300,80 @@ export const PresentationMode: React.FC<PresentationModeProps> = ({
       </div>
 
       <div className="presentation-mode-controls">
-      <div className="presentation-bar">
-        <button
-          className="presentation-btn"
-          onClick={handlePrev}
-          disabled={currentIndex === 0}
-          title="Diapositiva anterior (Flecha Izquierda)"
-        >
-          ◀ Anterior
-        </button>
+        <div className="presentation-bar">
+          <button
+            className="presentation-btn"
+            onClick={handlePrev}
+            disabled={currentIndex === 0}
+            title="Diapositiva anterior (Flecha Izquierda)"
+            style={{ display: "flex", alignItems: "center" }}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: "6px" }}>
+              <polyline points="15 18 9 12 15 6"></polyline>
+            </svg>
+            Anterior
+          </button>
 
-        <div className="presentation-info">
-          <span className="slide-counter">
-            {currentIndex + 1} / {slides.length}
-          </span>
-          <span className="slide-name" title={slideTitle}>
-            {slideTitle}
-          </span>
+          <div className="presentation-info">
+            <span className="slide-counter">
+              {currentIndex + 1} / {slides.length}
+            </span>
+            <span className="slide-name" title={slideTitle}>
+              {slideTitle}
+            </span>
+          </div>
+
+          <button
+            className="presentation-btn"
+            onClick={handleNext}
+            disabled={currentIndex === slides.length - 1}
+            title="Siguiente diapositiva (Flecha Derecha / Espacio)"
+            style={{ display: "flex", alignItems: "center" }}
+          >
+            Siguiente
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginLeft: "6px" }}>
+              <polyline points="9 18 15 12 9 6"></polyline>
+            </svg>
+          </button>
+
+          <div className="presentation-divider" />
+
+          <button
+            className="presentation-btn presentation-btn--icon"
+            onClick={toggleFullscreen}
+            title={isFullscreen ? "Salir de pantalla completa" : "Pantalla completa"}
+          >
+            {isFullscreen ? (
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="4 14 10 14 10 20"></polyline>
+                <polyline points="20 10 14 10 14 4"></polyline>
+                <line x1="14" y1="10" x2="21" y2="3"></line>
+                <line x1="10" y1="14" x2="3" y2="21"></line>
+              </svg>
+            ) : (
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="15 3 21 3 21 9"></polyline>
+                <polyline points="9 21 3 21 3 15"></polyline>
+                <line x1="21" y1="3" x2="14" y2="10"></line>
+                <line x1="3" y1="21" x2="10" y2="14"></line>
+              </svg>
+            )}
+          </button>
+
+          <button
+            className="presentation-btn presentation-btn--exit"
+            onClick={onClose}
+            title="Salir de la presentación (Escape)"
+            style={{ display: "flex", alignItems: "center" }}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: "6px" }}>
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+            Salir
+          </button>
         </div>
-
-        <button
-          className="presentation-btn"
-          onClick={handleNext}
-          disabled={currentIndex === slides.length - 1}
-          title="Siguiente diapositiva (Flecha Derecha / Espacio)"
-        >
-          Siguiente ▶
-        </button>
-
-        <div className="presentation-divider" />
-
-        <button
-          className="presentation-btn presentation-btn--icon"
-          onClick={toggleFullscreen}
-          title={isFullscreen ? "Salir de pantalla completa" : "Pantalla completa"}
-        >
-          {isFullscreen ? "↙ ↗" : "⛶"}
-        </button>
-
-        <button
-          className="presentation-btn presentation-btn--exit"
-          onClick={onClose}
-          title="Salir de la presentación (Escape)"
-        >
-          ✕ Salir
-        </button>
       </div>
-    </div>
     </>
   );
 };

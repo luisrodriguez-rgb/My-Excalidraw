@@ -481,7 +481,10 @@ const WorkspaceHeader: React.FC<{
         </div>
 
         <div className="workspace-header__status">
-          <span className="cloud-icon">☁️</span>
+          <svg className="cloud-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: "6px", display: "inline-block", verticalAlign: "middle" }}>
+            <path d="M17.5 19A3.5 3.5 0 0 0 21 15.5c0-2.79-2.54-4.5-5-4.5-.42 0-.83.07-1.22.2A6.5 6.5 0 0 0 2.5 12.5C2.5 16.09 5.41 19 9 19H17.5z"></path>
+            <polyline points="9 13 11 15 15 11"></polyline>
+          </svg>
           <span className="status-text">Guardado en la nube</span>
         </div>
       </div>
@@ -2519,15 +2522,21 @@ const ExcalidrawWrapper = () => {
               backgroundColor: "#6366f1",
               color: "white",
               border: "none",
-              padding: "4px 10px",
+              padding: "6px 12px",
               borderRadius: "12px",
               fontSize: "11px",
               fontWeight: "600",
               cursor: "pointer",
               transition: "all 0.15s ease",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "4px"
             }}
           >
-            ☁️ Guardar en la Nube
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M17.5 19A3.5 3.5 0 0 0 21 15.5c0-2.79-2.54-4.5-5-4.5-.42 0-.83.07-1.22.2A6.5 6.5 0 0 0 2.5 12.5C2.5 16.09 5.41 19 9 19H17.5z"></path>
+            </svg>
+            Guardar en la Nube
           </button>
         </div>
       )}

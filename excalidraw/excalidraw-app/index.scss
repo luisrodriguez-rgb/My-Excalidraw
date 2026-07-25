@@ -198,8 +198,21 @@
     height: calc(100vh - 64px) !important;
   }
 
-  /* Hide the native top-right collab trigger and user list — replaced by our WorkspaceHeader */
-  .excalidraw-ui-top-right,
+  /* Position top-right UI below the header and hide only the collaboration trigger */
+  .excalidraw-ui-top-right {
+    position: fixed !important;
+    top: 74px !important;
+    right: 12px !important;
+    z-index: 1000 !important;
+    display: flex !important;
+
+    .collab-button,
+    [data-testid="collab-button"],
+    .live-collaboration-trigger {
+      display: none !important;
+    }
+  }
+
   .UserList__wrapper {
     display: none !important;
   }
