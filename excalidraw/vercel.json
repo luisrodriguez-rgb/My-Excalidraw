@@ -1,4 +1,5 @@
 {
+  "outputDirectory": "excalidraw-app/build",
   "headers": [
     {
       "source": "/(.*)",
