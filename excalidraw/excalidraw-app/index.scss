@@ -165,13 +165,32 @@
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
-/* Shift Excalidraw UI overlays down to accommodate the custom top header bar */
+/* Push the entire Excalidraw UI layer down so nothing sits behind the custom header */
 .excalidraw .layer-ui__wrapper {
   padding-top: 64px !important;
 }
 
-/* Ensure Excalidraw sidebars start below the top header bar */
+/* Ensure the native hamburger (☰) and top-center toolbar are always visible below the header */
 .excalidraw {
+  /* Hamburger menu trigger — push it below the header */
+  .menu-trigger,
+  [data-testid="main-menu-trigger"] {
+    position: fixed !important;
+    top: 74px !important;
+    left: 12px !important;
+    z-index: 1000 !important;
+  }
+
+  /* Top-center toolbar — push it below the header */
+  .App-toolbar-container {
+    position: fixed !important;
+    top: 72px !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    z-index: 1000 !important;
+  }
+
+  /* Sidebars and main menu open below the header */
   .sidebar,
   .main-menu,
   .notes-sidebar {
@@ -179,7 +198,7 @@
     height: calc(100vh - 64px) !important;
   }
 
-  /* Hide default top-right controls and UserList */
+  /* Hide the native top-right collab trigger and user list — replaced by our WorkspaceHeader */
   .excalidraw-ui-top-right,
   .UserList__wrapper {
     display: none !important;
