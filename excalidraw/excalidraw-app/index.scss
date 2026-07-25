@@ -172,13 +172,9 @@
 
 /* Ensure the native hamburger (☰) and top-center toolbar are always visible below the header */
 .excalidraw {
-  /* Hamburger menu trigger — push it below the header */
-  .menu-trigger,
-  [data-testid="main-menu-trigger"] {
-    position: fixed !important;
+  /* Hamburger menu container — push it below the header */
+  .excalidraw-ui-top-left {
     top: 74px !important;
-    left: 12px !important;
-    z-index: 1000 !important;
   }
 
   /* Top-center toolbar — push it below the header */

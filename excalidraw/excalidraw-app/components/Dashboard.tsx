@@ -398,7 +398,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
       }
     }
 
-    await saveBoard(id, { name }, elements, {}, {});
+    await saveBoard(id, { name, folderId: activeFolderId }, elements, {}, {});
     onSelectBoard(id);
   };
 
@@ -916,8 +916,11 @@ export const Dashboard: React.FC<DashboardProps> = ({
               <button
                 className="btn-create-dropdown-trigger"
                 onClick={() => setShowQuickAddMenu(!showQuickAddMenu)}
+                title="Más opciones de creación"
               >
-                +
+                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="6 9 12 15 18 9" />
+                </svg>
               </button>
 
               {showQuickAddMenu && (
@@ -1195,6 +1198,18 @@ export const Dashboard: React.FC<DashboardProps> = ({
                   {/* Card Body Info */}
                   <div className="card-info-container">
                     <div className="title-row" onClick={() => handleOpenBoard(board)}>
+                      {viewMode === "list" && (
+                        <button
+                          className={`list-star-btn ${board.isFavorite ? "favorite" : ""}`}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleFavorite(board.id, board.isFavorite);
+                          }}
+                          title={board.isFavorite ? "Quitar de favoritos" : "Añadir a favoritos"}
+                        >
+                          <StarIcon />
+                        </button>
+                      )}
                       <h4 className="board-card-title">
                         {board.password && <span className="lock-icon"><LockIcon /></span>}
                         {board.name}

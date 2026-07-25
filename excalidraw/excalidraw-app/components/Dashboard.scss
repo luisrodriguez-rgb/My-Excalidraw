@@ -750,8 +750,11 @@
         gap: 12px;
 
         .filter-dropdown-select {
+          position: relative;
+          display: inline-block;
+
           select {
-            padding: 8px 12px;
+            padding: 8px 32px 8px 12px;
             background-color: var(--bg-card);
             border: 1px solid var(--border-color);
             border-radius: 6px;
@@ -759,10 +762,27 @@
             font-size: 12.5px;
             outline: none;
             cursor: pointer;
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            min-width: 150px;
+            transition: all 0.15s ease;
 
             &:hover {
               background-color: var(--bg-secondary);
+              border-color: var(--accent-color);
             }
+          }
+
+          &::after {
+            content: "↕";
+            font-size: 10px;
+            color: var(--text-secondary);
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            pointer-events: none;
           }
         }
 
@@ -891,6 +911,7 @@
             opacity: 0;
             transition: all 0.15s ease;
             box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+            z-index: 10 !important;
 
             &:hover {
               transform: scale(1.1);
@@ -919,6 +940,7 @@
             opacity: 0;
             transition: opacity 0.2s ease;
             pointer-events: none;
+            z-index: 1;
 
             .btn-open-overlay {
               background-color: #ffffff;
@@ -1553,4 +1575,150 @@
   .premium-bottom-education-banner {
     background-color: #ffffff !important;
   }
+}
+
+.list-star-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+  margin-right: 6px;
+
+  &:hover {
+    color: #f59e0b;
+    transform: scale(1.1);
+  }
+
+  &.favorite {
+    color: #f59e0b;
+  }
+}
+
+// Dialog overlay and modal box styles
+.dialog-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(15, 23, 42, 0.4);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100000 !important;
+  animation: fadeInOverlay 0.2s ease-out;
+}
+
+.dialog-box {
+  background-color: var(--bg-card, #ffffff);
+  color: var(--text-primary, #0f172a);
+  border: 1px solid var(--border-color, #e2e8f0);
+  border-radius: 16px;
+  padding: 24px;
+  width: 90%;
+  max-width: 440px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+  animation: scaleInDialog 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  text-align: left;
+  box-sizing: border-box;
+
+  h3 {
+    margin: 0 0 12px 0;
+    font-size: 18px;
+    font-weight: 700;
+  }
+
+  .dialog-desc {
+    font-size: 13.5px;
+    color: var(--text-secondary, #64748b);
+    line-height: 1.5;
+    margin: 0 0 20px 0;
+  }
+
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 20px;
+
+    label {
+      font-size: 12.5px;
+      font-weight: 600;
+      color: var(--text-primary, #0f172a);
+    }
+
+    select, input[type="text"], input[type="password"] {
+      padding: 10px 12px;
+      background-color: var(--bg-secondary, #f8fafc);
+      border: 1px solid var(--border-color, #e2e8f0);
+      border-radius: 8px;
+      color: var(--text-primary, #0f172a);
+      font-size: 13.5px;
+      outline: none;
+      width: 100%;
+      box-sizing: border-box;
+
+      &:focus {
+        border-color: var(--accent-color, #6366f1);
+      }
+    }
+  }
+
+  .dialog-buttons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 24px;
+
+    button {
+      padding: 10px 18px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: all 0.15s ease;
+    }
+
+    .btn-cancel {
+      background-color: var(--bg-secondary, #f1f5f9);
+      color: var(--text-secondary, #475569);
+
+      &:hover {
+        background-color: #e2e8f0;
+      }
+    }
+
+    .btn-confirm {
+      background-color: var(--accent-color, #6366f1);
+      color: white;
+
+      &:hover {
+        background-color: #4f46e5;
+      }
+
+      &.danger {
+        background-color: var(--danger-color, #ef4444);
+        &:hover {
+          background-color: #dc2626;
+        }
+      }
+    }
+  }
+}
+
+@keyframes fadeInOverlay {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes scaleInDialog {
+  from { transform: scale(0.95); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
 }
