@@ -374,6 +374,37 @@ export const Dashboard: React.FC<DashboardProps> = ({
     return () => window.removeEventListener("mousedown", handleOutsideClick);
   }, []);
 
+  // One-time storage optimization migration for existing boards
+  useEffect(() => {
+    const runMigration = async () => {
+      const isOptimized = localStorage.getItem("my-excalidraw-optimized-v1");
+      if (isOptimized === "true") return;
+
+      try {
+        const list = await getBoardsMetadata();
+        for (const meta of list) {
+          const board = await getBoard(meta.id);
+          if (board) {
+            // Re-saving the board automatically triggers compressBinaryFiles and optimizeElements!
+            await saveBoard(
+              board.id,
+              { name: board.name },
+              board.elements,
+              board.appState,
+              board.files,
+            );
+          }
+        }
+        localStorage.setItem("my-excalidraw-optimized-v1", "true");
+        loadBoards();
+      } catch (err) {
+        console.warn("Failed to run one-time storage optimization migration:", err);
+      }
+    };
+
+    runMigration();
+  }, []);
+
   // Supabase Realtime: auto-refresh board list when any board changes remotely
   useEffect(() => {
     const channel = supabase
