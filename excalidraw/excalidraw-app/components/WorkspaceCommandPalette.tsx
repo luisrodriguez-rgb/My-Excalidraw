@@ -7,8 +7,8 @@ export interface WorkspaceCommandPaletteProps {
   onSelectBoard: (boardId: string) => void;
   onNavigateTab: (tab: "recientes" | "favoritos" | "compartidos" | "papelera" | "plantillas") => void;
   onCreateBoard: (templateId: string | null) => void;
-  theme: "light" | "dark";
-  setTheme: (theme: "light" | "dark") => void;
+  theme: "light" | "dark" | "system";
+  setTheme: (theme: any) => void;
   onPresent?: () => void;
   onExportPNG?: () => void;
   onExportSVG?: () => void;
