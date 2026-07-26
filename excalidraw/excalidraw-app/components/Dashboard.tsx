@@ -260,7 +260,10 @@ export const Dashboard: React.FC<DashboardProps> = ({
   });
 
   // Navigation and Tab States
-  const [activeTab, setActiveTab] = useState<"recientes" | "favoritos" | "compartidos" | "papelera" | "plantillas">("recientes");
+  const [activeTab, setActiveTab] = useState<"recientes" | "favoritos" | "compartidos" | "papelera" | "plantillas" >(() => {
+    const saved = localStorage.getItem("my-excalidraw-active-tab");
+    return (saved as any) || "recientes";
+  });
   const [activeFolderId, setActiveFolderId] = useState<string | null>(null);
   const [showOnlyTemplates, setShowOnlyTemplates] = useState(false);
   const [sortOption, setSortOption] = useState<"updated" | "created" | "name">("updated");
@@ -365,6 +368,29 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
     return () => subscription.unsubscribe();
   }, [handleTriggerSync]);
+
+  // Listen for navigation and board creation events from the Command Palette
+  useEffect(() => {
+    const handleNavigate = (e: Event) => {
+      const tab = (e as CustomEvent).detail;
+      if (tab) {
+        setActiveTab(tab);
+      }
+    };
+
+    const handleCreate = (e: Event) => {
+      const templateId = (e as CustomEvent).detail;
+      handleCreateBoard(templateId);
+    };
+
+    window.addEventListener("dashboard-navigate-tab", handleNavigate);
+    window.addEventListener("dashboard-create-board", handleCreate);
+
+    return () => {
+      window.removeEventListener("dashboard-navigate-tab", handleNavigate);
+      window.removeEventListener("dashboard-create-board", handleCreate);
+    };
+  }, [boards, activeFolderId]);
 
   // Click outside menus to close them
   useEffect(() => {

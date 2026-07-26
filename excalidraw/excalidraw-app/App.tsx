@@ -161,7 +161,10 @@ import {
   getBoardComments,
   saveBoardComments,
   syncBoardsWithSupabase,
+  getBoardsMetadata,
 } from "./data/boardsDb";
+import { CommandPalette } from "./components/CommandPalette";
+import { TEMPLATES } from "./data/templates";
 
 import type { BoardComment } from "./data/boardsDb";
 
@@ -568,6 +571,19 @@ const ExcalidrawWrapper = () => {
     return null;
   });
   const [activeBoardName, setActiveBoardName] = useState("");
+  const [boardsList, setBoardsList] = useState<any[]>([]);
+  const loadBoardsList = useCallback(async () => {
+    try {
+      const list = await getBoardsMetadata();
+      setBoardsList(list || []);
+    } catch (e) {
+      console.warn("Failed to load boards metadata:", e);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadBoardsList();
+  }, [activeBoardId, loadBoardsList]);
   const presenceChannelRef = useRef<any>(null);
   const broadcastChannelRef = useRef<any>(null);
   const lastUsernameRef = useRef<string>("Usuario");
@@ -2047,24 +2063,60 @@ const ExcalidrawWrapper = () => {
 
   if (activeBoardId === null) {
     return (
-      <Dashboard
-        onSelectBoard={async (id) => {
-          const board = await getBoard(id);
-          setActiveBoardName(board?.name || "Workspace");
-          setActiveBoardId(id);
-        }}
-        onJoinRoom={(roomUrl) => {
-          let hash = roomUrl;
-          if (roomUrl.includes("#")) {
-            hash = roomUrl.substring(roomUrl.indexOf("#"));
-          }
-          window.location.hash = hash;
-          setActiveBoardName("Sala Colaborativa");
-          setActiveBoardId("collab_room");
-        }}
-      />
+      <>
+        <Dashboard
+          onSelectBoard={async (id) => {
+            const board = await getBoard(id);
+            setActiveBoardName(board?.name || "Workspace");
+            setActiveBoardId(id);
+          }}
+          onJoinRoom={(roomUrl) => {
+            let hash = roomUrl;
+            if (roomUrl.includes("#")) {
+              hash = roomUrl.substring(roomUrl.indexOf("#"));
+            }
+            window.location.hash = hash;
+            setActiveBoardName("Sala Colaborativa");
+            setActiveBoardId("collab_room");
+          }}
+        />
+        <CommandPalette
+          activeBoardId={null}
+          boards={boardsList}
+          onSelectBoard={async (id) => {
+            const board = await getBoard(id);
+            setActiveBoardName(board?.name || "Workspace");
+            setActiveBoardId(id);
+          }}
+          onNavigateTab={(tab) => {
+            localStorage.setItem("my-excalidraw-active-tab", tab);
+            window.dispatchEvent(new CustomEvent("dashboard-navigate-tab", { detail: tab }));
+          }}
+          onCreateBoard={(templateId) => {
+            window.dispatchEvent(new CustomEvent("dashboard-create-board", { detail: templateId }));
+          }}
+          theme={appTheme}
+          setTheme={setAppTheme}
+        />
+      </>
     );
   }
+
+  const handleCreateBoardFromPalette = async (templateId: string | null) => {
+    const id = `board_${crypto.randomUUID().replace(/-/g, "").substring(0, 12)}`;
+    let name = "Nueva Pizarra";
+    let elements: any[] = [];
+    if (templateId) {
+      const template = TEMPLATES.find((t) => t.id === templateId);
+      if (template) {
+        name = template.name;
+        elements = template.getElements();
+      }
+    }
+    await saveBoard(id, { name }, elements, {}, {});
+    setActiveBoardName(name);
+    setActiveBoardId(id);
+  };
 
   return (
     <div
@@ -3256,7 +3308,34 @@ const ExcalidrawWrapper = () => {
             )}
           </div>
         </div>
-      )}
+      <CommandPalette
+        activeBoardId={activeBoardId}
+        boards={boardsList}
+        onSelectBoard={async (id) => {
+          const board = await getBoard(id);
+          setActiveBoardName(board?.name || "Workspace");
+          setActiveBoardId(id);
+        }}
+        onNavigateTab={(tab) => {
+          localStorage.setItem("my-excalidraw-active-tab", tab);
+          setActiveBoardId(null);
+        }}
+        onCreateBoard={handleCreateBoardFromPalette}
+        theme={appTheme}
+        setTheme={setAppTheme}
+        onPresent={() => {
+          setIsPresenting(true);
+        }}
+        onExportPNG={() => {
+          const event = new KeyboardEvent("keydown", {
+            key: "s",
+            ctrlKey: true,
+            metaKey: !navigator.userAgent.includes("Windows"),
+            shiftKey: true,
+          });
+          window.dispatchEvent(event);
+        }}
+      />
     </div>
   );
 };
