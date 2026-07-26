@@ -455,7 +455,7 @@ export const TEMPLATES: Template[] = [
 
         const blockText = content?.[b.key] || "";
         if (blockText) {
-          const wrapped = blockText.split("\n").map(line => wrapText(line, 20)).join("\n");
+          const wrapped = blockText.split("\n").map((line: string) => wrapText(line, 20)).join("\n");
           elements.push(
             createText(b.x + 10, b.y + 55, wrapped, 12, {
               width: b.w - 20,
