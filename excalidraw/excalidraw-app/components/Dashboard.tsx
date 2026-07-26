@@ -1569,7 +1569,8 @@ User request: "${aiPrompt}"`;
                             },
                             body: JSON.stringify({
                               model: "google/gemini-2.5-flash",
-                              messages: [{ role: "user", content: systemPrompt }]
+                              messages: [{ role: "user", content: systemPrompt }],
+                              max_tokens: 4000
                             })
                           });
                         } else {
