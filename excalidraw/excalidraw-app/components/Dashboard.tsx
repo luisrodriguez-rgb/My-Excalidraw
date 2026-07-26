@@ -255,11 +255,17 @@ export const Dashboard: React.FC<DashboardProps> = ({
   });
 
   // Navigation and Tab States
-  const [activeTab, setActiveTab] = useState<"recientes" | "favoritos" | "compartidos" | "papelera">("recientes");
+  const [activeTab, setActiveTab] = useState<"recientes" | "favoritos" | "compartidos" | "papelera" | "plantillas">("recientes");
   const [activeFolderId, setActiveFolderId] = useState<string | null>(null);
   const [showOnlyTemplates, setShowOnlyTemplates] = useState(false);
   const [sortOption, setSortOption] = useState<"updated" | "created" | "name">("updated");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+
+  // Premium Templates Hub States
+  const [selectedTemplateCategory, setSelectedTemplateCategory] = useState<"todos" | "negocios" | "ingenieria" | "ai">("todos");
+  const [templateSearchQuery, setTemplateSearchQuery] = useState("");
+  const [aiPrompt, setAiPrompt] = useState("");
+  const [isGeneratingTemplate, setIsGeneratingTemplate] = useState(false);
 
   // Dropdown States
   const [showQuickAddMenu, setShowQuickAddMenu] = useState(false);
@@ -794,10 +800,11 @@ export const Dashboard: React.FC<DashboardProps> = ({
           </button>
 
           <button
-            className={`nav-link ${showOnlyTemplates ? "active" : ""}`}
+            className={`nav-link ${activeTab === "plantillas" ? "active" : ""}`}
             onClick={() => {
-              setShowOnlyTemplates(true);
+              setActiveTab("plantillas");
               setActiveFolderId(null);
+              setShowOnlyTemplates(false);
             }}
           >
             <span className="nav-icon"><TemplateIcon /></span>
@@ -1238,105 +1245,309 @@ export const Dashboard: React.FC<DashboardProps> = ({
             >
               Papelera
             </button>
+            <button
+              className={`tab-btn ${activeTab === "plantillas" ? "active" : ""}`}
+              onClick={() => {
+                setActiveTab("plantillas");
+                setActiveFolderId(null);
+                setShowOnlyTemplates(false);
+              }}
+            >
+              Plantillas
+            </button>
           </div>
         </div>
 
-        {/* Search, Sort and Grid Toggles */}
-        <div className="filters-controls-row">
-          <div className="search-box-input">
-            <span className="search-icon"><SearchIcon /></span>
-            <input
-              type="text"
-              placeholder="Buscar tableros..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </div>
-
-          <div className="controls-right-side">
-            <div className="filter-dropdown-select">
-              <select
-                value={activeFolderId || ""}
-                onChange={(e) => {
-                  setActiveFolderId(e.target.value || null);
-                  setShowOnlyTemplates(false);
-                }}
-              >
-                <option value="">Todos los tableros</option>
-                {folders.map((f) => (
-                  <option key={f.id} value={f.id}>
-                    {f.name}
-                  </option>
-                ))}
-              </select>
+        {activeTab === "plantillas" ? (
+          <div className="templates-hub-container">
+            <div className="templates-hub-header">
+              <h3>Biblioteca de Plantillas</h3>
+              <p>Elige una plantilla profesional estructurada o deja que Gemini cree una para ti instantáneamente.</p>
             </div>
 
-            <div className="filter-dropdown-select">
-              <select
-                value={sortOption}
-                onChange={(e) => setSortOption(e.target.value as any)}
-              >
-                <option value="updated">Última modificación</option>
-                <option value="created">Fecha de creación</option>
-                <option value="name">Alfabético</option>
-              </select>
+            <div className="templates-hub-filters">
+              <div className="category-tabs">
+                <button
+                  className={`category-tab-btn ${selectedTemplateCategory === "todos" ? "active" : ""}`}
+                  onClick={() => setSelectedTemplateCategory("todos")}
+                >
+                  Todos
+                </button>
+                <button
+                  className={`category-tab-btn ${selectedTemplateCategory === "negocios" ? "active" : ""}`}
+                  onClick={() => setSelectedTemplateCategory("negocios")}
+                >
+                  Negocios
+                </button>
+                <button
+                  className={`category-tab-btn ${selectedTemplateCategory === "ingenieria" ? "active" : ""}`}
+                  onClick={() => setSelectedTemplateCategory("ingenieria")}
+                >
+                  Ingeniería
+                </button>
+                <button
+                  className={`category-tab-btn ${selectedTemplateCategory === "ai" ? "active" : ""}`}
+                  onClick={() => setSelectedTemplateCategory("ai")}
+                >
+                  Generador IA (Gemini)
+                </button>
+              </div>
+
+              {selectedTemplateCategory !== "ai" && (
+                <div className="template-search-box">
+                  <span className="search-icon"><SearchIcon /></span>
+                  <input
+                    type="text"
+                    placeholder="Buscar plantilla..."
+                    value={templateSearchQuery}
+                    onChange={(e) => setTemplateSearchQuery(e.target.value)}
+                  />
+                </div>
+              )}
             </div>
 
-            <div className="view-mode-toggles">
-              <button
-                className={`toggle-btn ${viewMode === "grid" ? "active" : ""}`}
-                onClick={() => setViewMode("grid")}
-                title="Vista Cuadrícula"
-              >
-                <GridIcon />
-              </button>
-              <button
-                className={`toggle-btn ${viewMode === "list" ? "active" : ""}`}
-                onClick={() => setViewMode("list")}
-                title="Vista Lista"
-              >
-                <ListIcon />
-              </button>
-            </div>
-          </div>
-        </div>
+            {selectedTemplateCategory === "ai" ? (
+              <div className="ai-template-builder-card">
+                <div className="ai-builder-left">
+                  <h4>Gemini 1.5 Flash AI Blueprint Builder</h4>
+                  <p>Describe el diagrama, mapa o estructura que necesitas y la inteligencia artificial construirá los cuadros, flechas, conectores y textos por ti en segundos.</p>
 
-        {/* Boards Grid or List View */}
-        {sortedBoards.length > 0 ? (
-          <div className={`boards-${viewMode}-layout`}>
-            {sortedBoards.map((board) => {
-              const dateText = `Actualizado ${
-                Date.now() - board.updatedAt < 60000
-                  ? "hace un momento"
-                  : Date.now() - board.updatedAt < 3600000
-                  ? `hace ${Math.floor((Date.now() - board.updatedAt) / 60000)} min`
-                  : `hace ${Math.floor((Date.now() - board.updatedAt) / 3600000)} horas`
-              }`;
+                  <div className="ai-prompt-input-group">
+                    <label>Describe tu idea:</label>
+                    <textarea
+                      placeholder="Ej: Mapeo de procesos de registro de usuarios, Customer Journey de una app de entrega de comida, Lean Canvas para un SaaS de IA, etc."
+                      value={aiPrompt}
+                      onChange={(e) => setAiPrompt(e.target.value)}
+                      disabled={isGeneratingTemplate}
+                    />
+                  </div>
 
-              const boardFolder = folders.find((f) => f.id === board.folderId);
+                  <div className="ai-prompt-examples">
+                    <span className="examples-label">Ejemplos populares:</span>
+                    <div className="examples-list">
+                      <button
+                        onClick={() => setAiPrompt("Diagrama de arquitectura AWS con CloudFront, S3 y Lambda")}
+                        disabled={isGeneratingTemplate}
+                      >
+                        Arquitectura AWS
+                      </button>
+                      <button
+                        onClick={() => setAiPrompt("Mapa mental sobre estrategias de retención de usuarios")}
+                        disabled={isGeneratingTemplate}
+                      >
+                        Retención de Usuarios
+                      </button>
+                      <button
+                        onClick={() => setAiPrompt("Diagrama de flujo de compra en una tienda online")}
+                        disabled={isGeneratingTemplate}
+                      >
+                        Flujo de Tienda Online
+                      </button>
+                    </div>
+                  </div>
 
-              // Render active collaborator bubbles
-              const collabInitials = ["A", "J", "M", "L", "S"];
-              const boardCollabBubbles = collabInitials.slice(
-                0,
-                Math.max(1, board.id.charCodeAt(0) % 4)
-              );
+                  <button
+                    className="btn-ai-generate"
+                    onClick={async () => {
+                      if (!aiPrompt.trim()) return;
+                      let apiKey = import.meta.env.VITE_GEMINI_API_KEY || "";
 
-              return (
-                <div key={board.id} className="board-card-premium">
-                  {/* Card Header (Preview Area) */}
-                  <div
-                    className="card-preview-container"
-                    onClick={() => handleOpenBoard(board)}
+                      if (!apiKey) {
+                        const inputKey = prompt("No se encontró clave API en .env. Por favor introduce tu Gemini API Key:");
+                        if (!inputKey) return;
+                        apiKey = inputKey;
+                      }
+
+                      setIsGeneratingTemplate(true);
+                      try {
+                        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+                          method: "POST",
+                          headers: {
+                            "Content-Type": "application/json"
+                          },
+                          body: JSON.stringify({
+                            contents: [{
+                              parts: [{
+                                text: `You are a professional Excalidraw diagram generator. Generate a diagram in Excalidraw JSON format based on this prompt: "${aiPrompt}".
+Return ONLY a valid JSON array of Excalidraw element objects. Do not wrap in markdown codeblocks. Do not return any other text.
+The elements can be rectangle, diamond, ellipse, arrow, or text.
+All elements MUST be centered and have valid properties (id, type, x, y, width, height, strokeColor, backgroundColor, fillStyle, strokeWidth, roughness, opacity, isDeleted).
+Example:
+[
+  {
+    "id": "rect_1",
+    "type": "rectangle",
+    "x": 100,
+    "y": 100,
+    "width": 150,
+    "height": 80,
+    "strokeColor": "#6366f1",
+    "backgroundColor": "#e0e7ff",
+    "fillStyle": "solid",
+    "strokeWidth": 2,
+    "roughness": 0,
+    "roundness": { "type": 3 },
+    "opacity": 100,
+    "isDeleted": false
+  }
+]
+Generate a beautiful, complete diagram with multiple connected steps, titles, and text labels. Ensure coordinates are correctly offset so elements do not overlap.`
+                              }]
+                            }]
+                          })
+                        });
+
+                        const result = await response.json();
+                        const text = result?.candidates?.[0]?.content?.parts?.[0]?.text || "";
+                        const sanitized = text.replace(/```json/g, "").replace(/```/g, "").trim();
+                        const elements = JSON.parse(sanitized);
+
+                        const newBoard = await createBoard({
+                          name: `IA - ${aiPrompt.substring(0, 30)}`,
+                          elements,
+                          files: {},
+                        });
+                        onSelectBoard(newBoard.id);
+                      } catch (err) {
+                        console.error("AI Generation failed:", err);
+                        alert("No se pudo generar la plantilla. Revisa que tu API Key sea correcta o intenta acortar el prompt.");
+                      } finally {
+                        setIsGeneratingTemplate(false);
+                      }
+                    }}
+                    disabled={isGeneratingTemplate || !aiPrompt.trim()}
                   >
-                    {board.preview ? (
-                      <img src={board.preview} alt={board.name} className="board-preview-img" />
-                    ) : (
-                      <div className="board-preview-placeholder">
-                        <div className="grid-bg" />
-                        <span>Pizarra</span>
-                      </div>
-                    )}
+                    {isGeneratingTemplate ? "Generando diagrama..." : "Generar con IA (Gemini)"}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="templates-gallery-grid">
+                {TEMPLATES.filter((tmpl) => {
+                  if (selectedTemplateCategory === "negocios" && !["sipoc", "lean_canvas"].includes(tmpl.id)) return false;
+                  if (selectedTemplateCategory === "ingenieria" && !["kanban", "retro", "matrix", "customer_journey"].includes(tmpl.id)) return false;
+
+                  if (templateSearchQuery && !tmpl.name.toLowerCase().includes(templateSearchQuery.toLowerCase()) && !tmpl.description.toLowerCase().includes(templateSearchQuery.toLowerCase())) return false;
+
+                  return true;
+                }).map((tmpl) => (
+                  <div key={tmpl.id} className="template-card-premium">
+                    <div className="template-card-header">
+                      <span className="tmpl-badge">
+                        {["sipoc", "lean_canvas"].includes(tmpl.id) ? "NEGOCIOS" : "INGENIERÍA"}
+                      </span>
+                      <h4>{tmpl.name}</h4>
+                    </div>
+                    <p>{tmpl.description}</p>
+                    <button
+                      className="btn-use-template"
+                      onClick={() => handleCreateBoard(tmpl.id)}
+                    >
+                      Usar esta plantilla
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        ) : (
+          <>
+            {/* Search, Sort and Grid Toggles */}
+            <div className="filters-controls-row">
+              <div className="search-box-input">
+                <span className="search-icon"><SearchIcon /></span>
+                <input
+                  type="text"
+                  placeholder="Buscar tableros..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
+
+              <div className="controls-right-side">
+                <div className="filter-dropdown-select">
+                  <select
+                    value={activeFolderId || ""}
+                    onChange={(e) => {
+                      setActiveFolderId(e.target.value || null);
+                      setShowOnlyTemplates(false);
+                    }}
+                  >
+                    <option value="">Todos los tableros</option>
+                    {folders.map((f) => (
+                      <option key={f.id} value={f.id}>
+                        {f.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="filter-dropdown-select">
+                  <select
+                    value={sortOption}
+                    onChange={(e) => setSortOption(e.target.value as any)}
+                  >
+                    <option value="updated">Última modificación</option>
+                    <option value="created">Fecha de creación</option>
+                    <option value="name">Alfabético</option>
+                  </select>
+                </div>
+
+                <div className="view-mode-toggles">
+                  <button
+                    className={`toggle-btn ${viewMode === "grid" ? "active" : ""}`}
+                    onClick={() => setViewMode("grid")}
+                    title="Vista Cuadrícula"
+                  >
+                    <GridIcon />
+                  </button>
+                  <button
+                    className={`toggle-btn ${viewMode === "list" ? "active" : ""}`}
+                    onClick={() => setViewMode("list")}
+                    title="Vista Lista"
+                  >
+                    <ListIcon />
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Boards Grid or List View */}
+            {sortedBoards.length > 0 ? (
+              <div className={`boards-${viewMode}-layout`}>
+                {sortedBoards.map((board) => {
+                  const dateText = `Actualizado ${
+                    Date.now() - board.updatedAt < 60000
+                      ? "hace un momento"
+                      : Date.now() - board.updatedAt < 3600000
+                      ? `hace ${Math.floor((Date.now() - board.updatedAt) / 60000)} min`
+                      : `hace ${Math.floor((Date.now() - board.updatedAt) / 3600000)} horas`
+                  }`;
+
+                  const boardFolder = folders.find((f) => f.id === board.folderId);
+
+                  // Render active collaborator bubbles
+                  const collabInitials = ["A", "J", "M", "L", "S"];
+                  const boardCollabBubbles = collabInitials.slice(
+                    0,
+                    Math.max(1, board.id.charCodeAt(0) % 4)
+                  );
+
+                  return (
+                    <div key={board.id} className="board-card-premium">
+                      {/* Card Header (Preview Area) */}
+                      <div
+                        className="card-preview-container"
+                        onClick={() => handleOpenBoard(board)}
+                      >
+                        {board.preview ? (
+                          <img src={board.preview} alt={board.name} className="board-preview-img" />
+                        ) : (
+                          <div className="board-preview-placeholder">
+                            <div className="grid-bg" />
+                            <span>Pizarra</span>
+                          </div>
+                        )}
 
                     {/* Star toggle action overlay */}
                     <button
@@ -1651,6 +1862,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
             </div>
           </div>
         </div>
+        </>
+        )}
       </div>
 
       {/* Rename Modal */}
