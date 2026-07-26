@@ -1563,7 +1563,9 @@ User request: "${aiPrompt}"`;
                             method: "POST",
                             headers: {
                               "Content-Type": "application/json",
-                              "Authorization": `Bearer ${apiKey}`
+                              "Authorization": `Bearer ${apiKey}`,
+                              "HTTP-Referer": window.location.origin || "https://excalidraw.com",
+                              "X-Title": "My Excalidraw"
                             },
                             body: JSON.stringify({
                               model: "google/gemini-2.5-flash",
@@ -1587,7 +1589,15 @@ User request: "${aiPrompt}"`;
                         }
 
                         if (!response.ok) {
-                          throw new Error(`API responded with status: ${response.status}`);
+                          const errText = await response.text();
+                          let parsedError = "";
+                          try {
+                            const errObj = JSON.parse(errText);
+                            parsedError = errObj?.error?.message || errObj?.error || JSON.stringify(errObj);
+                          } catch (e) {
+                            parsedError = errText;
+                          }
+                          throw new Error(`API respondió con estado ${response.status}. Detalles: ${parsedError}`);
                         }
 
                         const result = await response.json();
@@ -1608,10 +1618,10 @@ User request: "${aiPrompt}"`;
                         const id = `board_${crypto.randomUUID().replace(/-/g, "").substring(0, 12)}`;
                         await saveBoard(id, { name: `${template.name} - ${aiPrompt.substring(0, 20)}...` }, elements, {}, {});
                         onSelectBoard(id);
-                      } catch (err) {
+                      } catch (err: any) {
                         console.error("AI Generation failed:", err);
                         localStorage.removeItem("my-excalidraw-gemini-key");
-                        alert("No se pudo generar la plantilla asistida. Se ha borrado la clave API inválida de la sesión. Por favor, ingresa una clave correcta (Gemini o OpenRouter) e intenta nuevamente.");
+                        alert(`No se pudo generar la plantilla asistida.\n\nDetalles del error:\n${err?.message || err}\n\nSe ha borrado la clave API. Por favor, introduce una clave correcta e inténtalo de nuevo.`);
                       } finally {
                         setIsGeneratingTemplate(false);
                       }
