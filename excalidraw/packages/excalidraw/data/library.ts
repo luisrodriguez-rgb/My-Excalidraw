@@ -900,10 +900,20 @@ export const useHandleLibrary = (
         );
       }
 
-      // load initial (or migrated) library
+      // load initial (or migrated) library with a 2.5s fallback race to prevent deadlocking the editor queue
+      const safeInitPromise = Promise.race([
+        initDataPromise,
+        new Promise<LibraryItems | null>((resolve) => {
+          setTimeout(() => {
+            console.warn("Library initial load timed out. Continuing with empty library.");
+            resolve([]);
+          }, 2500);
+        }),
+      ]);
+
       excalidrawAPI
         .updateLibrary({
-          libraryItems: initDataPromise.then((libraryItems) => {
+          libraryItems: safeInitPromise.then((libraryItems) => {
             const _libraryItems = libraryItems || [];
             lastSavedLibraryItemsHash = getLibraryItemsHash(_libraryItems);
             return _libraryItems;

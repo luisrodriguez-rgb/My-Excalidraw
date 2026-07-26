@@ -228,6 +228,13 @@ export class LocalData {
     },
   });
 }
+const withTimeout = <T>(promise: Promise<T>, ms: number, defaultValue: T): Promise<T> => {
+  return Promise.race([
+    promise,
+    new Promise<T>((resolve) => setTimeout(() => resolve(defaultValue), ms)),
+  ]);
+};
+
 export class LibraryIndexedDBAdapter {
   /** IndexedDB database and store name */
   private static idb_name = STORAGE_KEYS.IDB_LIBRARY;
@@ -240,20 +247,30 @@ export class LibraryIndexedDBAdapter {
   );
 
   static async load() {
-    const IDBData = await get<LibraryPersistedData>(
-      LibraryIndexedDBAdapter.key,
-      LibraryIndexedDBAdapter.store,
-    );
-
-    return IDBData || null;
+    try {
+      const loadPromise = get<LibraryPersistedData>(
+        LibraryIndexedDBAdapter.key,
+        LibraryIndexedDBAdapter.store,
+      );
+      const IDBData = await withTimeout(loadPromise, 1500, null);
+      return IDBData || null;
+    } catch (e) {
+      console.warn("Failed to load library from IndexedDB, using empty library:", e);
+      return null;
+    }
   }
 
-  static save(data: LibraryPersistedData): MaybePromise<void> {
-    const p = set(
-      LibraryIndexedDBAdapter.key,
-      data,
-      LibraryIndexedDBAdapter.store,
-    );
+  static async save(data: LibraryPersistedData): Promise<void> {
+    try {
+      const savePromise = set(
+        LibraryIndexedDBAdapter.key,
+        data,
+        LibraryIndexedDBAdapter.store,
+      );
+      await withTimeout(savePromise, 1500, undefined);
+    } catch (e) {
+      console.warn("Failed to save library to IndexedDB:", e);
+    }
 
     // Sync to Supabase if logged in
     supabase.auth.getSession().then(async ({ data: { session } }) => {
@@ -268,9 +285,9 @@ export class LibraryIndexedDBAdapter {
           console.error("Error syncing library to Supabase:", err);
         }
       }
+    }).catch((err) => {
+      console.error("Error getting session during library sync:", err);
     });
-
-    return p;
   }
 }
 
