@@ -183,3 +183,25 @@
     }
   }
 }
+
+body.presentation-active {
+  /* Hide custom top header, floating side buttons, sidebars and comments UI elements */
+  .workspace-header,
+  .floating-notes-btn,
+  .minimap-panel,
+  .minimap-toggle-btn,
+  .comment-pin,
+  .comment-popup,
+  .notes-sidebar {
+    display: none !important;
+  }
+
+  /* Hide Excalidraw native UI overlay containers */
+  .layer-ui__wrapper,
+  .App-menu,
+  .App-top-bar,
+  .layer-ui-trigger,
+  .excalidraw__canvas-actions {
+    display: none !important;
+  }
+}

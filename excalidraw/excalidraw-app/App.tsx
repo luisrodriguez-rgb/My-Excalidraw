@@ -3236,6 +3236,7 @@ const ExcalidrawWrapper = () => {
           excalidrawAPI={excalidrawAPI}
           onClose={() => setIsPresenting(false)}
           notesSidebarOpen={showNotesSidebar}
+          activeBoardId={activeBoardId}
         />
       )}
 

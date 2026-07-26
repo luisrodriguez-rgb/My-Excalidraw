@@ -280,8 +280,33 @@ export const AppSidebar = ({
     }
 
     try {
+      const sanitized = items.map((item) => {
+        const sanitizedElements = (item.elements || []).map((el: any) => ({
+          id: el.id || `${el.type}_${Math.random().toString(36).substring(2, 9)}`,
+          seed: el.seed || Math.floor(Math.random() * 100000),
+          version: el.version || 1,
+          versionNonce: el.versionNonce || Math.floor(Math.random() * 100000),
+          isDeleted: el.isDeleted ?? false,
+          updated: el.updated || Date.now(),
+          link: el.link ?? null,
+          locked: el.locked ?? false,
+          fillStyle: el.fillStyle || "hachure",
+          strokeWidth: el.strokeWidth ?? 2,
+          strokeStyle: el.strokeStyle || "solid",
+          roughness: el.roughness ?? 1,
+          opacity: el.opacity ?? 100,
+          strokeColor: el.strokeColor || "#1e1e1e",
+          backgroundColor: el.backgroundColor || "transparent",
+          ...el,
+        }));
+        return {
+          ...item,
+          elements: sanitizedElements,
+        };
+      });
+
       await excalidrawAPI.updateLibrary({
-        libraryItems: items,
+        libraryItems: sanitized,
         merge: true,
         openLibraryMenu: true,
       });

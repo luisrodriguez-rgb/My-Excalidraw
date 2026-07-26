@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 import type { ExcalidrawImperativeAPI } from "@excalidraw/excalidraw/types";
 import "./PresentationMode.scss";
 
@@ -6,6 +6,7 @@ interface PresentationModeProps {
   excalidrawAPI: ExcalidrawImperativeAPI;
   onClose: () => void;
   notesSidebarOpen?: boolean;
+  activeBoardId?: string | null;
 }
 
 const getZoomValue = (zoom: any): number => {
@@ -19,8 +20,8 @@ export const PresentationMode: React.FC<PresentationModeProps> = ({
   excalidrawAPI,
   onClose,
   notesSidebarOpen = false,
+  activeBoardId = null,
 }) => {
-  // Initialize slides synchronously during mount to avoid flash of warning dialog
   const [slides, setSlides] = useState<any[]>(() => {
     if (excalidrawAPI && typeof excalidrawAPI.getSceneElements === "function") {
       try {
@@ -40,15 +41,6 @@ export const PresentationMode: React.FC<PresentationModeProps> = ({
               !el.frameId,
           );
         }
-
-        frameSlides.sort((a: any, b: any) => {
-          const yDiff = (a.y ?? 0) - (b.y ?? 0);
-          if (Math.abs(yDiff) > 100) {
-            return yDiff;
-          }
-          return (a.x ?? 0) - (b.x ?? 0);
-        });
-
         return frameSlides;
       } catch (err) {
         console.error("Error initializing slides list:", err);
@@ -59,6 +51,64 @@ export const PresentationMode: React.FC<PresentationModeProps> = ({
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [showSlideList, setShowSlideList] = useState(false);
+
+  // Load/save custom slide order from localStorage for persistence!
+  const [customOrder, setCustomOrder] = useState<string[]>(() => {
+    if (activeBoardId) {
+      try {
+        const stored = localStorage.getItem(`presentation-order-${activeBoardId}`);
+        if (stored) {
+          return JSON.parse(stored);
+        }
+      } catch (e) {
+        console.error("Error loading custom slide order:", e);
+      }
+    }
+    return [];
+  });
+
+  // Manage presentation active body class to hide UI elements
+  useEffect(() => {
+    document.body.classList.add("presentation-active");
+    return () => {
+      document.body.classList.remove("presentation-active");
+    };
+  }, []);
+
+  // Sort slides according to manual customOrder, number prefixes, or coordinates
+  const sortedSlides = useMemo(() => {
+    const sorted = [...slides];
+    sorted.sort((a, b) => {
+      const indexA = customOrder.indexOf(a.id);
+      const indexB = customOrder.indexOf(b.id);
+      if (indexA !== -1 && indexB !== -1) {
+        return indexA - indexB;
+      }
+      if (indexA !== -1) return -1;
+      if (indexB !== -1) return 1;
+
+      // Extract slide number prefix (e.g. "1. Intro", "02 Slide")
+      const nameA = a.name || a.label?.text || "";
+      const nameB = b.name || b.label?.text || "";
+      const numMatchA = nameA.trim().match(/^(\d+)/);
+      const numMatchB = nameB.trim().match(/^(\d+)/);
+
+      if (numMatchA && numMatchB) {
+        return parseInt(numMatchA[1], 10) - parseInt(numMatchB[1], 10);
+      }
+      if (numMatchA) return -1;
+      if (numMatchB) return 1;
+
+      // Fallback to geometric sort
+      const yDiff = (a.y ?? 0) - (b.y ?? 0);
+      if (Math.abs(yDiff) > 100) {
+        return yDiff;
+      }
+      return (a.x ?? 0) - (b.x ?? 0);
+    });
+    return sorted;
+  }, [slides, customOrder]);
 
   // Center & fit a slide element in the current viewport
   const zoomToSlide = useCallback(
@@ -127,15 +177,6 @@ export const PresentationMode: React.FC<PresentationModeProps> = ({
             !el.frameId,
         );
       }
-
-      frameSlides.sort((a: any, b: any) => {
-        const yDiff = (a.y ?? 0) - (b.y ?? 0);
-        if (Math.abs(yDiff) > 100) {
-          return yDiff;
-        }
-        return (a.x ?? 0) - (b.x ?? 0);
-      });
-
       setSlides(frameSlides);
     } catch (err) {
       console.error("Error syncing presentation slides:", err);
@@ -144,33 +185,36 @@ export const PresentationMode: React.FC<PresentationModeProps> = ({
 
   // Initial zoom to first slide on mount
   useEffect(() => {
-    if (slides.length > 0 && slides[0]) {
-      // Small timeout to let UI settle before zooming
+    if (sortedSlides.length > 0 && sortedSlides[0]) {
       const timer = setTimeout(() => {
-        zoomToSlide(slides[0]);
+        zoomToSlide(sortedSlides[0]);
       }, 50);
       return () => clearTimeout(timer);
     }
-  }, [zoomToSlide, slides.length]);
+  }, [zoomToSlide, sortedSlides.length]);
 
   const goToSlide = useCallback(
     (index: number) => {
-      if (index < 0 || index >= slides.length) return;
+      if (index < 0 || index >= sortedSlides.length) return;
       setCurrentIndex(index);
-      const targetSlide = slides[index];
+      const targetSlide = sortedSlides[index];
       if (targetSlide) {
         zoomToSlide(targetSlide);
       }
     },
-    [slides, zoomToSlide],
+    [sortedSlides, zoomToSlide],
   );
 
   const handleNext = useCallback(() => {
-    goToSlide(currentIndex + 1);
-  }, [goToSlide, currentIndex]);
+    if (currentIndex < sortedSlides.length - 1) {
+      goToSlide(currentIndex + 1);
+    }
+  }, [goToSlide, currentIndex, sortedSlides.length]);
 
   const handlePrev = useCallback(() => {
-    goToSlide(currentIndex - 1);
+    if (currentIndex > 0) {
+      goToSlide(currentIndex - 1);
+    }
   }, [goToSlide, currentIndex]);
 
   const toggleFullscreen = () => {
@@ -252,8 +296,29 @@ export const PresentationMode: React.FC<PresentationModeProps> = ({
     return () => clearInterval(interval);
   }, [updateViewport, currentIndex]);
 
+  // Reorder slide helper
+  const moveSlide = (index: number, direction: "up" | "down") => {
+    const newIndex = direction === "up" ? index - 1 : index + 1;
+    if (newIndex < 0 || newIndex >= sortedSlides.length) return;
+
+    const currentOrder = sortedSlides.map((s) => s.id);
+    const [moved] = currentOrder.splice(index, 1);
+    currentOrder.splice(newIndex, 0, moved);
+
+    setCustomOrder(currentOrder);
+    if (activeBoardId) {
+      localStorage.setItem(`presentation-order-${activeBoardId}`, JSON.stringify(currentOrder));
+    }
+
+    if (currentIndex === index) {
+      setCurrentIndex(newIndex);
+    } else if (currentIndex === newIndex) {
+      setCurrentIndex(index);
+    }
+  };
+
   // If no slides, render guidance modal
-  if (slides.length === 0) {
+  if (sortedSlides.length === 0) {
     return (
       <div className="presentation-no-slides-overlay">
         <div className="presentation-no-slides-card">
@@ -284,7 +349,7 @@ export const PresentationMode: React.FC<PresentationModeProps> = ({
     );
   }
 
-  const currentSlide = slides[currentIndex];
+  const currentSlide = sortedSlides[currentIndex];
   if (!currentSlide) {
     return (
       <div className="presentation-no-slides-overlay">
@@ -311,7 +376,6 @@ export const PresentationMode: React.FC<PresentationModeProps> = ({
     currentSlide.label?.text ||
     `Diapositiva ${currentIndex + 1}`;
 
-  // Get current parent editor element position to compute absolute offset positioning
   const rect = document.querySelector(".excalidraw")?.getBoundingClientRect();
   const canvasLeft = rect ? rect.left : 0;
   const canvasTop = rect ? rect.top : 0;
@@ -322,7 +386,6 @@ export const PresentationMode: React.FC<PresentationModeProps> = ({
   const slideW = Math.max(Number.isFinite(currentSlide.width) ? currentSlide.width : 100, 100);
   const slideH = Math.max(Number.isFinite(currentSlide.height) ? currentSlide.height : 100, 100);
 
-  // Mask dimensions relative to document viewport
   const finalLeft = canvasLeft + (slideX + viewport.scrollX) * zoomFactor;
   const finalTop = canvasTop + (slideY + viewport.scrollY) * zoomFactor;
   const finalWidth = slideW * zoomFactor;
@@ -361,6 +424,128 @@ export const PresentationMode: React.FC<PresentationModeProps> = ({
         />
       </div>
 
+      {/* Slide Order Panel */}
+      {showSlideList && (
+        <div
+          style={{
+            position: "fixed",
+            bottom: "85px",
+            left: "50%",
+            transform: "translateX(-50%)",
+            width: "320px",
+            maxHeight: "300px",
+            backgroundColor: "rgba(15, 23, 42, 0.95)",
+            backdropFilter: "blur(12px)",
+            WebkitBackdropFilter: "blur(12px)",
+            borderRadius: "14px",
+            border: "1px solid rgba(255, 255, 255, 0.15)",
+            boxShadow: "0 20px 40px rgba(0, 0, 0, 0.5)",
+            color: "white",
+            zIndex: 100000,
+            display: "flex",
+            flexDirection: "column",
+            overflow: "hidden",
+            fontFamily: "sans-serif",
+          }}
+          className="presentation-slide-list"
+        >
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 16px", borderBottom: "1px solid rgba(255, 255, 255, 0.12)" }}>
+            <span style={{ fontWeight: 700, fontSize: "13px", color: "#f8fafc" }}>Orden de Diapositivas</span>
+            <button
+              onClick={() => setShowSlideList(false)}
+              style={{ background: "none", border: "none", color: "#94a3b8", cursor: "pointer", fontSize: "14px" }}
+            >
+              ✕
+            </button>
+          </div>
+          <div style={{ flex: 1, overflowY: "auto", padding: "8px 0" }}>
+            {sortedSlides.map((slide, idx) => {
+              const isActive = idx === currentIndex;
+              const title = slide.name || slide.label?.text || `Diapositiva ${idx + 1}`;
+              return (
+                <div
+                  key={slide.id}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    padding: "8px 16px",
+                    backgroundColor: isActive ? "rgba(99, 102, 241, 0.2)" : "transparent",
+                    transition: "background 0.15s ease",
+                    cursor: "pointer",
+                  }}
+                  onClick={() => goToSlide(idx)}
+                >
+                  <span style={{
+                    fontSize: "11px",
+                    fontWeight: 700,
+                    color: isActive ? "#818cf8" : "#64748b",
+                    marginRight: "10px",
+                    width: "20px"
+                  }}>
+                    {idx + 1}
+                  </span>
+                  <span style={{
+                    fontSize: "12.5px",
+                    fontWeight: isActive ? 600 : 500,
+                    color: isActive ? "#fff" : "#cbd5e1",
+                    flex: 1,
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                    marginRight: "8px"
+                  }}>
+                    {title}
+                  </span>
+                  
+                  <div style={{ display: "flex", gap: "2px" }} onClick={(e) => e.stopPropagation()}>
+                    <button
+                      disabled={idx === 0}
+                      onClick={() => moveSlide(idx, "up")}
+                      style={{
+                        background: "rgba(255, 255, 255, 0.08)",
+                        border: "none",
+                        color: idx === 0 ? "#475569" : "#fff",
+                        borderRadius: "4px",
+                        width: "24px",
+                        height: "24px",
+                        cursor: idx === 0 ? "not-allowed" : "pointer",
+                        fontSize: "11px",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                      title="Subir en orden"
+                    >
+                      ▲
+                    </button>
+                    <button
+                      disabled={idx === sortedSlides.length - 1}
+                      onClick={() => moveSlide(idx, "down")}
+                      style={{
+                        background: "rgba(255, 255, 255, 0.08)",
+                        border: "none",
+                        color: idx === sortedSlides.length - 1 ? "#475569" : "#fff",
+                        borderRadius: "4px",
+                        width: "24px",
+                        height: "24px",
+                        cursor: idx === sortedSlides.length - 1 ? "not-allowed" : "pointer",
+                        fontSize: "11px",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                      title="Bajar en orden"
+                    >
+                      ▼
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       <div className="presentation-mode-controls">
         <div className="presentation-bar">
           <button
@@ -378,7 +563,7 @@ export const PresentationMode: React.FC<PresentationModeProps> = ({
 
           <div className="presentation-info">
             <span className="slide-counter">
-              {currentIndex + 1} / {slides.length}
+              {currentIndex + 1} / {sortedSlides.length}
             </span>
             <span className="slide-name" title={slideTitle}>
               {slideTitle}
@@ -388,7 +573,7 @@ export const PresentationMode: React.FC<PresentationModeProps> = ({
           <button
             className="presentation-btn"
             onClick={handleNext}
-            disabled={currentIndex === slides.length - 1}
+            disabled={currentIndex === sortedSlides.length - 1}
             title="Siguiente diapositiva (Flecha Derecha / Espacio)"
             style={{ display: "flex", alignItems: "center" }}
           >
@@ -399,6 +584,24 @@ export const PresentationMode: React.FC<PresentationModeProps> = ({
           </button>
 
           <div className="presentation-divider" />
+
+          {/* Reorder Toggle Button */}
+          <button
+            className={`presentation-btn ${showSlideList ? "presentation-btn--active" : ""}`}
+            onClick={() => setShowSlideList(!showSlideList)}
+            title="Ver orden y reordenar diapositivas"
+            style={{ display: "flex", alignItems: "center", backgroundColor: showSlideList ? "rgba(99, 102, 241, 0.4)" : "" }}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: "6px" }}>
+              <line x1="8" y1="6" x2="21" y2="6"></line>
+              <line x1="8" y1="12" x2="21" y2="12"></line>
+              <line x1="8" y1="18" x2="21" y2="18"></line>
+              <line x1="3" y1="6" x2="3.01" y2="6"></line>
+              <line x1="3" y1="12" x2="3.01" y2="12"></line>
+              <line x1="3" y1="18" x2="3.01" y2="18"></line>
+            </svg>
+            Orden
+          </button>
 
           <button
             className="presentation-btn presentation-btn--icon"
