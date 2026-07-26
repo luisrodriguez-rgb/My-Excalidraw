@@ -95,6 +95,35 @@ function debounceSupabaseSync(
   pendingSyncs.set(id, timer);
 }
 
+export function optimizeElements(elements: readonly any[]): any[] {
+  if (!elements) return [];
+  return elements.map((el) => {
+    if (!el) return el;
+    const pruned: any = { ...el };
+
+    // 1. Round coordinate arrays (points) to 1 decimal place (crucial for drawings/freehand)
+    if (Array.isArray(pruned.points)) {
+      pruned.points = pruned.points.map((pt: any) => {
+        if (Array.isArray(pt)) {
+          return pt.map((val) => typeof val === "number" ? Math.round(val * 10) / 10 : val);
+        }
+        return pt;
+      });
+    }
+
+    // 2. Round positions and dimensions to 1 decimal place
+    if (typeof pruned.x === "number") pruned.x = Math.round(pruned.x * 10) / 10;
+    if (typeof pruned.y === "number") pruned.y = Math.round(pruned.y * 10) / 10;
+    if (typeof pruned.width === "number") pruned.width = Math.round(pruned.width * 10) / 10;
+    if (typeof pruned.height === "number") pruned.height = Math.round(pruned.height * 10) / 10;
+
+    // 3. Remove transient/editor-only attributes that shouldn't persist
+    delete pruned.customData;
+
+    return pruned;
+  });
+}
+
 export async function saveBoard(
   id: string,
   data: Partial<Omit<Board, "id">> & { name?: string },
@@ -107,6 +136,7 @@ export async function saveBoard(
 
   const rawFiles = files !== undefined ? files : currentBoard?.files || {};
   const optimizedFiles = await compressBinaryFiles(rawFiles);
+  const optimizedElements = elements !== undefined ? optimizeElements(elements) : currentBoard?.elements || [];
 
   const updatedBoard: Board = {
     id,
@@ -116,7 +146,7 @@ export async function saveBoard(
         : currentBoard?.name || "Untitled Board",
     createdAt: currentBoard?.createdAt || now,
     updatedAt: now,
-    elements: elements !== undefined ? elements : currentBoard?.elements || [],
+    elements: optimizedElements,
     appState: appState !== undefined ? appState : currentBoard?.appState || {},
     files: optimizedFiles,
     isCollaboration:
@@ -149,7 +179,7 @@ export async function saveBoard(
   await set(`board_content_${id}`, updatedBoard, boardsStore);
 
   if (elements !== undefined) {
-    saveBoardVersion(id, elements, appState, files).catch((err) =>
+    saveBoardVersion(id, optimizedElements, appState, files).catch((err) =>
       console.error("Error saving board version history:", err),
     );
   }
@@ -467,10 +497,10 @@ export async function saveBoardVersion(
 
   await set(`board_history_${boardId}`, versions, boardsStore);
 
-  // Save the full content of this checkpoint
+  // Save elements and state, omitting files to save significant storage space
   await set(
     `board_version_content_${boardId}_${versionId}`,
-    { elements, appState, files },
+    { elements, appState },
     boardsStore,
   );
 }
@@ -479,7 +509,7 @@ export async function restoreBoardVersion(
   boardId: string,
   versionId: string,
 ): Promise<void> {
-  const content = await get<{ elements: any[]; appState: any; files: any }>(
+  const content = await get<{ elements: any[]; appState: any; files?: any }>(
     `board_version_content_${boardId}_${versionId}`,
     boardsStore,
   );
@@ -491,7 +521,7 @@ export async function restoreBoardVersion(
         { name: currentBoard.name },
         content.elements,
         content.appState,
-        content.files,
+        content.files || currentBoard.files || {},
       );
     }
   }

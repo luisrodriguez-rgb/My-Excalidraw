@@ -6,8 +6,8 @@ import type { BinaryFileData, BinaryFiles } from "@excalidraw/excalidraw/types";
  */
 export const compressBinaryFile = async (
   fileData: BinaryFileData,
-  maxDimension = 1600,
-  quality = 0.82,
+  maxDimension = 1000,
+  quality = 0.70,
 ): Promise<BinaryFileData> => {
   if (
     !fileData.dataURL ||
@@ -17,8 +17,8 @@ export const compressBinaryFile = async (
     return fileData;
   }
 
-  // Skip compression for small files (< 250 KB)
-  if (fileData.dataURL.length < 350000) {
+  // Skip compression for very small files (< 35 KB)
+  if (fileData.dataURL.length < 50000) {
     return fileData;
   }
 
