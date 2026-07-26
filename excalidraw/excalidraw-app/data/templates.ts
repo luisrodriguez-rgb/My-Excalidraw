@@ -70,6 +70,28 @@ const createArrow = (
   });
 };
 
+const wrapText = (text: string, maxLen = 25): string => {
+  if (!text) return "";
+  const words = text.split(" ");
+  let currentLine = "";
+  const lines: string[] = [];
+
+  words.forEach((word) => {
+    if ((currentLine + " " + word).trim().length > maxLen) {
+      if (currentLine) {
+        lines.push(currentLine);
+      }
+      currentLine = word;
+    } else {
+      currentLine = currentLine ? currentLine + " " + word : word;
+    }
+  });
+  if (currentLine) {
+    lines.push(currentLine);
+  }
+  return lines.join("\n");
+};
+
 export interface Template {
   id: string;
   name: string;
@@ -135,7 +157,7 @@ export const TEMPLATES: Template[] = [
               }),
             );
             elements.push(
-              createText(x + 20, cardY + 15, cardText, 14, {
+              createText(x + 20, cardY + 15, wrapText(cardText, 25), 14, {
                 width: colWidth - 40,
                 height: 50,
                 textAlign: "left",
@@ -202,7 +224,7 @@ export const TEMPLATES: Template[] = [
               }),
             );
             elements.push(
-              createText(x + 20, itemY + 15, itemText, 14, {
+              createText(x + 20, itemY + 15, wrapText(itemText, 30), 14, {
                 width: cardWidth - 40,
                 height: 40,
                 textAlign: "left",
@@ -306,7 +328,7 @@ export const TEMPLATES: Template[] = [
               }),
             );
             elements.push(
-              createText(quad.x + 5, itemY + 10, itemText, 12, {
+              createText(quad.x + 5, itemY + 10, wrapText(itemText, 22), 12, {
                 width: 190,
                 height: 25,
               }),
@@ -374,7 +396,7 @@ export const TEMPLATES: Template[] = [
               }),
             );
             elements.push(
-              createText(x + 15, itemY + 10, itemText, 12, {
+              createText(x + 15, itemY + 10, wrapText(itemText, 22), 12, {
                 width: colWidth - 30,
                 height: 35,
                 textAlign: "left",
@@ -433,8 +455,9 @@ export const TEMPLATES: Template[] = [
 
         const blockText = content?.[b.key] || "";
         if (blockText) {
+          const wrapped = blockText.split("\n").map(line => wrapText(line, 20)).join("\n");
           elements.push(
-            createText(b.x + 10, b.y + 55, blockText, 12, {
+            createText(b.x + 10, b.y + 55, wrapped, 12, {
               width: b.w - 20,
               height: b.h - 65,
               textAlign: "left",
@@ -512,7 +535,7 @@ export const TEMPLATES: Template[] = [
           const cellText = content?.[row.key]?.[stageIdx] || "";
           if (cellText) {
             elements.push(
-              createText(x + 10, y + 10, cellText, 11, {
+              createText(x + 10, y + 10, wrapText(cellText, 22), 11, {
                 width: colWidth - 20,
                 height: rowHeight - 20,
                 textAlign: "left",
@@ -578,7 +601,7 @@ export const TEMPLATES: Template[] = [
               }),
             );
             elements.push(
-              createText(q.x + 15, itemY + 8, itemText, 12, {
+              createText(q.x + 15, itemY + 8, wrapText(itemText, 22), 12, {
                 width: size - 30,
                 height: 25,
                 textAlign: "left",
@@ -666,7 +689,7 @@ export const TEMPLATES: Template[] = [
                 }),
               );
               elements.push(
-                createText(x + 15, itemY + 6, itemText, 11, {
+                createText(x + 15, itemY + 6, wrapText(itemText, 20), 11, {
                   width: colWidth - 30,
                   height: 20,
                   textAlign: "left",

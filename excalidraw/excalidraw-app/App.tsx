@@ -595,8 +595,18 @@ const ExcalidrawWrapper = () => {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [isPresenting, setIsPresenting] = useState(false);
   const [showNotesSidebar, setShowNotesSidebar] = useState(false);
+  const [sidebarTab, setSidebarTab] = useState<"notes" | "comments">("notes");
   const [notesEditMode, setNotesEditMode] = useState<"edit" | "preview">("preview");
   const [selectedElementId, setSelectedElementId] = useState<string | null>(null);
+
+  const getAvatarColor = (name: string) => {
+    const colors = ["#a855f7", "#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#ec4899"];
+    let hash = 0;
+    for (let i = 0; i < name.length; i++) {
+      hash = name.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    return colors[Math.abs(hash) % colors.length];
+  };
 
   // Markdown parser helper for rich shape notes
   const parseMarkdownToHTML = (markdown: string): string => {
@@ -1243,10 +1253,12 @@ const ExcalidrawWrapper = () => {
   const handleResolveComment = async (commentId: string) => {
     const updated = comments.filter((c) => c.id !== commentId);
     setComments(updated);
-    if (activeBoardId) {
-      await saveBoardComments(activeBoardId, updated);
-    }
     setActiveCommentPopupId(null);
+    if (activeBoardId) {
+      saveBoardComments(activeBoardId, updated).catch((err) => {
+        console.error("Failed to save resolved comments:", err);
+      });
+    }
     if (collabAPI && collabAPI.sendCommentResolve) {
       collabAPI.sendCommentResolve(commentId);
     }
@@ -1286,8 +1298,11 @@ const ExcalidrawWrapper = () => {
     });
 
     setComments(updated);
-    await saveBoardComments(activeBoardId, updated);
     setReplyText("");
+
+    saveBoardComments(activeBoardId, updated).catch((err) => {
+      console.error("Failed to save replied comment:", err);
+    });
 
     if (collabAPI && collabAPI.sendCommentCreate) {
       collabAPI.sendCommentCreate(updatedComment);
@@ -1311,10 +1326,15 @@ const ExcalidrawWrapper = () => {
 
       const updated = [...comments, newComment];
       setComments(updated);
-      await saveBoardComments(activeBoardId, updated);
+      
+      // Close UI instantly!
       setShowAddCommentModal(false);
       setNewCommentCoords(null);
       setNewCommentText("");
+
+      saveBoardComments(activeBoardId, updated).catch((err) => {
+        console.error("Failed to save created comment:", err);
+      });
 
       if (collabAPI && collabAPI.sendCommentCreate) {
         collabAPI.sendCommentCreate(newComment);
@@ -2839,151 +2859,191 @@ const ExcalidrawWrapper = () => {
                 left: `${viewportX}px`,
                 top: `${viewportY - 10}px`,
                 transform: "translate(-50%, -100%)",
-                backgroundColor: "white",
-                border: "1px solid var(--border-color)",
-                borderRadius: "8px",
-                boxShadow: "0 6px 20px rgba(0,0,0,0.2)",
-                padding: "12px",
-                width: "240px",
+                backgroundColor: "var(--bg-primary, white)",
+                border: "1px solid var(--border-color, #e2e8f0)",
+                borderRadius: "14px",
+                boxShadow: "0 10px 25px rgba(0,0,0,0.15)",
+                padding: "16px",
+                width: "280px",
                 zIndex: 100,
-                color: "black",
+                color: "var(--text-primary, black)",
+                fontFamily: "var(--font-family, sans-serif)",
+                display: "flex",
+                flexDirection: "column",
+                gap: "10px",
               }}
             >
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  marginBottom: "8px",
-                }}
-              >
-                <span
-                  style={{
-                    fontWeight: "700",
-                    fontSize: "12px",
-                    color: "#a855f7",
-                  }}
-                >
-                  {comment.author}
+              {/* Chat Header */}
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid var(--border-color, #eee)", paddingBottom: "6px" }}>
+                <span style={{ fontWeight: 700, fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--text-secondary, #64748b)" }}>
+                  Discusión
                 </span>
-                <span style={{ fontSize: "10px", color: "#888" }}>
-                  {new Date(comment.createdAt).toLocaleTimeString([], {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
+                <span style={{ fontSize: "9px", color: "var(--text-secondary, #94a3b8)" }}>
+                  {new Date(comment.createdAt).toLocaleDateString([], { month: "short", day: "numeric" })}
                 </span>
-              </div>
-              <div
-                style={{
-                  fontSize: "13px",
-                  color: "#333",
-                  lineHeight: "1.4",
-                  marginBottom: "8px",
-                  whiteSpace: "pre-wrap",
-                }}
-              >
-                {comment.text}
               </div>
 
-              {/* Replies Thread */}
+              {/* Chat Message Thread */}
               <div
                 style={{
-                  maxHeight: "150px",
+                  maxHeight: "180px",
                   overflowY: "auto",
-                  borderTop: "1px solid #eee",
-                  paddingTop: "8px",
-                  marginTop: "8px",
-                  marginBottom: "8px",
                   display: "flex",
                   flexDirection: "column",
-                  gap: "6px",
+                  gap: "10px",
+                  paddingRight: "4px",
                 }}
               >
-                {(comment.replies || []).map((reply: any) => (
-                  <div
-                    key={reply.id}
-                    style={{ fontSize: "11px", lineHeight: "1.3" }}
-                  >
-                    <div
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        marginBottom: "2px",
-                      }}
-                    >
-                      <span style={{ fontWeight: "700", color: "#a855f7" }}>
-                        {reply.author}
-                      </span>
-                      <span style={{ fontSize: "9px", color: "#999" }}>
-                        {new Date(reply.createdAt).toLocaleTimeString([], {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
+                {/* Main Comment */}
+                <div style={{ display: "flex", gap: "8px" }}>
+                  <div style={{
+                    width: "24px",
+                    height: "24px",
+                    borderRadius: "50%",
+                    backgroundColor: getAvatarColor(comment.author),
+                    color: "white",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontSize: "11px",
+                    fontWeight: "bold",
+                    flexShrink: 0
+                  }}>
+                    {comment.author.charAt(0).toUpperCase()}
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: "2px" }}>
+                      <span style={{ fontWeight: 600, fontSize: "11.5px", color: "var(--text-primary)" }}>{comment.author}</span>
+                      <span style={{ fontSize: "8.5px", color: "#888" }}>
+                        {new Date(comment.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                       </span>
                     </div>
-                    <div style={{ color: "#444", whiteSpace: "pre-wrap" }}>
-                      {reply.text}
+                    <div style={{
+                      backgroundColor: "rgba(168, 85, 247, 0.08)",
+                      color: "var(--text-primary)",
+                      padding: "8px 12px",
+                      borderRadius: "0 12px 12px 12px",
+                      fontSize: "12px",
+                      lineHeight: "1.4",
+                      whiteSpace: "pre-wrap",
+                    }}>
+                      {comment.text}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Replies */}
+                {(comment.replies || []).map((reply: any) => (
+                  <div key={reply.id} style={{ display: "flex", gap: "8px" }}>
+                    <div style={{
+                      width: "20px",
+                      height: "20px",
+                      borderRadius: "50%",
+                      backgroundColor: getAvatarColor(reply.author),
+                      color: "white",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontSize: "10px",
+                      fontWeight: "bold",
+                      flexShrink: 0
+                    }}>
+                      {reply.author.charAt(0).toUpperCase()}
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: "2px" }}>
+                        <span style={{ fontWeight: 600, fontSize: "11px", color: "var(--text-primary)" }}>{reply.author}</span>
+                        <span style={{ fontSize: "8px", color: "#999" }}>
+                          {new Date(reply.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                        </span>
+                      </div>
+                      <div style={{
+                        backgroundColor: "var(--bg-secondary, #f1f5f9)",
+                        color: "var(--text-primary)",
+                        padding: "6px 10px",
+                        borderRadius: "0 12px 12px 12px",
+                        fontSize: "11px",
+                        lineHeight: "1.3",
+                        whiteSpace: "pre-wrap",
+                      }}>
+                        {reply.text}
+                      </div>
                     </div>
                   </div>
                 ))}
               </div>
 
-              {/* Add Reply Input */}
+              {/* Chat Input Area */}
               <div
-                style={{ display: "flex", gap: "6px", marginBottom: "12px" }}
+                style={{
+                  display: "flex",
+                  gap: "6px",
+                  borderTop: "1px solid var(--border-color, #eee)",
+                  paddingTop: "10px",
+                  marginTop: "2px",
+                }}
               >
-                <textarea
-                  placeholder="Responder..."
+                <input
+                  type="text"
+                  placeholder="Escribe una respuesta..."
                   value={replyText}
                   onChange={(e) => setReplyText(e.target.value)}
                   onKeyDown={(e) => {
-                    if (e.key === "Enter" && !e.shiftKey) {
+                    if (e.key === "Enter") {
                       e.preventDefault();
                       handleReplyComment(comment.id);
                     }
                   }}
                   style={{
                     flex: 1,
-                    fontSize: "11px",
-                    padding: "4px 6px",
-                    borderRadius: "4px",
-                    border: "1px solid #ccc",
-                    resize: "none",
-                    height: "28px",
-                    boxSizing: "border-box",
+                    fontSize: "11.5px",
+                    padding: "6px 10px",
+                    borderRadius: "20px",
+                    border: "1px solid var(--border-color, #ccc)",
+                    outline: "none",
+                    backgroundColor: "var(--bg-primary, white)",
+                    color: "var(--text-primary, black)",
                   }}
                 />
                 <button
                   onClick={() => handleReplyComment(comment.id)}
                   style={{
-                    padding: "4px 8px",
-                    fontSize: "11px",
+                    width: "26px",
+                    height: "26px",
+                    borderRadius: "50%",
                     backgroundColor: "#a855f7",
                     color: "white",
                     border: "none",
-                    borderRadius: "4px",
                     cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontSize: "12px",
+                    flexShrink: 0,
                   }}
                 >
                   ↑
                 </button>
               </div>
 
+              {/* Footer Actions */}
               <div
                 style={{
                   display: "flex",
-                  justifyContent: "flex-end",
-                  gap: "8px",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  marginTop: "2px",
                 }}
               >
                 <button
                   onClick={() => setActiveCommentPopupId(null)}
                   style={{
-                    padding: "4px 8px",
-                    fontSize: "11px",
-                    backgroundColor: "#eee",
+                    background: "none",
                     border: "none",
-                    borderRadius: "4px",
+                    fontSize: "11px",
+                    color: "var(--text-secondary, #64748b)",
                     cursor: "pointer",
+                    fontWeight: 600,
                   }}
                 >
                   Cerrar
@@ -2991,13 +3051,15 @@ const ExcalidrawWrapper = () => {
                 <button
                   onClick={() => handleResolveComment(comment.id)}
                   style={{
-                    padding: "4px 8px",
+                    padding: "4px 10px",
                     fontSize: "11px",
-                    backgroundColor: "#a855f7",
+                    backgroundColor: "#ef4444",
                     color: "white",
                     border: "none",
-                    borderRadius: "4px",
+                    borderRadius: "20px",
                     cursor: "pointer",
+                    fontWeight: 600,
+                    boxShadow: "0 2px 4px rgba(239, 68, 68, 0.15)",
                   }}
                 >
                   Resolver
@@ -3016,7 +3078,9 @@ const ExcalidrawWrapper = () => {
             left: 0,
             width: "100vw",
             height: "100vh",
-            backgroundColor: "rgba(0,0,0,0.5)",
+            backgroundColor: "rgba(15, 23, 42, 0.4)",
+            backdropFilter: "blur(6px)",
+            WebkitBackdropFilter: "blur(6px)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -3025,17 +3089,19 @@ const ExcalidrawWrapper = () => {
         >
           <div
             style={{
-              backgroundColor: "white",
-              padding: "20px",
-              borderRadius: "12px",
+              backgroundColor: "var(--bg-primary, white)",
+              padding: "24px",
+              borderRadius: "14px",
               width: "360px",
-              boxShadow: "0 10px 25px rgba(0,0,0,0.3)",
-              color: "black",
+              boxShadow: "0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04)",
+              border: "1px solid var(--border-color, #e2e8f0)",
+              color: "var(--text-primary, black)",
+              fontFamily: "var(--font-family, sans-serif)",
             }}
           >
             <h3
               style={{
-                margin: "0 0 15px 0",
+                margin: "0 0 16px 0",
                 fontSize: "16px",
                 fontWeight: "700",
               }}
@@ -3043,29 +3109,33 @@ const ExcalidrawWrapper = () => {
               Dejar un Comentario
             </h3>
 
-            <div style={{ marginBottom: "12px" }}>
+            <div style={{ marginBottom: "14px" }}>
               <label
                 style={{
                   display: "block",
                   fontSize: "12px",
-                  color: "#666",
-                  marginBottom: "4px",
+                  fontWeight: 600,
+                  color: "var(--text-secondary, #64748b)",
+                  marginBottom: "6px",
                 }}
               >
                 Tu Nombre:
               </label>
               <input
                 type="text"
-                placeholder="Nombre..."
+                placeholder="Escribe tu nombre..."
                 value={newCommentAuthor}
                 onChange={(e) => setNewCommentAuthor(e.target.value)}
                 style={{
                   width: "100%",
-                  padding: "8px 12px",
-                  border: "1px solid #ccc",
-                  borderRadius: "6px",
+                  padding: "10px 12px",
+                  border: "1px solid var(--border-color, #cbd5e1)",
+                  borderRadius: "8px",
                   fontSize: "13px",
                   outline: "none",
+                  backgroundColor: "var(--bg-primary, white)",
+                  color: "var(--text-primary, black)",
+                  boxSizing: "border-box",
                 }}
               />
             </div>
@@ -3075,8 +3145,9 @@ const ExcalidrawWrapper = () => {
                 style={{
                   display: "block",
                   fontSize: "12px",
-                  color: "#666",
-                  marginBottom: "4px",
+                  fontWeight: 600,
+                  color: "var(--text-secondary, #64748b)",
+                  marginBottom: "6px",
                 }}
               >
                 Comentario:
@@ -3088,12 +3159,15 @@ const ExcalidrawWrapper = () => {
                 rows={4}
                 style={{
                   width: "100%",
-                  padding: "8px 12px",
-                  border: "1px solid #ccc",
-                  borderRadius: "6px",
+                  padding: "10px 12px",
+                  border: "1px solid var(--border-color, #cbd5e1)",
+                  borderRadius: "8px",
                   fontSize: "13px",
                   outline: "none",
                   resize: "none",
+                  backgroundColor: "var(--bg-primary, white)",
+                  color: "var(--text-primary, black)",
+                  boxSizing: "border-box",
                 }}
                 autoFocus
               />
@@ -3114,11 +3188,13 @@ const ExcalidrawWrapper = () => {
                 style={{
                   padding: "8px 16px",
                   fontSize: "13px",
-                  backgroundColor: "#eee",
+                  backgroundColor: "rgba(0,0,0,0.05)",
                   border: "none",
-                  borderRadius: "6px",
+                  borderRadius: "8px",
                   cursor: "pointer",
                   fontWeight: "600",
+                  color: "var(--text-secondary, #64748b)",
+                  transition: "all 0.15s ease",
                 }}
               >
                 Cancelar
@@ -3126,14 +3202,16 @@ const ExcalidrawWrapper = () => {
               <button
                 onClick={handleCreateCommentConfirm}
                 style={{
-                  padding: "8px 16px",
+                  padding: "8px 18px",
                   fontSize: "13px",
                   backgroundColor: "#a855f7",
                   color: "white",
                   border: "none",
-                  borderRadius: "6px",
+                  borderRadius: "8px",
                   cursor: "pointer",
                   fontWeight: "600",
+                  boxShadow: "0 4px 6px -1px rgba(168, 85, 247, 0.2)",
+                  transition: "all 0.15s ease",
                 }}
               >
                 Comentar
@@ -3178,22 +3256,44 @@ const ExcalidrawWrapper = () => {
             display: "flex",
             flexDirection: "column",
             color: "var(--text-primary, #0f172a)",
+            fontFamily: "var(--font-family, sans-serif)",
           }}
         >
-          {/* Header */}
-          <div
-            style={{
-              padding: "16px",
-              borderBottom: "1px solid var(--border-color, #e2e8f0)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              backgroundColor: "var(--bg-secondary, #f8fafc)",
-            }}
-          >
-            <h3 style={{ margin: 0, fontSize: "15px", fontWeight: 700 }}>
+          {/* Header Tabs */}
+          <div style={{ display: "flex", width: "100%", padding: "12px 16px 0 16px", backgroundColor: "var(--bg-secondary, #f8fafc)", borderBottom: "1px solid var(--border-color, #e2e8f0)", gap: "16px", boxSizing: "border-box" }}>
+            <button
+              onClick={() => setSidebarTab("notes")}
+              style={{
+                padding: "8px 4px",
+                background: "none",
+                border: "none",
+                borderBottom: sidebarTab === "notes" ? "2px solid #a855f7" : "2px solid transparent",
+                color: sidebarTab === "notes" ? "var(--text-primary)" : "var(--text-secondary, #64748b)",
+                fontWeight: sidebarTab === "notes" ? 700 : 500,
+                fontSize: "13px",
+                cursor: "pointer",
+                transition: "all 0.15s ease",
+              }}
+            >
               Notas del Elemento
-            </h3>
+            </button>
+            <button
+              onClick={() => setSidebarTab("comments")}
+              style={{
+                padding: "8px 4px",
+                background: "none",
+                border: "none",
+                borderBottom: sidebarTab === "comments" ? "2px solid #a855f7" : "2px solid transparent",
+                color: sidebarTab === "comments" ? "var(--text-primary)" : "var(--text-secondary, #64748b)",
+                fontWeight: sidebarTab === "comments" ? 700 : 500,
+                fontSize: "13px",
+                cursor: "pointer",
+                transition: "all 0.15s ease",
+              }}
+            >
+              Comentarios ({comments.filter(c => !c.resolved).length})
+            </button>
+            <div style={{ flex: 1 }} />
             <button
               onClick={() => setShowNotesSidebar(false)}
               style={{
@@ -3202,6 +3302,8 @@ const ExcalidrawWrapper = () => {
                 fontSize: "18px",
                 cursor: "pointer",
                 color: "var(--text-secondary, #64748b)",
+                alignSelf: "center",
+                paddingBottom: "8px"
               }}
             >
               ✕
@@ -3209,101 +3311,237 @@ const ExcalidrawWrapper = () => {
           </div>
 
           {/* Body */}
-          <div style={{ flex: 1, display: "flex", flexDirection: "column", padding: "16px", overflowY: "auto" }}>
-            {selectedElement ? (
-              <>
-                {/* Tabs */}
-                <div style={{ display: "flex", gap: "8px", marginBottom: "14px" }}>
-                  <button
-                    onClick={() => setNotesEditMode("preview")}
-                    style={{
-                      flex: 1,
-                      padding: "6px 12px",
-                      borderRadius: "6px",
-                      border: "none",
-                      fontSize: "12px",
-                      fontWeight: 600,
-                      cursor: "pointer",
-                      backgroundColor: notesEditMode === "preview" ? "#6366f1" : "rgba(0,0,0,0.05)",
-                      color: notesEditMode === "preview" ? "white" : "inherit",
-                    }}
-                  >
-                    Vista Previa
-                  </button>
-                  <button
-                    onClick={() => setNotesEditMode("edit")}
-                    style={{
-                      flex: 1,
-                      padding: "6px 12px",
-                      borderRadius: "6px",
-                      border: "none",
-                      fontSize: "12px",
-                      fontWeight: 600,
-                      cursor: "pointer",
-                      backgroundColor: notesEditMode === "edit" ? "#6366f1" : "rgba(0,0,0,0.05)",
-                      color: notesEditMode === "edit" ? "white" : "inherit",
-                    }}
-                  >
-                    Editar
-                  </button>
-                </div>
+          <div style={{ flex: 1, display: "flex", flexDirection: "column", padding: "16px", overflowY: "auto", boxSizing: "border-box" }}>
+            {sidebarTab === "notes" ? (
+              selectedElement ? (
+                <>
+                  {/* Segmented Control for Edit/Preview */}
+                  <div style={{
+                    display: "flex",
+                    backgroundColor: "rgba(0,0,0,0.04)",
+                    padding: "4px",
+                    borderRadius: "8px",
+                    marginBottom: "16px",
+                    gap: "2px"
+                  }}>
+                    <button
+                      onClick={() => setNotesEditMode("preview")}
+                      style={{
+                        flex: 1,
+                        padding: "6px 12px",
+                        borderRadius: "6px",
+                        border: "none",
+                        fontSize: "12px",
+                        fontWeight: 600,
+                        cursor: "pointer",
+                        backgroundColor: notesEditMode === "preview" ? "white" : "transparent",
+                        color: notesEditMode === "preview" ? "#a855f7" : "#64748b",
+                        boxShadow: notesEditMode === "preview" ? "0 1px 3px rgba(0,0,0,0.1)" : "none",
+                        transition: "all 0.15s ease"
+                      }}
+                    >
+                      Vista Previa
+                    </button>
+                    <button
+                      onClick={() => setNotesEditMode("edit")}
+                      style={{
+                        flex: 1,
+                        padding: "6px 12px",
+                        borderRadius: "6px",
+                        border: "none",
+                        fontSize: "12px",
+                        fontWeight: 600,
+                        cursor: "pointer",
+                        backgroundColor: notesEditMode === "edit" ? "white" : "transparent",
+                        color: notesEditMode === "edit" ? "#a855f7" : "#64748b",
+                        boxShadow: notesEditMode === "edit" ? "0 1px 3px rgba(0,0,0,0.1)" : "none",
+                        transition: "all 0.15s ease"
+                      }}
+                    >
+                      Editar Notas
+                    </button>
+                  </div>
 
-                {/* Content area */}
-                {notesEditMode === "edit" ? (
-                  <textarea
-                    value={localNotes}
-                    onChange={(e) => handleUpdateNotes(e.target.value)}
-                    placeholder="Escribe tus especificaciones o notas aquí usando Markdown (ej. # Título, **negrita**, - listas)..."
-                    style={{
-                      flex: 1,
-                      width: "100%",
-                      padding: "10px",
-                      borderRadius: "8px",
-                      border: "1px solid var(--border-color, #ccc)",
-                      fontSize: "13px",
-                      lineHeight: "1.4",
-                      fontFamily: "inherit",
-                      resize: "none",
-                      outline: "none",
-                      backgroundColor: "var(--bg-primary, white)",
-                      color: "var(--text-primary, black)",
-                    }}
-                  />
-                ) : (
-                  <div
-                    className="markdown-preview"
-                    dangerouslySetInnerHTML={{
-                      __html: parseMarkdownToHTML(selectedElement.customData?.notes || ""),
-                    }}
-                    style={{
-                      flex: 1,
-                      overflowY: "auto",
-                      fontSize: "13px",
-                      lineHeight: "1.6",
-                    }}
-                  />
-                )}
-              </>
+                  {/* Content Area */}
+                  {notesEditMode === "edit" ? (
+                    <textarea
+                      value={localNotes}
+                      onChange={(e) => handleUpdateNotes(e.target.value)}
+                      placeholder="Escribe tus especificaciones o notas aquí usando Markdown (ej. # Título, **negrita**, - listas)..."
+                      style={{
+                        flex: 1,
+                        width: "100%",
+                        padding: "10px",
+                        borderRadius: "8px",
+                        border: "1px solid var(--border-color, #ccc)",
+                        fontSize: "13px",
+                        lineHeight: "1.4",
+                        fontFamily: "inherit",
+                        resize: "none",
+                        outline: "none",
+                        backgroundColor: "var(--bg-primary, white)",
+                        color: "var(--text-primary, black)",
+                        boxSizing: "border-box",
+                      }}
+                    />
+                  ) : (
+                    !(selectedElement.customData?.notes || "").trim() ? (
+                      <div style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        padding: "40px 20px",
+                        textAlign: "center",
+                        color: "var(--text-secondary, #64748b)",
+                        marginTop: "20px"
+                      }}>
+                        <span style={{ fontSize: "36px", marginBottom: "12px" }}>📝</span>
+                        <h4 style={{ margin: "0 0 6px 0", fontSize: "14px", fontWeight: 600, color: "var(--text-primary)" }}>
+                          Sin especificaciones
+                        </h4>
+                        <p style={{ margin: "0 0 16px 0", fontSize: "12px", lineHeight: "1.4" }}>
+                          Este elemento no tiene notas asignadas. Agrega especificaciones técnicas o guías de diseño en Markdown.
+                        </p>
+                        <button
+                          onClick={() => setNotesEditMode("edit")}
+                          style={{
+                            padding: "8px 20px",
+                            fontSize: "12.5px",
+                            fontWeight: 600,
+                            backgroundColor: "#a855f7",
+                            color: "white",
+                            border: "none",
+                            borderRadius: "6px",
+                            cursor: "pointer",
+                            boxShadow: "0 2px 5px rgba(168,85,247,0.2)"
+                          }}
+                        >
+                          Agregar Notas
+                        </button>
+                      </div>
+                    ) : (
+                      <div
+                        className="markdown-preview"
+                        dangerouslySetInnerHTML={{
+                          __html: parseMarkdownToHTML(selectedElement.customData?.notes || ""),
+                        }}
+                        style={{
+                          flex: 1,
+                          overflowY: "auto",
+                          fontSize: "13px",
+                          lineHeight: "1.6",
+                        }}
+                      />
+                    )
+                  )}
+                </>
+              ) : (
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    height: "80%",
+                    textAlign: "center",
+                    color: "var(--text-secondary, #64748b)",
+                    padding: "0 20px",
+                  }}
+                >
+                  <div style={{ fontSize: "28px", marginBottom: "12px" }}>ℹ️</div>
+                  <h4 style={{ margin: "0 0 6px 0", fontSize: "14px", fontWeight: 600, color: "var(--text-primary)" }}>
+                    Ningún elemento seleccionado
+                  </h4>
+                  <p style={{ margin: 0, fontSize: "12px", lineHeight: "1.4" }}>
+                    Selecciona cualquier figura, texto o conector en el lienzo para escribir notas detalladas asociadas a ella.
+                  </p>
+                </div>
+              )
             ) : (
-              <div
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  height: "80%",
-                  textAlign: "center",
-                  color: "var(--text-secondary, #64748b)",
-                  padding: "0 20px",
-                }}
-              >
-                <div style={{ fontSize: "24px", marginBottom: "12px", fontWeight: "bold" }}>i</div>
-                <h4 style={{ margin: "0 0 6px 0", fontSize: "14px", fontWeight: 600, color: "var(--text-primary)" }}>
-                  Ningun elemento seleccionado
-                </h4>
-                <p style={{ margin: 0, fontSize: "12px" }}>
-                  Selecciona una figura, texto o marco en el lienzo para escribir notas detalladas en Markdown asociadas a ella.
-                </p>
+              <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                {comments.filter(c => !c.resolved).length === 0 ? (
+                  <div style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    padding: "60px 20px",
+                    textAlign: "center",
+                    color: "var(--text-secondary, #64748b)"
+                  }}>
+                    <span style={{ fontSize: "36px", marginBottom: "12px" }}>💬</span>
+                    <h4 style={{ margin: "0 0 6px 0", fontSize: "14px", fontWeight: 600, color: "var(--text-primary)" }}>
+                      No hay comentarios
+                    </h4>
+                    <p style={{ margin: 0, fontSize: "12px", lineHeight: "1.4" }}>
+                      Activa el Modo Comentarios (icono de burbuja en el menú flotante) y haz clic en cualquier parte del lienzo para abrir una discusión.
+                    </p>
+                  </div>
+                ) : (
+                  comments.filter(c => !c.resolved).map((c) => (
+                    <div
+                      key={c.id}
+                      onClick={() => {
+                        if (excalidrawAPI) {
+                          const zoom = excalidrawAPI.getAppState().zoom.value;
+                          excalidrawAPI.updateScene({
+                            appState: {
+                              scrollX: -c.x + window.innerWidth / zoom / 2,
+                              scrollY: -c.y + window.innerHeight / zoom / 2,
+                            }
+                          });
+                          setActiveCommentPopupId(c.id);
+                        }
+                      }}
+                      style={{
+                        padding: "12px",
+                        borderRadius: "10px",
+                        border: "1px solid var(--border-color, #e2e8f0)",
+                        backgroundColor: "var(--bg-primary, white)",
+                        cursor: "pointer",
+                        transition: "all 0.2s ease",
+                        boxShadow: "0 1px 3px rgba(0,0,0,0.02)",
+                      }}
+                    >
+                      <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "6px" }}>
+                        <div style={{
+                          width: "20px",
+                          height: "20px",
+                          borderRadius: "50%",
+                          backgroundColor: getAvatarColor(c.author),
+                          color: "white",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          fontSize: "10px",
+                          fontWeight: "bold"
+                        }}>
+                          {c.author.charAt(0).toUpperCase()}
+                        </div>
+                        <span style={{ fontWeight: 700, fontSize: "12px", color: "var(--text-primary)" }}>{c.author}</span>
+                        <span style={{ fontSize: "9px", color: "#999", marginLeft: "auto" }}>
+                          {new Date(c.createdAt).toLocaleDateString([], { month: "short", day: "numeric" })}
+                        </span>
+                      </div>
+                      <p style={{
+                        margin: 0,
+                        fontSize: "12px",
+                        color: "var(--text-secondary, #475569)",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap"
+                      }}>
+                        {c.text}
+                      </p>
+                      {(c.replies || []).length > 0 && (
+                        <div style={{ fontSize: "10px", color: "#a855f7", marginTop: "6px", display: "flex", alignItems: "center", gap: "3px" }}>
+                          <span>↳</span> {(c.replies || []).length} {(c.replies || []).length === 1 ? "respuesta" : "respuestas"}
+                        </div>
+                      )}
+                    </div>
+                  ))
+                )}
               </div>
             )}
           </div>
