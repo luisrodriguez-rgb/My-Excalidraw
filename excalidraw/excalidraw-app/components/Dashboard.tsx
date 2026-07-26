@@ -16,6 +16,7 @@ import {
   syncBoardsWithSupabase,
   TemplateMetadata,
   syncAndLoadTemplates,
+  getTemplate,
   saveTemplate,
   deleteTemplate,
 } from "../data/boardsDb";
