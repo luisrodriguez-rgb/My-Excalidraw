@@ -1,5 +1,4 @@
 import React, { useRef, useEffect, useState } from "react";
-
 import "./Minimap.scss";
 
 interface MinimapProps {
@@ -16,12 +15,25 @@ export const Minimap: React.FC<MinimapProps> = ({
   tick,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const offscreenCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const [visible, setVisible] = useState(true);
-  const isDragging = useRef(false);
+  const [showDetails, setShowDetails] = useState(true);
 
-  // Filter out deleted elements
+  // Dragging state
+  const isDraggingViewport = useRef(false);
+  const dragStart = useRef({ x: 0, y: 0 });
+  const dragStartScroll = useRef({ scrollX: 0, scrollY: 0 });
+
+  // Cache bounds, scale and offsets to avoid recalculations during scroll
+  const boundsRef = useRef({ minX: -1000, maxX: 1000, minY: -1000, maxY: 1000 });
+  const scaleRef = useRef(1);
+  const offsetXRef = useRef(0);
+  const offsetYRef = useRef(0);
+  const viewportBoundsRef = useRef({ x: 0, y: 0, w: 0, h: 0 });
+
   const activeElements = elements.filter((el) => !el.isDeleted);
 
+  // Recalculate bounds and update the cached reference
   const getSceneBounds = () => {
     if (activeElements.length === 0) {
       return { minX: -1000, maxX: 1000, minY: -1000, maxY: 1000 };
@@ -39,7 +51,6 @@ export const Minimap: React.FC<MinimapProps> = ({
       maxY = Math.max(maxY, el.y + (el.height || 0));
     });
 
-    // Add some padding
     const padding = 200;
     return {
       minX: minX - padding,
@@ -49,46 +60,120 @@ export const Minimap: React.FC<MinimapProps> = ({
     };
   };
 
-  const drawMinimap = () => {
-    const canvas = canvasRef.current;
-    if (!canvas || !appState) {
-      return;
-    }
+  // 1. Static drawing cycle: renders elements onto the offscreen canvas
+  // This ONLY runs when the active elements list or tick changes, NOT during scrolls.
+  useEffect(() => {
+    const mainCanvas = canvasRef.current;
+    if (!mainCanvas) return;
 
-    const ctx = canvas.getContext("2d");
-    if (!ctx) {
-      return;
+    if (!offscreenCanvasRef.current) {
+      offscreenCanvasRef.current = document.createElement("canvas");
     }
+    const offscreen = offscreenCanvasRef.current;
+    offscreen.width = mainCanvas.width;
+    offscreen.height = mainCanvas.height;
 
-    const { width, height } = canvas;
-    ctx.clearRect(0, 0, width, height);
+    const ctx = offscreen.getContext("2d");
+    if (!ctx) return;
+
+    ctx.clearRect(0, 0, offscreen.width, offscreen.height);
 
     const bounds = getSceneBounds();
+    boundsRef.current = bounds;
+
     const boundsWidth = bounds.maxX - bounds.minX;
     const boundsHeight = bounds.maxY - bounds.minY;
 
-    // Calculate scale to fit all elements in the minimap
-    const scaleX = width / boundsWidth;
-    const scaleY = height / boundsHeight;
-    const scale = Math.min(scaleX, scaleY) * 0.9; // 10% padding
+    const scaleX = offscreen.width / boundsWidth;
+    const scaleY = offscreen.height / boundsHeight;
+    const scale = Math.min(scaleX, scaleY) * 0.9;
+    scaleRef.current = scale;
 
-    // Center offset
-    const offsetX = (width - boundsWidth * scale) / 2 - bounds.minX * scale;
-    const offsetY = (height - boundsHeight * scale) / 2 - bounds.minY * scale;
+    const offsetX = (offscreen.width - boundsWidth * scale) / 2 - bounds.minX * scale;
+    const offsetY = (offscreen.height - boundsHeight * scale) / 2 - bounds.minY * scale;
+    offsetXRef.current = offsetX;
+    offsetYRef.current = offsetY;
 
-    // 1. Draw elements
-    ctx.fillStyle =
-      appState.theme === "dark" ? "rgba(255,255,255,0.2)" : "rgba(0,0,0,0.15)";
+    if (activeElements.length === 0) return;
+
+    // High fidelity shape rendering
     activeElements.forEach((el) => {
       const elX = el.x * scale + offsetX;
       const elY = el.y * scale + offsetY;
       const elW = (el.width || 0) * scale;
       const elH = (el.height || 0) * scale;
 
-      ctx.fillRect(elX, elY, Math.max(elW, 2), Math.max(elH, 2));
+      const isSelected = appState?.selectedElementIds?.[el.id];
+
+      // Styling based on selection and element type
+      if (isSelected) {
+        ctx.fillStyle = "rgba(168, 85, 247, 0.7)"; // Selected glowing purple
+        ctx.strokeStyle = "#a855f7";
+        ctx.lineWidth = 1.5;
+      } else {
+        ctx.fillStyle = appState.theme === "dark" 
+          ? (el.strokeColor === "#000000" || el.strokeColor === "#1e1e1e" ? "rgba(255,255,255,0.25)" : el.strokeColor || "rgba(255,255,255,0.2)")
+          : (el.strokeColor === "#ffffff" ? "rgba(0,0,0,0.15)" : el.strokeColor || "rgba(0,0,0,0.15)");
+        ctx.strokeStyle = "transparent";
+      }
+
+      if (showDetails) {
+        ctx.beginPath();
+        if (el.type === "ellipse") {
+          const radiusX = Math.max(elW / 2, 1);
+          const radiusY = Math.max(elH / 2, 1);
+          ctx.ellipse(elX + radiusX, elY + radiusY, radiusX, radiusY, 0, 0, Math.PI * 2);
+          ctx.fill();
+          if (isSelected) ctx.stroke();
+        } else if (el.type === "arrow" || el.type === "line" || el.type === "freedraw") {
+          // Draw simplified connection line
+          ctx.strokeStyle = ctx.fillStyle;
+          ctx.lineWidth = Math.max(1, scale * 3);
+          ctx.moveTo(elX, elY);
+          ctx.lineTo(elX + elW, elY + elH);
+          ctx.stroke();
+        } else if (el.type === "text") {
+          // Text boxes styled as blueprint text composition lines
+          ctx.fillRect(elX, elY, Math.max(elW, 2), Math.max(scale * 3, 1));
+          ctx.fillRect(elX, elY + elH * 0.5, Math.max(elW * 0.7, 2), Math.max(scale * 2, 1));
+        } else {
+          // Rectangles, images, and other cards
+          ctx.fillRect(elX, elY, Math.max(elW, 2), Math.max(elH, 2));
+          if (isSelected) ctx.strokeRect(elX, elY, Math.max(elW, 2), Math.max(elH, 2));
+        }
+      } else {
+        // Draw simplified generic shapes
+        ctx.fillRect(elX, elY, Math.max(elW, 2), Math.max(elH, 2));
+        if (isSelected) ctx.strokeRect(elX, elY, Math.max(elW, 2), Math.max(elH, 2));
+      }
     });
 
-    // 2. Calculate and Draw viewport bounds
+    // Refresh viewport overlay drawing on main canvas
+    drawViewportOnly();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [elements, tick, showDetails, appState.theme]);
+
+  // 2. High-performance scroll drawing cycle (120 FPS)
+  // Copies the offscreen canvas onto the visible canvas and overlays the viewport
+  const drawViewportOnly = () => {
+    const canvas = canvasRef.current;
+    const offscreen = offscreenCanvasRef.current;
+    if (!canvas || !offscreen || !appState) return;
+
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    const { width, height } = canvas;
+    ctx.clearRect(0, 0, width, height);
+
+    // Fast Blit: Copy offscreen elements cached image
+    ctx.drawImage(offscreen, 0, 0);
+
+    // Viewport layout calculation
+    const scale = scaleRef.current;
+    const offsetX = offsetXRef.current;
+    const offsetY = offsetYRef.current;
+
     const zoom = appState.zoom.value;
     const viewWidth = window.innerWidth / zoom;
     const viewHeight = window.innerHeight / zoom;
@@ -100,48 +185,109 @@ export const Minimap: React.FC<MinimapProps> = ({
     const vpW = viewWidth * scale;
     const vpH = viewHeight * scale;
 
+    viewportBoundsRef.current = { x: vpX, y: vpY, w: vpW, h: vpH };
+
+    // Viewport overlay styling
     ctx.strokeStyle = "#a855f7";
-    ctx.lineWidth = 2;
+    ctx.lineWidth = 1.8;
     ctx.strokeRect(vpX, vpY, vpW, vpH);
 
-    // Draw viewport transparent fill
-    ctx.fillStyle = "rgba(168, 85, 247, 0.08)";
+    ctx.fillStyle = "rgba(168, 85, 247, 0.06)";
     ctx.fillRect(vpX, vpY, vpW, vpH);
   };
 
   useEffect(() => {
-    drawMinimap();
+    drawViewportOnly();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [elements, appState, tick]);
+  }, [appState.scrollX, appState.scrollY, appState.zoom.value]);
 
-  const handlePointerEvent = (e: React.PointerEvent<HTMLCanvasElement>) => {
+  // recents / zoom controls
+  const handleZoom = (factor: number) => {
+    if (!excalidrawAPI) return;
+    const currentZoom = appState.zoom.value;
+    const newZoom = Math.min(Math.max(0.1, currentZoom * factor), 3.0);
+    excalidrawAPI.updateScene({
+      appState: { zoom: { value: newZoom } },
+    });
+  };
+
+  const handleRecenter = () => {
+    if (!excalidrawAPI) return;
+    excalidrawAPI.scrollToContent(activeElements, {
+      fitToViewport: true,
+      viewportZoomFactor: 0.85,
+      animate: true,
+    });
+  };
+
+  // Dragging interaction
+  const handlePointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
-    if (!canvas || !excalidrawAPI || !appState) {
-      return;
-    }
+    if (!canvas || !appState || !excalidrawAPI) return;
 
     const rect = canvas.getBoundingClientRect();
     const clickX = e.clientX - rect.left;
     const clickY = e.clientY - rect.top;
 
-    const bounds = getSceneBounds();
-    const boundsWidth = bounds.maxX - bounds.minX;
-    const boundsHeight = bounds.maxY - bounds.minY;
+    const vp = viewportBoundsRef.current;
 
-    const scaleX = canvas.width / boundsWidth;
-    const scaleY = canvas.height / boundsHeight;
-    const scale = Math.min(scaleX, scaleY) * 0.9;
+    // Check if the click lies inside the viewport rectangle
+    const isInsideViewport =
+      clickX >= vp.x &&
+      clickX <= vp.x + vp.w &&
+      clickY >= vp.y &&
+      clickY <= vp.y + vp.h;
 
-    const offsetX =
-      (canvas.width - boundsWidth * scale) / 2 - bounds.minX * scale;
-    const offsetY =
-      (canvas.height - boundsHeight * scale) / 2 - bounds.minY * scale;
+    if (isInsideViewport) {
+      isDraggingViewport.current = true;
+      dragStart.current = { x: e.clientX, y: e.clientY };
+      dragStartScroll.current = {
+        scrollX: appState.scrollX,
+        scrollY: appState.scrollY,
+      };
+      canvas.setPointerCapture(e.pointerId);
+    } else {
+      // Direct jump recenter on click outside
+      recenterAtClick(clickX, clickY);
+    }
+  };
 
-    // Convert minimap click coordinates back to scene coordinates
+  const handlePointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    if (!isDraggingViewport.current || !appState || !excalidrawAPI) return;
+
+    const deltaX = e.clientX - dragStart.current.x;
+    const deltaY = e.clientY - dragStart.current.y;
+
+    const scale = scaleRef.current;
+    const zoom = appState.zoom.value;
+
+    // Convert minimap offset delta back to scene viewport scroll delta
+    const sceneDeltaX = deltaX / scale;
+    const sceneDeltaY = deltaY / scale;
+
+    excalidrawAPI.updateScene({
+      appState: {
+        scrollX: dragStartScroll.current.scrollX - sceneDeltaX,
+        scrollY: dragStartScroll.current.scrollY - sceneDeltaY,
+      },
+    });
+  };
+
+  const handlePointerUp = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    isDraggingViewport.current = false;
+    canvasRef.current?.releasePointerCapture(e.pointerId);
+  };
+
+  const recenterAtClick = (clickX: number, clickY: number) => {
+    const bounds = boundsRef.current;
+    const scale = scaleRef.current;
+    const offsetX = offsetXRef.current;
+    const offsetY = offsetYRef.current;
+
+    // Convert coordinates
     const sceneX = (clickX - offsetX) / scale;
     const sceneY = (clickY - offsetY) / scale;
 
-    // Center viewport at this coordinate
     const zoom = appState.zoom.value;
     const scrollX = -sceneX + window.innerWidth / zoom / 2;
     const scrollY = -sceneY + window.innerHeight / zoom / 2;
@@ -151,37 +297,21 @@ export const Minimap: React.FC<MinimapProps> = ({
     });
   };
 
-  const handlePointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
-    isDragging.current = true;
-    handlePointerEvent(e);
-    canvasRef.current?.setPointerCapture(e.pointerId);
-  };
-
-  const handlePointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
-    if (isDragging.current) {
-      handlePointerEvent(e);
-    }
-  };
-
-  const handlePointerUp = (e: React.PointerEvent<HTMLCanvasElement>) => {
-    isDragging.current = false;
-    canvasRef.current?.releasePointerCapture(e.pointerId);
-  };
-
   if (!visible) {
     return (
       <button
         className="minimap-toggle-btn collapsed"
         onClick={() => setVisible(true)}
+        title="Abrir mapa del canvas"
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"
-          width="22"
-          height="22"
+          width="20"
+          height="20"
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"
-          strokeWidth="2"
+          strokeWidth="2.5"
           strokeLinecap="round"
           strokeLinejoin="round"
         >
@@ -193,23 +323,48 @@ export const Minimap: React.FC<MinimapProps> = ({
     );
   }
 
+  const cursorStyle = isDraggingViewport.current 
+    ? "grabbing" 
+    : "grab";
+
   return (
     <div className="minimap-panel">
       <div className="minimap-header">
-        <span>Vista del Canvas</span>
-        <button className="minimap-close" onClick={() => setVisible(false)}>
-          ✕
-        </button>
+        <span>Mapa del Canvas</span>
+        <div className="minimap-actions-left">
+          <button 
+            className={`action-toggle-details ${showDetails ? "active" : ""}`}
+            onClick={() => setShowDetails(!showDetails)}
+            title="Alternar detalle de figuras"
+          >
+            📋
+          </button>
+          <button className="minimap-close" onClick={() => setVisible(false)} title="Cerrar">
+            ✕
+          </button>
+        </div>
       </div>
-      <canvas
-        ref={canvasRef}
-        width={180}
-        height={120}
-        onPointerDown={handlePointerDown}
-        onPointerMove={handlePointerMove}
-        onPointerUp={handlePointerUp}
-        style={{ cursor: "crosshair" }}
-      />
+
+      <div className="minimap-body">
+        <canvas
+          ref={canvasRef}
+          width={180}
+          height={120}
+          onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
+          onPointerUp={handlePointerUp}
+          style={{ cursor: cursorStyle }}
+        />
+        
+        {/* HUD control toolbar */}
+        <div className="minimap-controls">
+          <button onClick={() => handleZoom(1.1)} title="Zoom In">+</button>
+          <button onClick={() => handleZoom(0.9)} title="Zoom Out">-</button>
+          <button onClick={handleRecenter} title="Ajustar a Pantalla" className="btn-fit">
+            ⛶
+          </button>
+        </div>
+      </div>
     </div>
   );
 };
