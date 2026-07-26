@@ -551,7 +551,21 @@ const ExcalidrawWrapper = () => {
       return "collab_room";
     }
     const params = new URLSearchParams(window.location.search);
-    return params.get("boardId") || null;
+    const urlBoardId = params.get("boardId");
+    if (urlBoardId) {
+      return urlBoardId;
+    }
+
+    // Check if we are loading with a library import
+    const isAddingLib = window.location.hash.includes("addLibrary") || params.has("addLibrary");
+    if (isAddingLib) {
+      const lastBoard = localStorage.getItem("my-excalidraw-last-board-id");
+      if (lastBoard && lastBoard !== "collab_room") {
+        return lastBoard;
+      }
+      return "board_default";
+    }
+    return null;
   });
   const [activeBoardName, setActiveBoardName] = useState("");
   const presenceChannelRef = useRef<any>(null);
@@ -682,6 +696,15 @@ const ExcalidrawWrapper = () => {
 
   const debugCanvasRef = useRef<HTMLCanvasElement>(null);
 
+  // Load initial board name if activeBoardId is set but name is empty
+  useEffect(() => {
+    if (activeBoardId && activeBoardId !== "collab_room" && !activeBoardName) {
+      getBoard(activeBoardId).then((board) => {
+        setActiveBoardName(board?.name || "Mi Pizarra");
+      });
+    }
+  }, [activeBoardId, activeBoardName]);
+
   // Update URL search parameters based on activeBoardId
   useEffect(() => {
     if (
@@ -689,6 +712,14 @@ const ExcalidrawWrapper = () => {
       (window.location.hash.includes("addLibrary") ||
         window.location.search.includes("addLibrary"))
     ) {
+      const lastBoard = localStorage.getItem("my-excalidraw-last-board-id");
+      if (lastBoard && lastBoard !== "collab_room") {
+        setActiveBoardId(lastBoard);
+        getBoard(lastBoard).then((b) => {
+          setActiveBoardName(b?.name || "Mi Pizarra");
+        });
+        return;
+      }
       setActiveBoardId("board_default");
       setActiveBoardName("Mi Pizarra");
       return;
@@ -698,16 +729,21 @@ const ExcalidrawWrapper = () => {
       if (activeBoardId === "collab_room") {
         // Keep hash for collab rooms
       } else {
+        localStorage.setItem("my-excalidraw-last-board-id", activeBoardId);
         const url = new URL(window.location.href);
         url.searchParams.set("boardId", activeBoardId);
-        url.hash = "";
+        if (!window.location.hash.includes("addLibrary")) {
+          url.hash = "";
+        }
         window.history.pushState({}, "", url.toString());
       }
     } else {
       const url = new URL(window.location.href);
       url.searchParams.delete("boardId");
-      url.hash = "";
-      window.history.pushState({}, "", url.pathname + url.search);
+      if (!window.location.hash.includes("addLibrary")) {
+        url.hash = "";
+      }
+      window.history.pushState({}, "", url.pathname + url.search + url.hash);
     }
   }, [activeBoardId]);
 
