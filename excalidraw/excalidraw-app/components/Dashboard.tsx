@@ -1158,22 +1158,40 @@ export const Dashboard: React.FC<DashboardProps> = ({
         {/* Welcome Section */}
         <div className="welcome-banner-premium">
           <h2>¡Buenos días, {userDisplayName}! 👋</h2>
-          <div className="welcome-stats-row">
-            <span className="stat-bullet-item">
-              <strong>{countBoards}</strong> {countBoards === 1 ? "tablero" : "tableros"}
-            </span>
-            <span className="stat-separator">•</span>
-            <span className="stat-bullet-item">
-              <strong>{countFolders}</strong> {countFolders === 1 ? "carpeta" : "carpetas"}
-            </span>
-            <span className="stat-separator">•</span>
-            <span className="stat-bullet-item">
-              <strong>{countNotes}</strong> {countNotes === 1 ? "nota" : "notas"}
-            </span>
-            <span className="stat-separator">•</span>
-            <span className="stat-bullet-item">
-              <strong>{countCollabs}</strong> {countCollabs === 1 ? "colaborador" : "colaboradores"}
-            </span>
+        </div>
+
+        {/* Compact Stats Cards Grid */}
+        <div className="stats-dashboard-grid-compact">
+          <div className="stat-card-compact board-count-card">
+            <div className="stat-icon-compact"><CanvasIcon /></div>
+            <div className="stat-details-compact">
+              <span className="stat-num-compact">{countBoards}</span>
+              <span className="stat-label-compact">{countBoards === 1 ? "Tablero" : "Tableros"}</span>
+            </div>
+          </div>
+
+          <div className="stat-card-compact folder-count-card">
+            <div className="stat-icon-compact"><FolderIcon /></div>
+            <div className="stat-details-compact">
+              <span className="stat-num-compact">{countFolders}</span>
+              <span className="stat-label-compact">{countFolders === 1 ? "Carpeta" : "Carpetas"}</span>
+            </div>
+          </div>
+
+          <div className="stat-card-compact notes-count-card">
+            <div className="stat-icon-compact"><NotesIcon /></div>
+            <div className="stat-details-compact">
+              <span className="stat-num-compact">{countNotes}</span>
+              <span className="stat-label-compact">{countNotes === 1 ? "Nota" : "Notas"}</span>
+            </div>
+          </div>
+
+          <div className="stat-card-compact collabs-count-card">
+            <div className="stat-icon-compact"><GroupIcon /></div>
+            <div className="stat-details-compact">
+              <span className="stat-num-compact">{countCollabs}</span>
+              <span className="stat-label-compact">{countCollabs === 1 ? "Colaborador" : "Colaboradores"}</span>
+            </div>
           </div>
         </div>
 

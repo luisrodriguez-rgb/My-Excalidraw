@@ -59,14 +59,247 @@ export const AppSidebar = ({
     });
   };
 
+  const importCollection = async (type: "flowchart" | "ui" | "kanban") => {
+    if (!excalidrawAPI) return;
+
+    let items: any[] = [];
+    if (type === "flowchart") {
+      items = [
+        {
+          id: "flow_process",
+          status: "published",
+          created: Date.now(),
+          name: "Proceso",
+          elements: [
+            {
+              type: "rectangle",
+              x: 0,
+              y: 0,
+              width: 140,
+              height: 60,
+              strokeColor: "#3b82f6",
+              backgroundColor: "#dbeafe",
+              fillStyle: "solid",
+              strokeWidth: 2,
+              roughness: 0,
+              roundness: { type: 3 },
+              opacity: 100,
+              isDeleted: false,
+            },
+          ],
+        },
+        {
+          id: "flow_decision",
+          status: "published",
+          created: Date.now(),
+          name: "Decisión",
+          elements: [
+            {
+              type: "diamond",
+              x: 0,
+              y: 0,
+              width: 80,
+              height: 80,
+              strokeColor: "#f59e0b",
+              backgroundColor: "#fef3c7",
+              fillStyle: "solid",
+              strokeWidth: 2,
+              roughness: 0,
+              opacity: 100,
+              isDeleted: false,
+            },
+          ],
+        },
+        {
+          id: "flow_term",
+          status: "published",
+          created: Date.now(),
+          name: "Inicio/Fin",
+          elements: [
+            {
+              type: "ellipse",
+              x: 0,
+              y: 0,
+              width: 140,
+              height: 60,
+              strokeColor: "#10b981",
+              backgroundColor: "#d1fae5",
+              fillStyle: "solid",
+              strokeWidth: 2,
+              roughness: 0,
+              opacity: 100,
+              isDeleted: false,
+            },
+          ],
+        },
+      ];
+    } else if (type === "ui") {
+      items = [
+        {
+          id: "ui_button",
+          status: "published",
+          created: Date.now(),
+          name: "Botón Primario",
+          elements: [
+            {
+              type: "rectangle",
+              x: 0,
+              y: 0,
+              width: 140,
+              height: 40,
+              strokeColor: "#6366f1",
+              backgroundColor: "#6366f1",
+              fillStyle: "solid",
+              strokeWidth: 1,
+              roughness: 0,
+              roundness: { type: 3 },
+              opacity: 100,
+              isDeleted: false,
+            },
+          ],
+        },
+        {
+          id: "ui_input",
+          status: "published",
+          created: Date.now(),
+          name: "Campo de Texto",
+          elements: [
+            {
+              type: "rectangle",
+              x: 0,
+              y: 0,
+              width: 200,
+              height: 40,
+              strokeColor: "#cbd5e1",
+              backgroundColor: "#f8fafc",
+              fillStyle: "solid",
+              strokeWidth: 1,
+              roughness: 0,
+              roundness: { type: 3 },
+              opacity: 100,
+              isDeleted: false,
+            },
+          ],
+        },
+        {
+          id: "ui_card",
+          status: "published",
+          created: Date.now(),
+          name: "Contenedor Tarjeta",
+          elements: [
+            {
+              type: "rectangle",
+              x: 0,
+              y: 0,
+              width: 280,
+              height: 160,
+              strokeColor: "#e2e8f0",
+              backgroundColor: "#ffffff",
+              fillStyle: "solid",
+              strokeWidth: 1,
+              roughness: 0,
+              roundness: { type: 3 },
+              opacity: 100,
+              isDeleted: false,
+            },
+          ],
+        },
+      ];
+    } else if (type === "kanban") {
+      items = [
+        {
+          id: "kanban_todo",
+          status: "published",
+          created: Date.now(),
+          name: "Kanban Pendiente",
+          elements: [
+            {
+              type: "rectangle",
+              x: 0,
+              y: 0,
+              width: 180,
+              height: 80,
+              strokeColor: "#f87171",
+              backgroundColor: "#fef2f2",
+              fillStyle: "solid",
+              strokeWidth: 1.5,
+              roughness: 0,
+              roundness: { type: 3 },
+              opacity: 100,
+              isDeleted: false,
+            },
+          ],
+        },
+        {
+          id: "kanban_progress",
+          status: "published",
+          created: Date.now(),
+          name: "Kanban En Progreso",
+          elements: [
+            {
+              type: "rectangle",
+              x: 0,
+              y: 0,
+              width: 180,
+              height: 80,
+              strokeColor: "#fbbf24",
+              backgroundColor: "#fffbeb",
+              fillStyle: "solid",
+              strokeWidth: 1.5,
+              roughness: 0,
+              roundness: { type: 3 },
+              opacity: 100,
+              isDeleted: false,
+            },
+          ],
+        },
+        {
+          id: "kanban_done",
+          status: "published",
+          created: Date.now(),
+          name: "Kanban Completado",
+          elements: [
+            {
+              type: "rectangle",
+              x: 0,
+              y: 0,
+              width: 180,
+              height: 80,
+              strokeColor: "#34d399",
+              backgroundColor: "#ecfdf5",
+              fillStyle: "solid",
+              strokeWidth: 1.5,
+              roughness: 0,
+              roundness: { type: 3 },
+              opacity: 100,
+              isDeleted: false,
+            },
+          ],
+        },
+      ];
+    }
+
+    try {
+      await excalidrawAPI.updateLibrary({
+        libraryItems: items,
+        merge: true,
+        openLibraryMenu: true,
+      });
+    } catch (err) {
+      console.error("Error importing pre-built library:", err);
+    }
+  };
+
   return (
-    <DefaultSidebar>
+    <DefaultSidebar docked={true}>
       <DefaultSidebar.TabTriggers>
         <Sidebar.TabTrigger tab="comments">
           {messageCircleIcon}
         </Sidebar.TabTrigger>
-        <Sidebar.TabTrigger tab="presentation">
-          {presentationIcon}
+        <Sidebar.TabTrigger tab="premium-libraries" title="Librerías Premium">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
+          </svg>
         </Sidebar.TabTrigger>
       </DefaultSidebar.TabTriggers>
 
@@ -377,23 +610,213 @@ export const AppSidebar = ({
         </div>
       </Sidebar.Tab>
 
-      <Sidebar.Tab tab="presentation">
-        <div style={{ padding: "16px" }}>
+      <Sidebar.Tab tab="premium-libraries">
+        <div
+          style={{
+            padding: "16px",
+            display: "flex",
+            flexDirection: "column",
+            height: "100%",
+            boxSizing: "border-box",
+            overflowY: "auto",
+          }}
+        >
           <span
             style={{
               fontWeight: "700",
               fontSize: "16px",
               display: "block",
-              marginBottom: "12px",
+              marginBottom: "8px",
             }}
           >
-            Diapositivas
+            Librerías Premium
           </span>
-          <p style={{ fontSize: "13px", color: "#666", lineHeight: "1.4" }}>
-            Crea marcos ("Frames") en el canvas para organizar tus dibujos en
-            diapositivas individuales. Luego podrás exportarlas todas juntas a
-            PowerPoint utilizando la opción en el menú de exportación.
+          <p
+            style={{
+              fontSize: "12.5px",
+              color: "#64748b",
+              lineHeight: "1.4",
+              margin: "0 0 16px 0",
+            }}
+          >
+            Colecciones de formas y bloques optimizados y prediseñados listos para usar en tus pizarras.
           </p>
+
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: "12px",
+            }}
+          >
+            {/* Card 1: Flowcharts */}
+            <div
+              style={{
+                border: "1px solid var(--border-color)",
+                borderRadius: "8px",
+                padding: "12px",
+                backgroundColor: "var(--card-bg-color, #ffffff)",
+                display: "flex",
+                flexDirection: "column",
+                gap: "8px",
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                }}
+              >
+                <span
+                  style={{
+                    backgroundColor: "rgba(59, 130, 246, 0.1)",
+                    color: "#3b82f6",
+                    fontSize: "11px",
+                    fontWeight: "700",
+                    padding: "2px 6px",
+                    borderRadius: "4px",
+                  }}
+                >
+                  DIAGRAMA
+                </span>
+                <span style={{ fontWeight: "600", fontSize: "13px" }}>
+                  Diagramas de Flujo
+                </span>
+              </div>
+              <p style={{ fontSize: "11.5px", color: "#64748b", margin: 0, lineHeight: "1.4" }}>
+                Procesos, decisiones y terminadores estándar para modelar tus flujos de trabajo.
+              </p>
+              <button
+                onClick={() => importCollection("flowchart")}
+                style={{
+                  backgroundColor: "#a855f7",
+                  color: "white",
+                  border: "none",
+                  padding: "8px 12px",
+                  borderRadius: "6px",
+                  fontSize: "12px",
+                  fontWeight: "600",
+                  cursor: "pointer",
+                  width: "100%",
+                }}
+              >
+                Añadir a mi Biblioteca
+              </button>
+            </div>
+
+            {/* Card 2: Web UI Components */}
+            <div
+              style={{
+                border: "1px solid var(--border-color)",
+                borderRadius: "8px",
+                padding: "12px",
+                backgroundColor: "var(--card-bg-color, #ffffff)",
+                display: "flex",
+                flexDirection: "column",
+                gap: "8px",
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                }}
+              >
+                <span
+                  style={{
+                    backgroundColor: "rgba(99, 102, 241, 0.1)",
+                    color: "#6366f1",
+                    fontSize: "11px",
+                    fontWeight: "700",
+                    padding: "2px 6px",
+                    borderRadius: "4px",
+                  }}
+                >
+                  INTERFAZ
+                </span>
+                <span style={{ fontWeight: "600", fontSize: "13px" }}>
+                  Componentes UI Web
+                </span>
+              </div>
+              <p style={{ fontSize: "11.5px", color: "#64748b", margin: 0, lineHeight: "1.4" }}>
+                Botones primarios, entradas de texto y tarjetas contenedoras listas para prototipar.
+              </p>
+              <button
+                onClick={() => importCollection("ui")}
+                style={{
+                  backgroundColor: "#a855f7",
+                  color: "white",
+                  border: "none",
+                  padding: "8px 12px",
+                  borderRadius: "6px",
+                  fontSize: "12px",
+                  fontWeight: "600",
+                  cursor: "pointer",
+                  width: "100%",
+                }}
+              >
+                Añadir a mi Biblioteca
+              </button>
+            </div>
+
+            {/* Card 3: Kanban Cards */}
+            <div
+              style={{
+                border: "1px solid var(--border-color)",
+                borderRadius: "8px",
+                padding: "12px",
+                backgroundColor: "var(--card-bg-color, #ffffff)",
+                display: "flex",
+                flexDirection: "column",
+                gap: "8px",
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                }}
+              >
+                <span
+                  style={{
+                    backgroundColor: "rgba(16, 185, 129, 0.1)",
+                    color: "#10b981",
+                    fontSize: "11px",
+                    fontWeight: "700",
+                    padding: "2px 6px",
+                    borderRadius: "4px",
+                  }}
+                >
+                  KANBAN
+                </span>
+                <span style={{ fontWeight: "600", fontSize: "13px" }}>
+                  Tarjetas de Organización
+                </span>
+              </div>
+              <p style={{ fontSize: "11.5px", color: "#64748b", margin: 0, lineHeight: "1.4" }}>
+                Bloques de colores (Pendiente, En Progreso, Completado) para organizar tareas.
+              </p>
+              <button
+                onClick={() => importCollection("kanban")}
+                style={{
+                  backgroundColor: "#a855f7",
+                  color: "white",
+                  border: "none",
+                  padding: "8px 12px",
+                  borderRadius: "6px",
+                  fontSize: "12px",
+                  fontWeight: "600",
+                  cursor: "pointer",
+                  width: "100%",
+                }}
+              >
+                Añadir a mi Biblioteca
+              </button>
+            </div>
+          </div>
         </div>
       </Sidebar.Tab>
     </DefaultSidebar>

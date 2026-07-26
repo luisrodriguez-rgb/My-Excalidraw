@@ -743,7 +743,7 @@
 
     // Welcome banner section
     .welcome-banner-premium {
-      margin-bottom: 24px;
+      margin-bottom: 16px;
       text-align: left;
 
       h2 {
@@ -752,25 +752,77 @@
         font-weight: 700;
         color: var(--text-primary);
       }
+    }
 
-      .welcome-stats-row {
+    // Compact Stats Cards Grid (Reduced by 30%)
+    .stats-dashboard-grid-compact {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 24px;
+
+      .stat-card-compact {
+        background-color: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        padding: 10px 14px;
         display: flex;
         align-items: center;
-        gap: 8px;
-        margin-top: 6px;
-        font-size: 13px;
-        color: var(--text-secondary);
+        gap: 12px;
+        box-shadow: var(--card-shadow);
+        transition: transform 0.15s ease, border-color 0.15s ease;
 
-        .stat-bullet-item {
-          strong {
-            color: var(--text-primary);
-            font-weight: 600;
-          }
+        &:hover {
+          transform: translateY(-2px);
+          border-color: var(--accent-color);
         }
 
-        .stat-separator {
-          color: var(--border-color);
-          opacity: 0.6;
+        .stat-icon-compact {
+          width: 32px;
+          height: 32px;
+          border-radius: 6px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 15px;
+          flex-shrink: 0;
+        }
+
+        // Stats card color variants (pastel light backgrounds)
+        &.board-count-card .stat-icon-compact {
+          background-color: rgba(225, 29, 72, 0.08);
+          color: var(--accent-color);
+        }
+        &.folder-count-card .stat-icon-compact {
+          background-color: rgba(168, 85, 247, 0.08);
+          color: #a855f7;
+        }
+        &.notes-count-card .stat-icon-compact {
+          background-color: rgba(245, 158, 11, 0.08);
+          color: #f59e0b;
+        }
+        &.collabs-count-card .stat-icon-compact {
+          background-color: rgba(16, 185, 129, 0.08);
+          color: #10b981;
+        }
+
+        .stat-details-compact {
+          display: flex;
+          align-items: baseline;
+          gap: 6px;
+          text-align: left;
+
+          .stat-num-compact {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--text-primary);
+            line-height: 1.2;
+          }
+          .stat-label-compact {
+            font-size: 11.5px;
+            color: var(--text-secondary);
+            font-weight: 500;
+          }
         }
       }
     }
