@@ -3308,6 +3308,7 @@ const ExcalidrawWrapper = () => {
             )}
           </div>
         </div>
+      )}
       <CommandPalette
         activeBoardId={activeBoardId}
         boards={boardsList}

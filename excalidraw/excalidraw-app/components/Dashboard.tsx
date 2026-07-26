@@ -22,6 +22,7 @@ import {
 } from "../data/boardsDb";
 import { TEMPLATES } from "../data/templates";
 import { supabase } from "../data/supabaseClient";
+import { exportToSvg } from "@excalidraw/excalidraw";
 
 import { AuthModal } from "./AuthModal";
 
