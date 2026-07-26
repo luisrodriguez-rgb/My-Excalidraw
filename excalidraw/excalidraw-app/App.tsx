@@ -163,7 +163,7 @@ import {
   syncBoardsWithSupabase,
   getBoardsMetadata,
 } from "./data/boardsDb";
-import { CommandPalette } from "./components/CommandPalette";
+import { WorkspaceCommandPalette } from "./components/WorkspaceCommandPalette";
 import { TEMPLATES } from "./data/templates";
 
 import type { BoardComment } from "./data/boardsDb";
@@ -2080,19 +2080,19 @@ const ExcalidrawWrapper = () => {
             setActiveBoardId("collab_room");
           }}
         />
-        <CommandPalette
+        <WorkspaceCommandPalette
           activeBoardId={null}
           boards={boardsList}
-          onSelectBoard={async (id) => {
+          onSelectBoard={async (id: string) => {
             const board = await getBoard(id);
             setActiveBoardName(board?.name || "Workspace");
             setActiveBoardId(id);
           }}
-          onNavigateTab={(tab) => {
+          onNavigateTab={(tab: "recientes" | "favoritos" | "compartidos" | "papelera" | "plantillas") => {
             localStorage.setItem("my-excalidraw-active-tab", tab);
             window.dispatchEvent(new CustomEvent("dashboard-navigate-tab", { detail: tab }));
           }}
-          onCreateBoard={(templateId) => {
+          onCreateBoard={(templateId: string | null) => {
             window.dispatchEvent(new CustomEvent("dashboard-create-board", { detail: templateId }));
           }}
           theme={appTheme}
@@ -3309,15 +3309,15 @@ const ExcalidrawWrapper = () => {
           </div>
         </div>
       )}
-      <CommandPalette
+      <WorkspaceCommandPalette
         activeBoardId={activeBoardId}
         boards={boardsList}
-        onSelectBoard={async (id) => {
+        onSelectBoard={async (id: string) => {
           const board = await getBoard(id);
           setActiveBoardName(board?.name || "Workspace");
           setActiveBoardId(id);
         }}
-        onNavigateTab={(tab) => {
+        onNavigateTab={(tab: "recientes" | "favoritos" | "compartidos" | "papelera" | "plantillas") => {
           localStorage.setItem("my-excalidraw-active-tab", tab);
           setActiveBoardId(null);
         }}
