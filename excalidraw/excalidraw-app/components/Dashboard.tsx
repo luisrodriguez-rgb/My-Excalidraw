@@ -328,7 +328,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
   // Storage & Plan States
   const [activePlan, setActivePlan] = useState<"free" | "pro" | "enterprise">("free");
   const [showPlanModal, setShowPlanModal] = useState(false);
-  const [storageUsed, setStorageUsed] = useState(2400000); // 2.4 MB default
+  const [storageUsed, setStorageUsed] = useState(0);
 
   // Folders list length management
   const [showAllFolders, setShowAllFolders] = useState(false);
@@ -477,7 +477,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
           total += JSON.stringify(board).length;
         }
       }
-      setStorageUsed(total > 0 ? total : 2400000);
+      setStorageUsed(total);
     } catch (e) {
       console.warn("Failed to calculate storage used:", e);
     }
@@ -824,12 +824,14 @@ export const Dashboard: React.FC<DashboardProps> = ({
   const countBoards = boards.filter((b) => !b.isDeleted && !b.isTemplate).length;
   const countFolders = folders.length;
   const countNotes = boards.reduce((acc, b) => acc + (b.notesCount || 0), 0);
-  const countCollabs = Math.max(3, boards.filter((b) => b.isCollaboration).length * 2 + 1);
+  const countCollabs = boards.filter((b) => b.isCollaboration && !b.isDeleted).length > 0
+    ? boards.filter((b) => b.isCollaboration && !b.isDeleted).length * 2 + 1
+    : 0;
 
   // User avatar display
   const userDisplayName = session?.user?.email
     ? session.user.email.split("@")[0].charAt(0).toUpperCase() + session.user.email.split("@")[0].slice(1)
-    : "Luis";
+    : "Invitado";
   const userInitials = userDisplayName.charAt(0).toUpperCase();
 
   const activeFolder = folders.find((f) => f.id === activeFolderId);
@@ -1422,12 +1424,13 @@ export const Dashboard: React.FC<DashboardProps> = ({
                     className="btn-ai-generate"
                     onClick={async () => {
                       if (!aiPrompt.trim()) return;
-                      let apiKey = import.meta.env.VITE_GEMINI_API_KEY || "";
+                      let apiKey = import.meta.env.VITE_GEMINI_API_KEY || localStorage.getItem("my-excalidraw-gemini-key") || "";
 
                       if (!apiKey) {
-                        const inputKey = prompt("No se encontró clave API en .env. Por favor introduce tu Gemini API Key:");
+                        const inputKey = prompt("No se encontró clave API en .env. Por favor introduce tu Gemini API Key (la cual se guardará localmente en este navegador):");
                         if (!inputKey) return;
                         apiKey = inputKey;
+                        localStorage.setItem("my-excalidraw-gemini-key", apiKey);
                       }
 
                       setIsGeneratingTemplate(true);
