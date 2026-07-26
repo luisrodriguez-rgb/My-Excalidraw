@@ -20,31 +20,33 @@ export const PresentationMode: React.FC<PresentationModeProps> = ({
   // Center & fit a slide element in the current viewport
   const zoomToSlide = useCallback(
     (slide: any) => {
-      if (!slide || !excalidrawAPI) return;
+      if (!slide || !excalidrawAPI || typeof excalidrawAPI.updateScene !== "function") return;
 
       try {
-        const padding = 60;
         const sidebarWidth = notesSidebarOpen ? 340 : 0;
-        const availableWidth = window.innerWidth - padding - sidebarWidth;
-        const availableHeight = window.innerHeight - padding - 60;
+        // 0 padding for exact full screen slide rendering
+        const availableWidth = window.innerWidth - sidebarWidth;
+        const availableHeight = window.innerHeight;
 
         const slideWidth = Math.max(slide.width || 100, 100);
         const slideHeight = Math.max(slide.height || 100, 100);
 
+        // Zoom to fit the slide exactly within available dimensions
         const zoomValue = Math.min(
           Math.max(
             Math.min(availableWidth / slideWidth, availableHeight / slideHeight),
-            0.15,
+            0.1,
           ),
-          2.0,
+          5.0,
         );
 
-        const centerX = slide.x + slideWidth / 2;
-        const centerY = slide.y + slideHeight / 2;
+        const centerX = (slide.x ?? 0) + slideWidth / 2;
+        const centerY = (slide.y ?? 0) + slideHeight / 2;
 
         const visibleCenterX = (window.innerWidth - sidebarWidth) / 2;
         const visibleCenterY = window.innerHeight / 2;
 
+        // Coordinates to center the slide exactly
         const scrollX = visibleCenterX / zoomValue - centerX;
         const scrollY = visibleCenterY / zoomValue - centerY;
 
@@ -64,39 +66,45 @@ export const PresentationMode: React.FC<PresentationModeProps> = ({
 
   // Discover all slides (Frames or large container shapes)
   useEffect(() => {
-    const elements = excalidrawAPI.getSceneElements();
-    const validElements = elements.filter((el) => !el.isDeleted);
+    if (!excalidrawAPI || typeof excalidrawAPI.getSceneElements !== "function") return;
 
-    // 1. First priority: explicit Frame elements
-    let frameSlides = validElements.filter(
-      (el: any) => el.type === "frame" || el.type === "magicframe",
-    );
+    try {
+      const elements = excalidrawAPI.getSceneElements() || [];
+      const validElements = elements.filter((el) => el && !el.isDeleted);
 
-    // 2. Fallback: if no frames, find large rectangle containers (width > 250, height > 180)
-    if (frameSlides.length === 0) {
-      frameSlides = validElements.filter(
-        (el: any) =>
-          el.type === "rectangle" &&
-          el.width > 250 &&
-          el.height > 180 &&
-          !el.frameId, // top-level containers only
+      // 1. First priority: explicit Frame elements
+      let frameSlides = validElements.filter(
+        (el: any) => el.type === "frame" || el.type === "magicframe",
       );
-    }
 
-    // Sort slides: top to bottom, then left to right
-    frameSlides.sort((a: any, b: any) => {
-      const yDiff = a.y - b.y;
-      if (Math.abs(yDiff) > 100) {
-        return yDiff;
+      // 2. Fallback: if no frames, find large rectangle containers (width > 250, height > 180)
+      if (frameSlides.length === 0) {
+        frameSlides = validElements.filter(
+          (el: any) =>
+            el.type === "rectangle" &&
+            el.width > 250 &&
+            el.height > 180 &&
+            !el.frameId, // top-level containers only
+        );
       }
-      return a.x - b.x;
-    });
 
-    setSlides(frameSlides);
+      // Sort slides: top to bottom, then left to right safely
+      frameSlides.sort((a: any, b: any) => {
+        const yDiff = (a.y ?? 0) - (b.y ?? 0);
+        if (Math.abs(yDiff) > 100) {
+          return yDiff;
+        }
+        return (a.x ?? 0) - (b.x ?? 0);
+      });
 
-    // Initial zoom to first slide if available
-    if (frameSlides.length > 0) {
-      zoomToSlide(frameSlides[0]);
+      setSlides(frameSlides);
+
+      // Initial zoom to first slide if available
+      if (frameSlides.length > 0 && frameSlides[0]) {
+        zoomToSlide(frameSlides[0]);
+      }
+    } catch (err) {
+      console.error("Error discovering presentation slides:", err);
     }
   }, [excalidrawAPI, zoomToSlide]);
 
@@ -194,28 +202,36 @@ export const PresentationMode: React.FC<PresentationModeProps> = ({
 
   // Keep track of scroll & zoom to render the framing mask in real time
   const [viewport, setViewport] = useState(() => {
-    if (excalidrawAPI) {
-      const state = excalidrawAPI.getAppState();
-      return {
-        scrollX: state?.scrollX ?? 0,
-        scrollY: state?.scrollY ?? 0,
-        zoom: state?.zoom?.value ?? state?.zoom ?? 1,
-        theme: state?.theme ?? "light",
-      };
+    if (excalidrawAPI && typeof excalidrawAPI.getAppState === "function") {
+      try {
+        const state = excalidrawAPI.getAppState();
+        return {
+          scrollX: state?.scrollX ?? 0,
+          scrollY: state?.scrollY ?? 0,
+          zoom: state?.zoom?.value ?? state?.zoom ?? 1,
+          theme: state?.theme ?? "light",
+        };
+      } catch (err) {
+        console.error("Error getting initial presentation appState:", err);
+      }
     }
     return { scrollX: 0, scrollY: 0, zoom: 1, theme: "light" };
   });
 
   const updateViewport = useCallback(() => {
-    if (!excalidrawAPI) return;
-    const state = excalidrawAPI.getAppState();
-    if (!state) return;
-    setViewport({
-      scrollX: state.scrollX ?? 0,
-      scrollY: state.scrollY ?? 0,
-      zoom: state.zoom?.value ?? state.zoom ?? 1,
-      theme: state.theme ?? "light",
-    });
+    if (!excalidrawAPI || typeof excalidrawAPI.getAppState !== "function") return;
+    try {
+      const state = excalidrawAPI.getAppState();
+      if (!state) return;
+      setViewport({
+        scrollX: state.scrollX ?? 0,
+        scrollY: state.scrollY ?? 0,
+        zoom: state.zoom?.value ?? state.zoom ?? 1,
+        theme: state.theme ?? "light",
+      });
+    } catch (err) {
+      console.error("Error updating presentation viewport:", err);
+    }
   }, [excalidrawAPI]);
 
   useEffect(() => {
@@ -262,10 +278,10 @@ export const PresentationMode: React.FC<PresentationModeProps> = ({
     `Diapositiva ${currentIndex + 1}`;
 
   // Mask dimensions
-  const left = (currentSlide.x + viewport.scrollX) * viewport.zoom;
-  const top = (currentSlide.y + viewport.scrollY) * viewport.zoom;
-  const width = currentSlide.width * viewport.zoom;
-  const height = currentSlide.height * viewport.zoom;
+  const left = ((currentSlide.x ?? 0) + viewport.scrollX) * viewport.zoom;
+  const top = ((currentSlide.y ?? 0) + viewport.scrollY) * viewport.zoom;
+  const width = (currentSlide.width ?? 100) * viewport.zoom;
+  const height = (currentSlide.height ?? 100) * viewport.zoom;
   const maskColor = viewport.theme === "dark" ? "#121212" : "#ffffff";
 
   return (
