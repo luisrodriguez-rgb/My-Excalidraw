@@ -762,6 +762,11 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
   const activeFolder = folders.find((f) => f.id === activeFolderId);
   const visibleFolders = showAllFolders ? folders : folders.slice(0, 4);
+  const favoriteBoards = boards.filter((b) => b.isFavorite && !b.isDeleted && !b.isTemplate).slice(0, 3);
+  const recentBoards = boards
+    .filter((b) => !b.isDeleted && !b.isTemplate)
+    .sort((a, b) => b.updatedAt - a.updatedAt)
+    .slice(0, 3);
 
   return (
     <div className={`workspace-dashboard theme-${theme}`}>
@@ -802,9 +807,36 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
         <div className="sidebar-divider" />
 
+        {/* 1. Starred/Favorite Boards */}
         <div className="sidebar-section">
           <div className="section-header">
-            <span>MI ESPACIO</span>
+            <span>FAVORITOS</span>
+          </div>
+          <div className="sidebar-boards-list">
+            {favoriteBoards.length > 0 ? (
+              favoriteBoards.map((b) => (
+                <button
+                  key={b.id}
+                  className="sidebar-board-link"
+                  onClick={() => handleOpenBoard(b)}
+                  title={`Abrir ${b.name}`}
+                >
+                  <span className="star-icon-sidebar"><StarIcon /></span>
+                  <span className="sidebar-board-name">{b.name}</span>
+                </button>
+              ))
+            ) : (
+              <span className="sidebar-empty-hint">Sin favoritos</span>
+            )}
+          </div>
+        </div>
+
+        <div className="sidebar-divider" />
+
+        {/* 2. Folders/Carpetas List */}
+        <div className="sidebar-section">
+          <div className="section-header">
+            <span>CARPETAS</span>
             <button
               className="btn-add-section"
               onClick={() => setShowCreateFolderModal(true)}
@@ -864,19 +896,34 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
         <div className="sidebar-divider" />
 
-        <div className="sidebar-bottom-nav">
-          <button
-            className={`nav-link ${activeTab === "favoritos" && activeFolderId === null && !showOnlyTemplates ? "active" : ""}`}
-            onClick={() => {
-              setActiveTab("favoritos");
-              setActiveFolderId(null);
-              setShowOnlyTemplates(false);
-            }}
-          >
-            <span className="nav-icon"><StarIcon /></span>
-            <span className="nav-text">Favoritos</span>
-          </button>
+        {/* 3. Recent Boards list */}
+        <div className="sidebar-section">
+          <div className="section-header">
+            <span>RECIENTES</span>
+          </div>
+          <div className="sidebar-boards-list">
+            {recentBoards.length > 0 ? (
+              recentBoards.map((b) => (
+                <button
+                  key={b.id}
+                  className="sidebar-board-link"
+                  onClick={() => handleOpenBoard(b)}
+                  title={`Abrir ${b.name}`}
+                >
+                  <span className="board-icon-sidebar"><CanvasIcon /></span>
+                  <span className="sidebar-board-name">{b.name}</span>
+                </button>
+              ))
+            ) : (
+              <span className="sidebar-empty-hint">Sin tableros</span>
+            )}
+          </div>
+        </div>
 
+        <div className="sidebar-divider" />
+
+        {/* 4. Bottom Navigations */}
+        <div className="sidebar-bottom-nav">
           <button
             className={`nav-link ${activeTab === "compartidos" && activeFolderId === null && !showOnlyTemplates ? "active" : ""}`}
             onClick={() => {
@@ -902,19 +949,24 @@ export const Dashboard: React.FC<DashboardProps> = ({
           </button>
         </div>
 
-        {/* Storage status widget */}
-        <div className="storage-widget">
-          <span className="storage-title">Almacenamiento ({activePlan === "free" ? "Gratuito" : activePlan === "pro" ? "Pro" : "Enterprise"})</span>
-          <div className="progress-container">
+        {/* 5. Compact Storage widget */}
+        <div 
+          className="storage-widget-compact" 
+          onClick={() => setShowPlanModal(true)} 
+          title={`Gestionar plan: ${storageUsed < 1024 * 1024 ? (storageUsed / 1024).toFixed(1) + " KB" : (storageUsed / (1024 * 1024)).toFixed(2) + " MB"} de ${PLAN_LIMITS[activePlan] / (1024 * 1024)} MB utilizados`}
+        >
+          <div className="storage-info">
+            <span className="storage-percent">
+              {Math.min(Math.round((storageUsed / PLAN_LIMITS[activePlan]) * 100), 100)}% usado
+            </span>
+            <span className="storage-badge">{activePlan === "free" ? "Gratuito" : activePlan === "pro" ? "Pro" : "Enterprise"}</span>
+          </div>
+          <div className="progress-container-compact">
             <div 
-              className={`progress-bar ${storageUsed >= PLAN_LIMITS[activePlan] ? "progress-bar-danger" : ""}`} 
+              className={`progress-bar-compact ${storageUsed >= PLAN_LIMITS[activePlan] ? "danger" : ""}`} 
               style={{ width: `${Math.min((storageUsed / PLAN_LIMITS[activePlan]) * 100, 100)}%` }} 
             />
           </div>
-          <span className="storage-text">
-            {storageUsed < 1024 * 1024 ? (storageUsed / 1024).toFixed(1) + " KB" : (storageUsed / (1024 * 1024)).toFixed(2) + " MB"} de {PLAN_LIMITS[activePlan] < 1024 * 1024 * 1024 ? (PLAN_LIMITS[activePlan] / (1024 * 1024)).toFixed(0) + " MB" : (PLAN_LIMITS[activePlan] / (1024 * 1024 * 1024)).toFixed(0) + " GB"} utilizados
-          </span>
-          <button className="storage-link" onClick={() => setShowPlanModal(true)}>Gestionar plan →</button>
         </div>
       </aside>
 
@@ -1105,42 +1157,23 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
         {/* Welcome Section */}
         <div className="welcome-banner-premium">
-          <h2>Buenos días, {userDisplayName}</h2>
-          <p>Aquí tienes un resumen de tu espacio de trabajo.</p>
-        </div>
-
-        {/* Stats Grid Widget */}
-        <div className="stats-dashboard-grid">
-          <div className="stat-card board-count-card">
-            <div className="stat-icon"><CanvasIcon /></div>
-            <div className="stat-details">
-              <h3>{countBoards}</h3>
-              <span>Tableros</span>
-            </div>
-          </div>
-
-          <div className="stat-card folder-count-card">
-            <div className="stat-icon"><FolderIcon /></div>
-            <div className="stat-details">
-              <h3>{countFolders}</h3>
-              <span>Carpetas</span>
-            </div>
-          </div>
-
-          <div className="stat-card notes-count-card">
-            <div className="stat-icon"><NotesIcon /></div>
-            <div className="stat-details">
-              <h3>{countNotes}</h3>
-              <span>Notas</span>
-            </div>
-          </div>
-
-          <div className="stat-card collabs-count-card">
-            <div className="stat-icon"><GroupIcon /></div>
-            <div className="stat-details">
-              <h3>{countCollabs}</h3>
-              <span>Colaboradores</span>
-            </div>
+          <h2>¡Buenos días, {userDisplayName}! 👋</h2>
+          <div className="welcome-stats-row">
+            <span className="stat-bullet-item">
+              <strong>{countBoards}</strong> {countBoards === 1 ? "tablero" : "tableros"}
+            </span>
+            <span className="stat-separator">•</span>
+            <span className="stat-bullet-item">
+              <strong>{countFolders}</strong> {countFolders === 1 ? "carpeta" : "carpetas"}
+            </span>
+            <span className="stat-separator">•</span>
+            <span className="stat-bullet-item">
+              <strong>{countNotes}</strong> {countNotes === 1 ? "nota" : "notas"}
+            </span>
+            <span className="stat-separator">•</span>
+            <span className="stat-bullet-item">
+              <strong>{countCollabs}</strong> {countCollabs === 1 ? "colaborador" : "colaboradores"}
+            </span>
           </div>
         </div>
 
@@ -1303,13 +1336,31 @@ export const Dashboard: React.FC<DashboardProps> = ({
                     {!board.isDeleted && (
                       <div className="card-quick-actions-bar">
                         <button
-                          className="btn-open-overlay"
+                          className="btn-quick-action"
                           onClick={(e) => {
                             e.stopPropagation();
                             handleOpenBoard(board);
                           }}
                         >
-                          <EyeIcon /> Abrir
+                          Abrir
+                        </button>
+                        <button
+                          className="btn-quick-action"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleFavorite(board.id, board.isFavorite);
+                          }}
+                        >
+                          {board.isFavorite ? "★ Quitar" : "★ Favorito"}
+                        </button>
+                        <button
+                          className="btn-quick-action"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDuplicate(board.id, board.name);
+                          }}
+                        >
+                          Duplicar
                         </button>
                       </div>
                     )}
@@ -1531,8 +1582,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 onClick={() => handleCreateBoard()}
               >
                 <div className="placeholder-content">
-                  <div className="plus-dashed-icon">+</div>
-                  <span>Crear nuevo tablero</span>
+                  <div className="plus-dashed-icon">＋</div>
+                  <div className="placeholder-title">Crear tablero</div>
+                  <div className="placeholder-subtitle">Empieza desde cero o usa una plantilla</div>
                 </div>
               </div>
             )}
