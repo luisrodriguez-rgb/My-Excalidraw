@@ -87,7 +87,7 @@
         ON public.shared_links FOR SELECT
         USING (true);
 
-    DROP POLICY IF EXISTS "Public insert access for shared_links" ON public.shared_links;
+    DROP POLICY IF EXISTS "Authenticated insert access for shared_links" ON public.shared_links;
     -- CN-003: Only authenticated users can create shared links
     CREATE POLICY "Authenticated insert access for shared_links"
         ON public.shared_links FOR INSERT
@@ -105,5 +105,34 @@
 
     -- Garantizar que la columna is_template existe en bases de datos ya creadas
     ALTER TABLE public.boards ADD COLUMN IF NOT EXISTS is_template BOOLEAN NOT NULL DEFAULT FALSE;
+
+    -- 6. Tabla de Plantillas del Workspace (Templates)
+    CREATE TABLE IF NOT EXISTS public.templates (
+        id TEXT PRIMARY KEY,
+        user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+        name TEXT NOT NULL,
+        description TEXT,
+        category TEXT NOT NULL,
+        elements JSONB NOT NULL,
+        thumbnail TEXT, -- base64 representation of preview
+        is_public BOOLEAN NOT NULL DEFAULT FALSE,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+
+    -- Habilitar RLS para plantillas
+    ALTER TABLE public.templates ENABLE ROW LEVEL SECURITY;
+
+    -- Todos los usuarios autenticados pueden ver todas las plantillas
+    DROP POLICY IF EXISTS "Permitir lectura general a usuarios autenticados" ON public.templates;
+    CREATE POLICY "Permitir lectura general a usuarios autenticados" 
+        ON public.templates FOR SELECT 
+        TO authenticated 
+        USING (true);
+
+    -- Solo el creador puede modificar o eliminar sus plantillas
+    DROP POLICY IF EXISTS "Permitir gestión de plantillas propias" ON public.templates;
+    CREATE POLICY "Permitir gestión de plantillas propias" 
+        ON public.templates FOR ALL 
+        USING (auth.uid() = user_id);
 
 

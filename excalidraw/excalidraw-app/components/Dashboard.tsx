@@ -14,6 +14,10 @@ import {
   getBoardVersions,
   restoreBoardVersion,
   syncBoardsWithSupabase,
+  TemplateMetadata,
+  syncAndLoadTemplates,
+  saveTemplate,
+  deleteTemplate,
 } from "../data/boardsDb";
 import { TEMPLATES } from "../data/templates";
 import { supabase } from "../data/supabaseClient";
@@ -262,10 +266,11 @@ export const Dashboard: React.FC<DashboardProps> = ({
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
 
   // Premium Templates Hub States
-  const [selectedTemplateCategory, setSelectedTemplateCategory] = useState<"todos" | "negocios" | "ingenieria" | "ai">("todos");
+  const [selectedTemplateCategory, setSelectedTemplateCategory] = useState<"todos" | "negocios" | "ingenieria" | "equipo" | "ai">("todos");
   const [templateSearchQuery, setTemplateSearchQuery] = useState("");
   const [aiPrompt, setAiPrompt] = useState("");
   const [isGeneratingTemplate, setIsGeneratingTemplate] = useState(false);
+  const [workspaceTemplates, setWorkspaceTemplates] = useState<TemplateMetadata[]>([]);
 
   // Dropdown States
   const [showQuickAddMenu, setShowQuickAddMenu] = useState(false);
@@ -456,6 +461,12 @@ export const Dashboard: React.FC<DashboardProps> = ({
     const folderList = await getFolders();
     setFolders(folderList);
     calculateStorageUsed(list);
+    try {
+      const templatesList = await syncAndLoadTemplates();
+      setWorkspaceTemplates(templatesList);
+    } catch (e) {
+      console.warn("Error loading workspace templates:", e);
+    }
   };
 
   const handleCreateBoard = async (templateId: string | null = null) => {
@@ -638,7 +649,34 @@ export const Dashboard: React.FC<DashboardProps> = ({
   };
 
   const handleToggleTemplate = async (id: string, isTemplate: boolean) => {
-    await saveBoard(id, { isTemplate });
+    if (isTemplate) {
+      const boardContent = await getBoard(id);
+      if (!boardContent) return;
+
+      const name = prompt("Nombre de la plantilla:", boardContent.name) || boardContent.name;
+      const description = prompt("Descripción de la plantilla:", "Plantilla personalizada del equipo") || "";
+      const catInput = prompt("Categoría (1: Negocios, 2: Ingeniería, 3: Diseño):", "1");
+      
+      const category = 
+        catInput === "2" 
+          ? "Product & Engineering" 
+          : catInput === "3" 
+          ? "Design & UI" 
+          : "Business & Strategy";
+
+      await saveTemplate(
+        id,
+        name,
+        category,
+        boardContent.elements || [],
+        description,
+        boardContent.preview,
+        false
+      );
+      alert("¡Tablero guardado con éxito en las plantillas del equipo!");
+    } else {
+      await deleteTemplate(id);
+    }
     loadBoards();
   };
 
@@ -1286,6 +1324,12 @@ export const Dashboard: React.FC<DashboardProps> = ({
                   Ingeniería
                 </button>
                 <button
+                  className={`category-tab-btn ${selectedTemplateCategory === "equipo" ? "active" : ""}`}
+                  onClick={() => setSelectedTemplateCategory("equipo")}
+                >
+                  Plantillas del Equipo
+                </button>
+                <button
                   className={`category-tab-btn ${selectedTemplateCategory === "ai" ? "active" : ""}`}
                   onClick={() => setSelectedTemplateCategory("ai")}
                 >
@@ -1368,30 +1412,125 @@ export const Dashboard: React.FC<DashboardProps> = ({
                           body: JSON.stringify({
                             contents: [{
                               parts: [{
-                                text: `You are a professional Excalidraw diagram generator. Generate a diagram in Excalidraw JSON format based on this prompt: "${aiPrompt}".
-Return ONLY a valid JSON array of Excalidraw element objects. Do not wrap in markdown codeblocks. Do not return any other text.
-The elements can be rectangle, diamond, ellipse, arrow, or text.
-All elements MUST be centered and have valid properties (id, type, x, y, width, height, strokeColor, backgroundColor, fillStyle, strokeWidth, roughness, opacity, isDeleted).
-Example:
-[
-  {
-    "id": "rect_1",
-    "type": "rectangle",
-    "x": 100,
-    "y": 100,
-    "width": 150,
-    "height": 80,
-    "strokeColor": "#6366f1",
-    "backgroundColor": "#e0e7ff",
-    "fillStyle": "solid",
-    "strokeWidth": 2,
-    "roughness": 0,
-    "roundness": { "type": 3 },
-    "opacity": 100,
-    "isDeleted": false
+                                text: `You are an AI Template Content Assistant. Your task is to analyze the user request and map it to the best matching template from this list:
+- "kanban" (Tablero Kanban)
+- "retro" (Retrospectiva del Equipo)
+- "matrix" (Matriz de Priorización 2x2)
+- "sipoc" (Diagrama SIPOC)
+- "lean_canvas" (Lean Canvas de Modelo de Negocio)
+- "customer_journey" (Customer Journey Map)
+- "swot" (Análisis FODA / SWOT)
+- "roadmap" (Product Roadmap por Q1-Q4)
+
+Return ONLY a valid JSON object matching this schema. Do not write markdown code blocks or any explanation.
+
+For "kanban":
+{
+  "templateId": "kanban",
+  "content": {
+    "todo": ["card task 1", "card task 2", "card task 3"],
+    "progress": ["card task 4", "card task 5"],
+    "done": ["card task 6"]
   }
-]
-Generate a beautiful, complete diagram with multiple connected steps, titles, and text labels. Ensure coordinates are correctly offset so elements do not overlap.`
+}
+
+For "retro":
+{
+  "templateId": "retro",
+  "content": {
+    "well": ["what went well item 1", "what went well item 2"],
+    "improve": ["what to improve item 1", "what to improve item 2"],
+    "ideas": ["action item/idea 1", "action item/idea 2"]
+  }
+}
+
+For "matrix":
+{
+  "templateId": "matrix",
+  "content": {
+    "high_impact_low_effort": ["quick win task 1", "quick win task 2"],
+    "high_impact_high_effort": ["major project 1", "major project 2"],
+    "low_impact_low_effort": ["low priority fill-in 1"],
+    "low_impact_high_effort": ["thankless task/discard 1"]
+  }
+}
+
+For "sipoc":
+{
+  "templateId": "sipoc",
+  "content": {
+    "suppliers": ["supplier 1", "supplier 2"],
+    "inputs": ["input 1", "input 2"],
+    "process": ["process step 1", "process step 2", "process step 3"],
+    "outputs": ["output 1", "output 2"],
+    "customers": ["customer segment 1", "customer segment 2"]
+  }
+}
+
+For "lean_canvas":
+{
+  "templateId": "lean_canvas",
+  "content": {
+    "problema": "1. [Problem 1]\\n2. [Problem 2]",
+    "solucion": "1. [Solution 1]\\n2. [Solution 2]",
+    "metricas": "1. [Metric 1]\\n2. [Metric 2]",
+    "propuesta": "1. [Value Proposition]",
+    "ventaja": "1. [Unfair Advantage]",
+    "canales": "1. [Channel 1]\\n2. [Channel 2]",
+    "segmentos": "1. [Customer Segment 1]\\n2. [Customer Segment 2]",
+    "costes": "1. [Cost Structure 1]\\n2. [Cost Structure 2]",
+    "ingresos": "1. [Revenue Stream 1]\\n2. [Revenue Stream 2]"
+  }
+}
+
+For "customer_journey":
+{
+  "templateId": "customer_journey",
+  "content": {
+    "acciones": ["Descubrimiento action", "Consideración action", "Compra action", "Uso action", "Soporte action"],
+    "contactos": ["Descubrimiento touchpoint", "Consideración touchpoint", "Compra touchpoint", "Uso touchpoint", "Soporte touchpoint"],
+    "dolores": ["Descubrimiento pain point", "Consideración pain point", "Compra pain point", "Uso pain point", "Soporte pain point"],
+    "oportunidades": ["Descubrimiento opportunity", "Consideración opportunity", "Compra opportunity", "Uso opportunity", "Soporte opportunity"]
+  }
+}
+
+For "swot":
+{
+  "templateId": "swot",
+  "content": {
+    "strengths": ["strength 1", "strength 2"],
+    "weaknesses": ["weakness 1", "weakness 2"],
+    "opportunities": ["opportunity 1", "opportunity 2"],
+    "threats": ["threat 1", "threat 2"]
+  }
+}
+
+For "roadmap":
+{
+  "templateId": "roadmap",
+  "content": {
+    "frontend": [
+      ["Q1 item 1", "Q1 item 2"],
+      ["Q2 item 1"],
+      ["Q3 item 1"],
+      ["Q4 item 1"]
+    ],
+    "backend": [
+      ["Q1 item 1"],
+      ["Q2 item 1", "Q2 item 2"],
+      ["Q3 item 1"],
+      ["Q4 item 1"]
+    ],
+    "marketing": [
+      ["Q1 item 1"],
+      ["Q2 item 1"],
+      ["Q3 item 1", "Q3 item 2"],
+      ["Q4 item 1"]
+    ]
+  }
+}
+
+User request: "${aiPrompt}"`
                               }]
                             }]
                           })
@@ -1400,17 +1539,18 @@ Generate a beautiful, complete diagram with multiple connected steps, titles, an
                         const result = await response.json();
                         const text = result?.candidates?.[0]?.content?.parts?.[0]?.text || "";
                         const sanitized = text.replace(/```json/g, "").replace(/```/g, "").trim();
-                        const elements = JSON.parse(sanitized);
+                        const payload = JSON.parse(sanitized);
 
-                        const newBoard = await createBoard({
-                          name: `IA - ${aiPrompt.substring(0, 30)}`,
-                          elements,
-                          files: {},
-                        });
-                        onSelectBoard(newBoard.id);
+                        const { templateId, content } = payload;
+                        const template = TEMPLATES.find((t) => t.id === templateId) || TEMPLATES[0];
+                        const elements = template.getElements(content);
+
+                        const id = `board_${crypto.randomUUID().replace(/-/g, "").substring(0, 12)}`;
+                        await saveBoard(id, { name: `${template.name} - ${aiPrompt.substring(0, 20)}...` }, elements, {}, {});
+                        onSelectBoard(id);
                       } catch (err) {
                         console.error("AI Generation failed:", err);
-                        alert("No se pudo generar la plantilla. Revisa que tu API Key sea correcta o intenta acortar el prompt.");
+                        alert("No se pudo generar la plantilla asistida. Revisa que tu API Key sea correcta.");
                       } finally {
                         setIsGeneratingTemplate(false);
                       }
@@ -1423,30 +1563,81 @@ Generate a beautiful, complete diagram with multiple connected steps, titles, an
               </div>
             ) : (
               <div className="templates-gallery-grid">
-                {TEMPLATES.filter((tmpl) => {
-                  if (selectedTemplateCategory === "negocios" && !["sipoc", "lean_canvas"].includes(tmpl.id)) return false;
-                  if (selectedTemplateCategory === "ingenieria" && !["kanban", "retro", "matrix", "customer_journey"].includes(tmpl.id)) return false;
-
-                  if (templateSearchQuery && !tmpl.name.toLowerCase().includes(templateSearchQuery.toLowerCase()) && !tmpl.description.toLowerCase().includes(templateSearchQuery.toLowerCase())) return false;
-
-                  return true;
-                }).map((tmpl) => (
-                  <div key={tmpl.id} className="template-card-premium">
-                    <div className="template-card-header">
-                      <span className="tmpl-badge">
-                        {["sipoc", "lean_canvas"].includes(tmpl.id) ? "NEGOCIOS" : "INGENIERÍA"}
-                      </span>
-                      <h4>{tmpl.name}</h4>
+                {selectedTemplateCategory === "equipo" ? (
+                  workspaceTemplates.filter((tmpl) => {
+                    if (templateSearchQuery && !tmpl.name.toLowerCase().includes(templateSearchQuery.toLowerCase()) && !tmpl.description?.toLowerCase().includes(templateSearchQuery.toLowerCase())) return false;
+                    return true;
+                  }).map((tmpl) => (
+                    <div key={tmpl.id} className="template-card-premium">
+                      <div className="template-card-header">
+                        <span className="tmpl-badge">EQUIPO</span>
+                        {tmpl.thumbnail ? (
+                          <div className="template-thumbnail-container">
+                            <img src={tmpl.thumbnail} className="template-thumbnail-img" alt={tmpl.name} />
+                          </div>
+                        ) : (
+                          <div className="template-thumbnail-placeholder">📁</div>
+                        )}
+                        <h4>{tmpl.name}</h4>
+                      </div>
+                      <p>{tmpl.description || "Plantilla personalizada creada por tu equipo."}</p>
+                      <div className="template-card-actions">
+                        <button
+                          className="btn-use-template"
+                          onClick={async () => {
+                            const fullTmpl = await getTemplate(tmpl.id);
+                            const id = `board_${crypto.randomUUID().replace(/-/g, "").substring(0, 12)}`;
+                            await saveBoard(id, { name: tmpl.name }, fullTmpl?.elements || [], {}, {});
+                            onSelectBoard(id);
+                          }}
+                        >
+                          Usar plantilla
+                        </button>
+                        <button
+                          className="btn-delete-template-danger"
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            if (confirm(`¿Estás seguro de que deseas eliminar la plantilla "${tmpl.name}"?`)) {
+                              await deleteTemplate(tmpl.id);
+                              loadBoards();
+                            }
+                          }}
+                        >
+                          Eliminar
+                        </button>
+                      </div>
                     </div>
-                    <p>{tmpl.description}</p>
-                    <button
-                      className="btn-use-template"
-                      onClick={() => handleCreateBoard(tmpl.id)}
-                    >
-                      Usar esta plantilla
-                    </button>
-                  </div>
-                ))}
+                  ))
+                ) : (
+                  TEMPLATES.filter((tmpl) => {
+                    if (selectedTemplateCategory === "negocios" && tmpl.category !== "Business & Strategy") return false;
+                    if (selectedTemplateCategory === "ingenieria" && !["Product & Engineering", "Design & UI"].includes(tmpl.category)) return false;
+
+                    if (templateSearchQuery && !tmpl.name.toLowerCase().includes(templateSearchQuery.toLowerCase()) && !tmpl.description.toLowerCase().includes(templateSearchQuery.toLowerCase())) return false;
+
+                    return true;
+                  }).map((tmpl) => (
+                    <div key={tmpl.id} className="template-card-premium">
+                      <div className="template-card-header">
+                        <span className="tmpl-badge">
+                          {tmpl.category === "Business & Strategy"
+                            ? "NEGOCIOS"
+                            : tmpl.category === "Product & Engineering"
+                            ? "INGENIERÍA"
+                            : "DISEÑO & UI"}
+                        </span>
+                        <h4>{tmpl.name}</h4>
+                      </div>
+                      <p>{tmpl.description}</p>
+                      <button
+                        className="btn-use-template"
+                        onClick={() => handleCreateBoard(tmpl.id)}
+                      >
+                        Usar esta plantilla
+                      </button>
+                    </div>
+                  ))
+                )}
               </div>
             )}
           </div>
@@ -2005,9 +2196,7 @@ Generate a beautiful, complete diagram with multiple connected steps, titles, an
                   }}
                 >
                   <span className="tmpl-icon">
-                    {tmpl.id === "kanban" && <KanbanIcon />}
-                    {tmpl.id === "retro" && <RetroIcon />}
-                    {tmpl.id === "matrix" && <MatrixIcon />}
+                    {tmpl.id === "kanban" ? <KanbanIcon /> : tmpl.id === "retro" ? <RetroIcon /> : tmpl.id === "matrix" ? <MatrixIcon /> : <DocumentIcon />}
                   </span>
                   <h4>{tmpl.name}</h4>
                   <p>{tmpl.description}</p>

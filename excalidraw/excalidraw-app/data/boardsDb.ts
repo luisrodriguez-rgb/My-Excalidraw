@@ -762,3 +762,189 @@ export async function syncBoardsWithSupabase(): Promise<void> {
     console.error("Error during Supabase synchronization:", error);
   }
 }
+
+// ==========================================
+// Workspace Templates Database Module
+// ==========================================
+
+export interface TemplateMetadata {
+  id: string;
+  name: string;
+  description?: string;
+  category: "Business & Strategy" | "Product & Engineering" | "Design & UI";
+  thumbnail?: string; // base64 representation of preview
+  isPublic?: boolean;
+  createdAt: number;
+}
+
+export interface WorkspaceTemplate extends TemplateMetadata {
+  elements: readonly any[];
+}
+
+const TEMPLATES_METADATA_KEY = "workspace_templates_metadata_list";
+const templatesStore = createStore("excalidraw-templates-db", "templates-store");
+
+export async function getTemplatesMetadata(): Promise<TemplateMetadata[]> {
+  try {
+    const list = await get<TemplateMetadata[]>(TEMPLATES_METADATA_KEY, templatesStore);
+    return list || [];
+  } catch (error) {
+    console.error("Error reading templates metadata:", error);
+    return [];
+  }
+}
+
+export async function saveTemplatesMetadata(metadataList: TemplateMetadata[]): Promise<void> {
+  await set(TEMPLATES_METADATA_KEY, metadataList, templatesStore);
+}
+
+export async function getTemplate(id: string): Promise<WorkspaceTemplate | null> {
+  try {
+    const template = await get<WorkspaceTemplate>(`template_content_${id}`, templatesStore);
+    return template || null;
+  } catch (error) {
+    console.error(`Error reading template ${id}:`, error);
+    return null;
+  }
+}
+
+export async function saveTemplate(
+  id: string,
+  name: string,
+  category: "Business & Strategy" | "Product & Engineering" | "Design & UI",
+  elements: readonly any[],
+  description?: string,
+  thumbnail?: string,
+  isPublic?: boolean,
+): Promise<void> {
+  const now = Date.now();
+  const currentTemplate = await getTemplate(id);
+
+  const updatedTemplate: WorkspaceTemplate = {
+    id,
+    name,
+    category,
+    description: description !== undefined ? description : currentTemplate?.description,
+    thumbnail: thumbnail !== undefined ? thumbnail : currentTemplate?.thumbnail,
+    isPublic: isPublic !== undefined ? isPublic : currentTemplate?.isPublic ?? false,
+    createdAt: currentTemplate?.createdAt || now,
+    elements,
+  };
+
+  await set(`template_content_${id}`, updatedTemplate, templatesStore);
+
+  // Sync to Supabase
+  const { data: { session } } = await supabase.auth.getSession();
+  if (session?.user) {
+    try {
+      await supabase.from("templates").upsert({
+        id,
+        user_id: session.user.id,
+        name,
+        description: updatedTemplate.description || null,
+        category,
+        elements,
+        thumbnail: updatedTemplate.thumbnail || null,
+        is_public: updatedTemplate.isPublic,
+      });
+    } catch (err) {
+      console.error("Error saving template to Supabase:", err);
+    }
+  }
+
+  // Update metadata list
+  const metadataList = await getTemplatesMetadata();
+  const index = metadataList.findIndex((item) => item.id === id);
+  const newMetadata: TemplateMetadata = {
+    id,
+    name,
+    description: updatedTemplate.description,
+    category,
+    thumbnail: updatedTemplate.thumbnail,
+    isPublic: updatedTemplate.isPublic,
+    createdAt: updatedTemplate.createdAt,
+  };
+
+  if (index >= 0) {
+    metadataList[index] = newMetadata;
+  } else {
+    metadataList.push(newMetadata);
+  }
+  await saveTemplatesMetadata(metadataList);
+}
+
+export async function deleteTemplate(id: string): Promise<void> {
+  await del(`template_content_${id}`, templatesStore);
+
+  // Sync to Supabase
+  const { data: { session } } = await supabase.auth.getSession();
+  if (session?.user) {
+    try {
+      await supabase.from("templates").delete().eq("id", id);
+    } catch (err) {
+      console.error("Error deleting template from Supabase:", err);
+    }
+  }
+
+  // Update metadata list
+  const metadataList = await getTemplatesMetadata();
+  const filtered = metadataList.filter((item) => item.id !== id);
+  await saveTemplatesMetadata(filtered);
+}
+
+// Fetch all templates (Local + Remote)
+export async function syncAndLoadTemplates(): Promise<WorkspaceTemplate[]> {
+  const localMeta = await getTemplatesMetadata();
+  const localTemplates: WorkspaceTemplate[] = [];
+  for (const meta of localMeta) {
+    const content = await getTemplate(meta.id);
+    if (content) {
+      localTemplates.push(content);
+    }
+  }
+
+  const { data: { session } } = await supabase.auth.getSession();
+  if (session?.user) {
+    try {
+      const { data, error } = await supabase.from("templates").select("*");
+      if (data && !error) {
+        const remoteMetaList: TemplateMetadata[] = [];
+        for (const item of data) {
+          const remoteMeta: TemplateMetadata = {
+            id: item.id,
+            name: item.name,
+            description: item.description || undefined,
+            category: item.category,
+            thumbnail: item.thumbnail || undefined,
+            isPublic: item.is_public,
+            createdAt: new Date(item.created_at).getTime(),
+          };
+          remoteMetaList.push(remoteMeta);
+
+          const remoteTemplate: WorkspaceTemplate = {
+            ...remoteMeta,
+            elements: item.elements || [],
+          };
+
+          // Save to local cache
+          await set(`template_content_${item.id}`, remoteTemplate, templatesStore);
+        }
+        await saveTemplatesMetadata(remoteMetaList);
+        return data.map((item) => ({
+          id: item.id,
+          name: item.name,
+          description: item.description || undefined,
+          category: item.category,
+          thumbnail: item.thumbnail || undefined,
+          isPublic: item.is_public,
+          createdAt: new Date(item.created_at).getTime(),
+          elements: item.elements || [],
+        }));
+      }
+    } catch (err) {
+      console.error("Error fetching templates from Supabase:", err);
+    }
+  }
+
+  return localTemplates;
+}
