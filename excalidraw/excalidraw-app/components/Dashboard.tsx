@@ -1435,15 +1435,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
                       setIsGeneratingTemplate(true);
                       try {
-                        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
-                          method: "POST",
-                          headers: {
-                            "Content-Type": "application/json"
-                          },
-                          body: JSON.stringify({
-                            contents: [{
-                              parts: [{
-                                text: `You are an AI Template Content Assistant. Your task is to analyze the user request and map it to the best matching template from this list:
+                        const systemPrompt = `You are an AI Template Content Assistant. Your task is to analyze the user request and map it to the best matching template from this list:
 - "kanban" (Tablero Kanban)
 - "retro" (Retrospectiva del Equipo)
 - "matrix" (Matriz de Priorización 2x2)
@@ -1561,14 +1553,51 @@ For "roadmap":
   }
 }
 
-User request: "${aiPrompt}"`
+User request: "${aiPrompt}"`;
+
+                        const isOpenRouter = apiKey.startsWith("sk-or-v1-");
+                        let response: Response;
+
+                        if (isOpenRouter) {
+                          response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+                            method: "POST",
+                            headers: {
+                              "Content-Type": "application/json",
+                              "Authorization": `Bearer ${apiKey}`
+                            },
+                            body: JSON.stringify({
+                              model: "google/gemini-2.5-flash",
+                              messages: [{ role: "user", content: systemPrompt }]
+                            })
+                          });
+                        } else {
+                          response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+                            method: "POST",
+                            headers: {
+                              "Content-Type": "application/json"
+                            },
+                            body: JSON.stringify({
+                              contents: [{
+                                parts: [{
+                                  text: systemPrompt
+                                }]
                               }]
-                            }]
-                          })
-                        });
+                            })
+                          });
+                        }
+
+                        if (!response.ok) {
+                          throw new Error(`API responded with status: ${response.status}`);
+                        }
 
                         const result = await response.json();
-                        const text = result?.candidates?.[0]?.content?.parts?.[0]?.text || "";
+                        let text = "";
+                        if (isOpenRouter) {
+                          text = result?.choices?.[0]?.message?.content || "";
+                        } else {
+                          text = result?.candidates?.[0]?.content?.parts?.[0]?.text || "";
+                        }
+
                         const sanitized = text.replace(/```json/g, "").replace(/```/g, "").trim();
                         const payload = JSON.parse(sanitized);
 
@@ -1581,7 +1610,8 @@ User request: "${aiPrompt}"`
                         onSelectBoard(id);
                       } catch (err) {
                         console.error("AI Generation failed:", err);
-                        alert("No se pudo generar la plantilla asistida. Revisa que tu API Key sea correcta.");
+                        localStorage.removeItem("my-excalidraw-gemini-key");
+                        alert("No se pudo generar la plantilla asistida. Se ha borrado la clave API inválida de la sesión. Por favor, ingresa una clave correcta (Gemini o OpenRouter) e intenta nuevamente.");
                       } finally {
                         setIsGeneratingTemplate(false);
                       }

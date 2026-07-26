@@ -2266,18 +2266,25 @@
           gap: 8px;
 
           button {
-            background-color: var(--bg-secondary);
-            border: 1px solid var(--border-color);
+            background-color: var(--pill-bg, rgba(255, 255, 255, 0.03));
+            border: 1px solid var(--pill-border, rgba(0, 0, 0, 0.08));
             color: var(--text-secondary);
-            padding: 4px 10px;
-            border-radius: 6px;
-            font-size: 12px;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 11.5px;
+            font-weight: 500;
             cursor: pointer;
-            transition: all 0.15s ease;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+
+            .excalidraw-theme-dark & {
+              --pill-border: rgba(255, 255, 255, 0.08);
+            }
 
             &:hover {
+              background-color: rgba(168, 85, 247, 0.1);
               border-color: var(--accent-color);
-              color: var(--text-primary);
+              color: var(--accent-color);
+              transform: scale(1.02);
             }
           }
         }
@@ -2285,23 +2292,33 @@
 
       .btn-ai-generate {
         align-self: flex-start;
-        background-color: var(--accent-color);
+        background: linear-gradient(135deg, #a855f7, #6366f1);
         color: white;
         border: none;
-        padding: 10px 24px;
+        padding: 10px 26px;
         border-radius: 8px;
         font-size: 13.5px;
         font-weight: 600;
         cursor: pointer;
-        transition: background-color 0.15s ease;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 4px 12px rgba(168, 85, 247, 0.2);
 
         &:hover {
-          background-color: var(--accent-hover);
+          background: linear-gradient(135deg, #b55fe6, #4f46e5);
+          transform: translateY(-1.5px);
+          box-shadow: 0 6px 16px rgba(168, 85, 247, 0.3);
+        }
+
+        &:active {
+          transform: translateY(0);
+          box-shadow: 0 2px 8px rgba(168, 85, 247, 0.15);
         }
 
         &:disabled {
           opacity: 0.6;
           cursor: not-allowed;
+          transform: none;
+          box-shadow: none;
         }
       }
     }
