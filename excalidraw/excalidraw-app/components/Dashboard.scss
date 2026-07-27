@@ -1015,6 +1015,47 @@
           }
         }
 
+        // Selected state ring
+        &.board-card-selected {
+          border-color: #6366f1 !important;
+          box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.25), var(--card-shadow) !important;
+        }
+
+        // Checkbox overlay (top-left corner)
+        .board-select-checkbox {
+          position: absolute;
+          top: 10px;
+          left: 10px;
+          z-index: 60;
+          width: 24px;
+          height: 24px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: rgba(255, 255, 255, 0.9);
+          border-radius: 6px;
+          box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+          opacity: 0;
+          transition: opacity 0.15s ease;
+          cursor: pointer;
+
+          &.visible {
+            opacity: 1;
+          }
+
+          input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+            accent-color: #6366f1;
+            margin: 0;
+          }
+        }
+
+        &:hover .board-select-checkbox {
+          opacity: 1;
+        }
+
         .card-preview-container {
           height: 140px;
           background-color: var(--bg-secondary);
@@ -2327,5 +2368,66 @@
 
 @keyframes fadeInHub {
   from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+// ── Bulk Action Bar ────────────────────────────────────────────────────────────
+.bulk-action-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 16px;
+  background: linear-gradient(135deg, #4f46e5, #7c3aed);
+  border-radius: 12px;
+  margin-bottom: 14px;
+  box-shadow: 0 4px 16px rgba(99, 102, 241, 0.35);
+  animation: slideInBulkBar 0.2s ease;
+
+  .bulk-action-count {
+    font-size: 14px;
+    font-weight: 700;
+    color: #fff;
+    white-space: nowrap;
+  }
+
+  .bulk-action-buttons {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+
+    .bulk-btn {
+      padding: 7px 16px;
+      border-radius: 8px;
+      border: none;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.15s, transform 0.1s;
+
+      &:hover { opacity: 0.88; transform: translateY(-1px); }
+      &:active { transform: translateY(0); }
+    }
+
+    .bulk-btn-restore {
+      background: #10b981;
+      color: #fff;
+    }
+
+    .bulk-btn-delete {
+      background: #ef4444;
+      color: #fff;
+    }
+
+    .bulk-btn-cancel {
+      background: rgba(255,255,255,0.2);
+      color: #fff;
+      border: 1px solid rgba(255,255,255,0.35);
+    }
+  }
+}
+
+@keyframes slideInBulkBar {
+  from { opacity: 0; transform: translateY(-8px); }
   to { opacity: 1; transform: translateY(0); }
 }

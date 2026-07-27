@@ -294,6 +294,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
   const [boardIdToDelete, setBoardIdToDelete] = useState<string | null>(null);
   const [boardNameToDelete, setBoardNameToDelete] = useState("");
 
+  // Multi-select state
+  const [selectedBoardIds, setSelectedBoardIds] = useState<Set<string>>(new Set());
+
   const [showTagsModal, setShowTagsModal] = useState(false);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [showTemplatesModal, setShowTemplatesModal] = useState(false);
@@ -539,6 +542,44 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
   const handleRestore = async (id: string) => {
     await restoreBoard(id);
+    loadBoards();
+  };
+
+  const toggleSelectBoard = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setSelectedBoardIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedBoardIds.size === 0) return;
+    const isTrash = activeTab === "papelera";
+    const label = isTrash ? "eliminar permanentemente" : "mover a la papelera";
+    if (!window.confirm(`¿Seguro que quieres ${label} los ${selectedBoardIds.size} tablero(s) seleccionados?`)) return;
+    for (const id of selectedBoardIds) {
+      if (isTrash) {
+        await deleteBoardPermanently(id);
+      } else {
+        await deleteBoard(id);
+      }
+    }
+    setSelectedBoardIds(new Set());
+    loadBoards();
+  };
+
+  const handleBulkRestore = async () => {
+    if (selectedBoardIds.size === 0) return;
+    for (const id of selectedBoardIds) {
+      await restoreBoard(id);
+    }
+    setSelectedBoardIds(new Set());
     loadBoards();
   };
 
@@ -1715,6 +1756,28 @@ User request: "${aiPrompt}"`;
           </div>
         ) : (
           <>
+            {/* Bulk-action toolbar — shows when 1+ boards are selected */}
+            {selectedBoardIds.size > 0 && (
+              <div className="bulk-action-bar">
+                <span className="bulk-action-count">
+                  {selectedBoardIds.size} tablero{selectedBoardIds.size !== 1 ? "s" : ""} seleccionado{selectedBoardIds.size !== 1 ? "s" : ""}
+                </span>
+                <div className="bulk-action-buttons">
+                  {activeTab === "papelera" ? (
+                    <button className="bulk-btn bulk-btn-restore" onClick={handleBulkRestore}>
+                      ↩ Restaurar seleccionados
+                    </button>
+                  ) : null}
+                  <button className="bulk-btn bulk-btn-delete" onClick={handleBulkDelete}>
+                    🗑 {activeTab === "papelera" ? "Eliminar permanentemente" : "Mover a papelera"}
+                  </button>
+                  <button className="bulk-btn bulk-btn-cancel" onClick={() => setSelectedBoardIds(new Set())}>
+                    ✕ Cancelar selección
+                  </button>
+                </div>
+              </div>
+            )}
+
             {/* Search, Sort and Grid Toggles */}
             <div className="filters-controls-row">
               <div className="search-box-input">
@@ -1796,8 +1859,25 @@ User request: "${aiPrompt}"`;
                     Math.max(1, board.id.charCodeAt(0) % 4)
                   );
 
+                  const isSelected = selectedBoardIds.has(board.id);
+
                   return (
-                    <div key={board.id} className="board-card-premium">
+                    <div
+                      key={board.id}
+                      className={`board-card-premium${isSelected ? " board-card-selected" : ""}`}
+                    >
+                      {/* Multi-select checkbox */}
+                      <div
+                        className={`board-select-checkbox${isSelected || selectedBoardIds.size > 0 ? " visible" : ""}`}
+                        onClick={(e) => toggleSelectBoard(board.id, e)}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={() => {}}
+                          onClick={(e) => { e.stopPropagation(); toggleSelectBoard(board.id, e as any); }}
+                        />
+                      </div>
                       {/* Card Header (Preview Area) */}
                       <div
                         className="card-preview-container"

@@ -56,24 +56,33 @@ My-Excalidraw/
 * **Estructura jerárquica:** Creación y edición de carpetas para agrupar tableros de manera ordenada.
 * **Búsqueda y filtrado:** Buscador de tableros por nombre y clasificación mediante etiquetas de estado.
 * **Soft Deletes:** Los tableros eliminados se envían a una papelera de reciclaje y pueden ser recuperados o borrados permanentemente.
+* **Almacenamiento de Plantillas Independiente:** Implementación de persistencia física e híbrida (Supabase y local) para diagramas de templates, organizados por taxonomía técnica (Business & Strategy, Product & Engineering, Design & UI, Equipo).
 
-### Panel de Notas en Markdown (Rendimiento Optimizado)
-* **Editor Lateral:** Al seleccionar cualquier elemento del lienzo, se despliega una barra lateral con soporte para Markdown. Permite documentar especificaciones técnicas, añadir tareas o escribir descripciones.
-* **Rendimiento Reactivo:** El editor utiliza una vinculación de estado local que permite una escritura fluida libre de latencia. Los cambios aplicados sobre el canvas se envían de forma asíncrona mediante un temporizador agrupado (debounce de 150ms), lo que evita la regeneración continua de la escena de dibujo.
+### Motor de IA y Plantillas Controladas
+* **Modelos Auxiliares y Llaveros persistentes:** Soporte integrado para claves de API de Google Gemini y OpenRouter (con endpoints dedicados sk-or-v1-, límites automáticos a `max_tokens: 4000` y depuración en caliente).
+* **Ajuste de Texto Inteligente (wrapText):** Algoritmo de división automática que ajusta textos largos a múltiples líneas para tarjetas y columnas (Kanban, Retro, SWOT), previniendo desbordamientos horizontales.
+* **Ajuste Proporcional de Previsualizaciones:** Escalado de miniaturas con `object-fit: contain` sobre fondo blanco, asegurando capturas proporcionadas y nítidas de los diagramas.
 
-### Modo Presentación de Alto Rendimiento
-* **Detección Automática de Diapositivas:** Reconoce elementos de tipo "Frame" (Marcos) presentes en el lienzo y los organiza cronológicamente (ordenación espacial arriba-abajo e izquierda-derecha) como diapositivas individuales.
-* **Máscara Visual de Enfoque:** Implementa un fondo translúcido que oculta cualquier elemento adyacente que quede fuera del marco activo. Este fondo detecta el tema del lienzo de forma dinámica (blanco en temas claros y gris oscuro en temas oscuros) y aplica una animación suave al cambiar de diapositiva.
-* **Cálculo de Viewport:** Ajusta de forma reactiva el zoom y la posición de centrado de cada diapositiva considerando si la barra de notas está abierta, garantizando que el marco nunca se vea cubierto o recortado por componentes de la interfaz.
+### Panel de Inspección Dual e Hilos de Comentarios (Chat)
+* **Pestaña de Notas de Elemento:** Editor lateral de notas en Markdown optimizado mediante persistencia reactiva local y guardado diferido (debounce de 150ms) para evitar retrasos de escritura.
+* **Pestaña de Discusiones (Resumen del Tablero):** Inbox integrado en la barra lateral que resume todos los comentarios activos del tablero. Al hacer clic en un comentario, la cámara del editor se desplaza de manera automática y centra al usuario en las coordenadas espaciales exactas abriendo su hilo.
+* **Chat en Hilos e Iniciales con Color (Avatares):** Ventanas emergentes de comentarios estilizadas como un chat de mensajería moderno con bocadillos de respuesta, avatares basados en iniciales con colores determinísticos calculados mediante hash del nombre de usuario, e inputs circulares optimizados.
+* **Cierre Instantáneo de Modales:** Desacoplamiento de las consultas asíncronas de base de datos Supabase/IndexedDB, reduciendo la latencia de guardado de comentarios a 0ms en pantalla.
 
-### Colaboración en Tiempo Real y Presencia
-* **PresenceBar:** Barra superior derecha que muestra en tiempo real los avatares e iniciales de los usuarios editando el documento.
-* **Generación de Colores:** Cada usuario tiene asignado un color de cursor y avatar persistente calculado mediante un hash determinístico de su nombre.
-* **Notificaciones de Eventos:** Alertas visuales y auditivas en pantalla cuando un usuario se une o abandona el lienzo de trabajo.
+### Minimap Optimizado por GPU a 120 FPS
+* **Caché en Canvas Secundario (Offscreen):** Renderizado en memoria virtual secundaria de los miles de elementos del tablero. Al arrastrar o hacer zoom, el canvas dibuja directamente la imagen almacenada en buffer (`ctx.drawImage`), logrando 120 FPS estables.
+* **Controles HUD Incorporados:** Panel glassmorphic con botones rápidos para Zoom In, Zoom Out, y Ajustar a Pantalla (Fit Screen) para re-centrar el encuadre.
+* **Área de Viewport Interactiva:** Ventana roja interactiva arrastrable en el minimap para desplazar (panear) la cámara de Excalidraw por toda la pizarra de forma intuitiva.
 
-### Sincronización Automática de Bibliotecas
-* **Nube Compartida:** La biblioteca de formas y colecciones de Excalidraw de cada usuario se sincroniza automáticamente con su cuenta de Supabase.
-* **Importación Directa:** Cuenta con resolución automática de rutas para solicitudes externas (`addLibrary` en la URL). Si se accede mediante un enlace de biblioteca oficial de Excalidraw, la aplicación levanta una pizarra por defecto de forma transparente para permitir la confirmación e inserción directa de los elementos.
+### Modo Presentación de Alto Rendimiento (Modo Cine)
+* **Ocultación Total de Controles (Modo Cine):** Al activar la presentación, se añade la clase `presentation-active` en el `body`. Oculta dinámicamente mediante CSS todas las barras de herramientas (herramientas de dibujo `1, 2, 3...`), menús emergentes, sidebars, pines de comentarios, y la cabecera personalizada del tablero (compartir, guardar, perfil, título). Solo queda visible el contenido del Frame activo y los controles inferiores.
+* **Lista de Diapositivas e Índice de Ordenación:** Menú flotante "Orden" que despliega el listado de frames. Permite la reordenación secuencial manual mediante controles de flechas `▲` y `▼` persistidas localmente de forma única por pizarra.
+* **Cálculo Adaptativo de Viewport:** Redimensionamiento reactivo que ajusta el zoom al ancho/alto disponible en pantalla respetando si la barra de notas está abierta o cerrada.
+
+### Sincronización Automática y Saneamiento de Bibliotecas
+* **Normalización de Elementos Importados:** Al ingresar por un enlace de biblioteca externo (`addLibrary`), la aplicación sanitiza todos los parámetros obligatorios ausentes en formas crudas (generando `id`, `seed`, `versionNonce`, etc.). Esto garantiza la compatibilidad con el motor de validación estricto de Excalidraw, permitiendo la inserción y carga correcta e inmediata.
+* **Nube Compartida:** La biblioteca de formas de cada usuario se sincroniza automáticamente con su cuenta de Supabase.
+* **Colaboración en Tiempo Real:** Barra superior de presencia y notificaciones de entrada/salida de usuarios.
 
 ---
 

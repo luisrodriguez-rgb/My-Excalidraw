@@ -280,27 +280,53 @@ export const AppSidebar = ({
     }
 
     try {
+      // Generate a fresh unique ID per element so mergeLibraryItems never
+      // considers them duplicates of items already in the library.
+      // IMPORTANT: the generated values must come AFTER spreading `el` so they
+      // override any stale hard-coded IDs (e.g. "flow_process", "kanban_todo").
+      const newItemId = () => {
+        try { return crypto.randomUUID(); } catch { return Math.random().toString(36).slice(2); }
+      };
+
       const sanitized = items.map((item) => {
-        const sanitizedElements = (item.elements || []).map((el: any) => ({
-          id: el.id || `${el.type}_${Math.random().toString(36).substring(2, 9)}`,
-          seed: el.seed || Math.floor(Math.random() * 100000),
-          version: el.version || 1,
-          versionNonce: el.versionNonce || Math.floor(Math.random() * 100000),
-          isDeleted: el.isDeleted ?? false,
-          updated: el.updated || Date.now(),
-          link: el.link ?? null,
-          locked: el.locked ?? false,
-          fillStyle: el.fillStyle || "hachure",
-          strokeWidth: el.strokeWidth ?? 2,
-          strokeStyle: el.strokeStyle || "solid",
-          roughness: el.roughness ?? 1,
-          opacity: el.opacity ?? 100,
-          strokeColor: el.strokeColor || "#1e1e1e",
-          backgroundColor: el.backgroundColor || "transparent",
-          ...el,
-        }));
+        const sanitizedElements = (item.elements || []).map((el: any) => {
+          const base = {
+            // These defaults come first so el can override them (e.g. type, x, y…)
+            fillStyle: "hachure" as const,
+            strokeWidth: 2,
+            strokeStyle: "solid" as const,
+            roughness: 1,
+            opacity: 100,
+            strokeColor: "#1e1e1e",
+            backgroundColor: "transparent",
+            link: null,
+            locked: false,
+            isDeleted: false,
+            boundElements: [],
+            groupIds: [],
+            frameId: null,
+            index: null,
+            angle: 0,
+            ...el,
+            // Override AFTER spread so we always get fresh, unique values.
+            // This is the critical fix: stale IDs from the element definition
+            // are overwritten here.
+            id: newItemId(),
+            seed: Math.floor(Math.random() * 2147483647),
+            version: (el.version || 0) + 1,
+            versionNonce: Math.floor(Math.random() * 2147483647),
+            updated: Date.now(),
+          };
+          return base;
+        });
+
         return {
           ...item,
+          // Also give the library item a fresh id so it isn't deduplicated
+          // with a previously imported copy of the same collection.
+          id: newItemId(),
+          created: Date.now(),
+          status: "published" as const,
           elements: sanitizedElements,
         };
       });
