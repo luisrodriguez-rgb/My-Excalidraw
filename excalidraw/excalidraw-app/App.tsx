@@ -880,20 +880,20 @@ const ExcalidrawWrapper = () => {
           setNewCommentAuthor(displayName);
         }
         try {
-          const { data: remoteLib } = await supabase
+          const { data: remoteLib, error } = await supabase
             .from("libraries")
             .select("items")
             .maybeSingle();
 
-          if (remoteLib?.items) {
+          if (!error && remoteLib?.items?.libraryItems?.length) {
             await LibraryIndexedDBAdapter.save(remoteLib.items);
             excalidrawAPI.updateLibrary({
-              libraryItems: remoteLib.items.libraryItems || [],
-              merge: false,
+              libraryItems: remoteLib.items.libraryItems,
+              merge: true,
             });
           }
         } catch (err) {
-          console.error("Error loading remote library from Supabase:", err);
+          console.warn("Supabase library sync skipped (using local storage):", err);
         }
       }
     });

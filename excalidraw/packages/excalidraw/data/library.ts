@@ -905,9 +905,9 @@ export const useHandleLibrary = (
         initDataPromise,
         new Promise<LibraryItems | null>((resolve) => {
           setTimeout(() => {
-            console.warn("Library initial load timed out. Continuing with empty library.");
+            console.warn("Library initial load timed out. Continuing with current library.");
             resolve([]);
-          }, 2500);
+          }, 5000);
         }),
       ]);
 

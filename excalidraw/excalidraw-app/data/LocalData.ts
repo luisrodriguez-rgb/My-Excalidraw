@@ -272,7 +272,7 @@ export class LibraryIndexedDBAdapter {
       console.warn("Failed to save library to IndexedDB:", e);
     }
 
-    // Sync to Supabase if logged in
+    // Sync to Supabase if logged in (non-blocking)
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (session?.user) {
         try {
@@ -282,12 +282,10 @@ export class LibraryIndexedDBAdapter {
             updated_at: new Date().toISOString(),
           });
         } catch (err) {
-          console.error("Error syncing library to Supabase:", err);
+          // Ignore remote sync errors so local IndexedDB continues to work flawlessly
         }
       }
-    }).catch((err) => {
-      console.error("Error getting session during library sync:", err);
-    });
+    }).catch(() => {});
   }
 }
 
