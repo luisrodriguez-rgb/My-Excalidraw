@@ -1765,14 +1765,14 @@ User request: "${aiPrompt}"`;
                 <div className="bulk-action-buttons">
                   {activeTab === "papelera" ? (
                     <button className="bulk-btn bulk-btn-restore" onClick={handleBulkRestore}>
-                      ↩ Restaurar seleccionados
+                      Restaurar seleccionados
                     </button>
                   ) : null}
                   <button className="bulk-btn bulk-btn-delete" onClick={handleBulkDelete}>
-                    🗑 {activeTab === "papelera" ? "Eliminar permanentemente" : "Mover a papelera"}
+                    {activeTab === "papelera" ? "Eliminar permanentemente" : "Mover a papelera"}
                   </button>
                   <button className="bulk-btn bulk-btn-cancel" onClick={() => setSelectedBoardIds(new Set())}>
-                    ✕ Cancelar selección
+                    Cancelar selección
                   </button>
                 </div>
               </div>
