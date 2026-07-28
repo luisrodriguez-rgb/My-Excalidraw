@@ -307,7 +307,7 @@
   },
   "toolBar": {
     "selection": "Selección",
-    "lasso": "",
+    "lasso": "Selección Lasso",
     "image": "Insertar imagen",
     "rectangle": "Rectángulo",
     "diamond": "Diamante",
@@ -321,10 +321,11 @@
     "penMode": "Modo Lápiz - previene toque",
     "link": "Añadir/Actualizar enlace para una forma seleccionada",
     "eraser": "Borrar",
-    "frame": "Herramienta Estructura",
+    "frame": "Marcos / Presentación",
     "magicframe": "Esquema a código",
-    "embeddable": "Incrustar Web",
+    "embeddable": "Insertar Web",
     "laser": "Puntero láser",
+
     "hand": "Mano (herramienta de panoramización)",
     "extraTools": "Más herramientas",
     "mermaidToExcalidraw": "Mermaid a Excalidraw",

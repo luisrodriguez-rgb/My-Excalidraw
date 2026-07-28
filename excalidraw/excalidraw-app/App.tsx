@@ -2576,7 +2576,7 @@ const ExcalidrawWrapper = () => {
         />
       )}
 
-      {activeBoardId && activeBoardId !== "collab_room" && presenceUsers.length > 0 && (
+      {activeBoardId && activeBoardId !== "collab_room" && presenceUsers.length > 0 && !isPresenting && (
         <PresenceBar users={presenceUsers} />
       )}
 
@@ -2601,32 +2601,22 @@ const ExcalidrawWrapper = () => {
             display: "flex",
             alignItems: "center",
             gap: "10px",
-            border: "1px solid rgba(255, 255, 255, 0.1)",
           }}
         >
-          <span style={{ display: "flex", alignItems: "center", gap: "5px" }}>
-            <span>💾</span> Pizarra local (guardada en este navegador)
-          </span>
+          <span>Pizarra local guardada en navegador</span>
           <button
-            onClick={() => setShowAuthModal(true)}
+            onClick={() => handleBackToWorkspaces()}
             style={{
-              backgroundColor: "#6366f1",
-              color: "white",
+              backgroundColor: "#ef4444",
+              color: "#fff",
               border: "none",
-              padding: "6px 12px",
               borderRadius: "12px",
+              padding: "4px 10px",
               fontSize: "11px",
               fontWeight: "600",
               cursor: "pointer",
-              transition: "all 0.15s ease",
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "4px"
             }}
           >
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M17.5 19A3.5 3.5 0 0 0 21 15.5c0-2.79-2.54-4.5-5-4.5-.42 0-.83.07-1.22.2A6.5 6.5 0 0 0 2.5 12.5C2.5 16.09 5.41 19 9 19H17.5z"></path>
-            </svg>
             Guardar en la Nube
           </button>
         </div>
@@ -2639,13 +2629,13 @@ const ExcalidrawWrapper = () => {
           title={showNotesSidebar ? "Cerrar panel de notas" : "Ver notas del elemento (Markdown)"}
           style={{
             position: "fixed",
-            bottom: "200px",
+            bottom: "260px",
             right: showNotesSidebar ? "360px" : "20px",
             width: "50px",
             height: "50px",
             borderRadius: "50%",
-            backgroundColor: showNotesSidebar ? "#6366f1" : "white",
-            color: showNotesSidebar ? "white" : "#6366f1",
+            backgroundColor: showNotesSidebar ? "#ef4444" : "white",
+            color: showNotesSidebar ? "white" : "#ef4444",
             border: "1px solid var(--border-color)",
             boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
             cursor: "pointer",
@@ -2674,13 +2664,13 @@ const ExcalidrawWrapper = () => {
           }
           style={{
             position: "fixed",
-            bottom: "140px",
+            bottom: "200px",
             right: showNotesSidebar ? "360px" : "20px",
             width: "50px",
             height: "50px",
             borderRadius: "50%",
-            backgroundColor: isPresenting ? "#6366f1" : "white",
-            color: isPresenting ? "white" : "#6366f1",
+            backgroundColor: isPresenting ? "#ef4444" : "white",
+            color: isPresenting ? "white" : "#ef4444",
             border: "1px solid var(--border-color)",
             boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
             cursor: "pointer",
@@ -2710,15 +2700,15 @@ const ExcalidrawWrapper = () => {
           }
           style={{
             position: "fixed",
-            bottom: "80px",
+            bottom: "140px",
             right: "20px",
             width: "50px",
             height: "50px",
             borderRadius: "50%",
             backgroundColor: commentModeActive
-              ? "var(--accent-color)"
+              ? "#ef4444"
               : "white",
-            color: commentModeActive ? "white" : "black",
+            color: commentModeActive ? "white" : "#ef4444",
             border: "1px solid var(--border-color)",
             boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
             cursor: "pointer",

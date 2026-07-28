@@ -213,11 +213,19 @@ export const Minimap: React.FC<MinimapProps> = ({
 
   const handleRecenter = () => {
     if (!excalidrawAPI) return;
-    excalidrawAPI.scrollToContent(activeElements, {
-      fitToViewport: true,
-      viewportZoomFactor: 0.85,
-      animate: true,
-    });
+    const sceneElements = excalidrawAPI.getSceneElements?.() || activeElements;
+    const nonDeleted = sceneElements.filter((el: any) => !el.isDeleted);
+    if (nonDeleted.length > 0) {
+      excalidrawAPI.scrollToContent(nonDeleted, {
+        fitToViewport: true,
+        viewportZoomFactor: 0.85,
+        animate: true,
+      });
+    } else {
+      excalidrawAPI.updateScene({
+        appState: { scrollX: 0, scrollY: 0, zoom: { value: 1 } },
+      });
+    }
   };
 
   // Dragging interaction
@@ -337,7 +345,11 @@ export const Minimap: React.FC<MinimapProps> = ({
             onClick={() => setShowDetails(!showDetails)}
             title="Alternar detalle de figuras"
           >
-            📋
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polygon points="12 2 2 7 12 12 22 7 12 2"/>
+              <polyline points="2 17 12 22 22 17"/>
+              <polyline points="2 12 12 17 22 12"/>
+            </svg>
           </button>
           <button className="minimap-close" onClick={() => setVisible(false)} title="Cerrar">
             ✕

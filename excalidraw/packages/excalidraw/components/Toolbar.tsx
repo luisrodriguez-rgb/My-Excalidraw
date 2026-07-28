@@ -26,11 +26,14 @@ import {
   ArrowToolButton,
   DiamondToolButton,
   EllipseToolButton,
+  EmbeddableToolButton,
   EraserToolButton,
+  FrameToolButton,
   FreedrawToolButton,
   HandToolButton,
   ImageToolButton,
   isToolButtonDisabled,
+  LaserToolButton,
   LassoToolButton,
   LineToolButton,
   RectangleToolButton,
@@ -38,6 +41,7 @@ import {
   SelectionToolPopover,
   TextToolButton,
 } from "./Tools";
+
 
 import type {
   AppClassProperties,
@@ -219,19 +223,6 @@ export const Toolbar = ({
             penDetected={appState.penDetected}
           />
         )}
-        {app.props.activeTool == null && (
-          <>
-            <LockButton
-              checked={appState.activeTool.locked}
-              onChange={onLockToggle}
-              title={t("toolBar.lock")}
-              // the active tool — including its lock state — is host-controlled
-              disabled={app.props.activeTool != null}
-            />
-
-            <div className="App-toolbar__divider" />
-          </>
-        )}
 
         <HandToolButton {...toolProps} hideKeyBinding />
         {isCompactStylesPanel ? (
@@ -250,15 +241,12 @@ export const Toolbar = ({
         <TextToolButton {...toolProps} />
         {UIOptions.tools?.image !== false && <ImageToolButton {...toolProps} />}
         <EraserToolButton {...toolProps} />
-
-        <div className="App-toolbar__divider" />
-
-        <ExtraToolsDropdown
-          app={app}
-          activeTool={activeTool}
-          setAppState={setAppState}
-        />
+        <FrameToolButton {...toolProps} />
+        <EmbeddableToolButton {...toolProps} />
+        <LaserToolButton {...toolProps} />
+        {!isCompactStylesPanel && <LassoToolButton {...toolProps} />}
       </Stack.Row>
+
     </Island>
   );
 };

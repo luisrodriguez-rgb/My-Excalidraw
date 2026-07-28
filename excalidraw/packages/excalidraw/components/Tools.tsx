@@ -298,6 +298,9 @@ export const TextToolButton = createToolButton("text");
 export const ImageToolButton = createToolButton("image");
 export const EraserToolButton = createToolButton("eraser");
 export const FrameToolButton = createToolButton("frame");
+export const EmbeddableToolButton = createToolButton("embeddable");
+export const LaserToolButton = createToolButton("laser");
+
 
 /**
  * The selection tool button — pointer-clicking it while the selection tool

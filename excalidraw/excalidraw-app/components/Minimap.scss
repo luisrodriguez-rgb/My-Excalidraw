@@ -1,6 +1,6 @@
 .minimap-panel {
   position: fixed;
-  bottom: 140px;
+  bottom: 20px;
   right: 20px;
   background: rgba(255, 255, 255, 0.75);
   backdrop-filter: blur(20px);
@@ -39,15 +39,18 @@
         cursor: pointer;
         padding: 2px;
         font-size: 11px;
+        color: #64748b;
         opacity: 0.6;
         transition: opacity 0.15s ease;
 
         &.active {
           opacity: 1;
+          color: #ef4444;
         }
 
         &:hover {
           opacity: 1;
+          color: #ef4444;
         }
       }
 
@@ -108,9 +111,9 @@
 
         &:hover {
           background: #ffffff;
-          border-color: #a855f7;
-          color: #a855f7;
-          box-shadow: 0 4px 6px -1px rgba(168, 85, 247, 0.1);
+          border-color: #ef4444;
+          color: #ef4444;
+          box-shadow: 0 4px 6px -1px rgba(239, 68, 68, 0.1);
         }
 
         &:active {
@@ -123,7 +126,7 @@
 
 .minimap-toggle-btn {
   position: fixed;
-  bottom: 140px;
+  bottom: 20px;
   right: 20px;
   width: 48px;
   height: 48px;
@@ -143,8 +146,8 @@
   &:hover {
     transform: scale(1.06);
     background: #ffffff;
-    border-color: #a855f7;
-    color: #a855f7;
+    border-color: #ef4444;
+    color: #ef4444;
   }
 
   &:active {
@@ -186,8 +189,8 @@
 
           &:hover {
             background: #1e293b;
-            border-color: #a855f7;
-            color: #c084fc;
+            border-color: #ef4444;
+            color: #f87171;
           }
         }
       }
@@ -201,8 +204,9 @@
 
     &:hover {
       background: #1e293b;
-      color: #c084fc;
-      border-color: #a855f7;
+      color: #f87171;
+      border-color: #ef4444;
     }
   }
 }
+
