@@ -104,8 +104,12 @@ const InteractiveCanvas = (props: InteractiveCanvasProps) => {
       new Map();
     const remotePointerUserStates: InteractiveCanvasRenderConfig["remotePointerUserStates"] =
       new Map();
+    const collaborators =
+      props.appState.collaborators instanceof Map
+        ? props.appState.collaborators
+        : new Map();
 
-    props.appState.collaborators.forEach((user, socketId) => {
+    collaborators.forEach((user, socketId) => {
       if (user.selectedElementIds) {
         for (const id of Object.keys(user.selectedElementIds)) {
           if (!remoteSelectedElementIds.has(id)) {
@@ -260,7 +264,10 @@ const getRelevantAppStateProps = (
   suggestedBinding: appState.suggestedBinding,
   isRotating: appState.isRotating,
   elementsToHighlight: appState.elementsToHighlight,
-  collaborators: appState.collaborators, // Necessary for collab. sessions
+  collaborators:
+    appState.collaborators instanceof Map
+      ? appState.collaborators
+      : new Map(),
   activeEmbeddable: appState.activeEmbeddable,
   snapLines: appState.snapLines,
   zenModeEnabled: appState.zenModeEnabled,

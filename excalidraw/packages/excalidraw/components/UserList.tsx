@@ -118,7 +118,10 @@ export const UserList = React.memo(
       MarkRequired<Collaborator, "socketId">
     >();
 
-    collaborators.forEach((collaborator, socketId) => {
+    const safeCollaborators =
+      collaborators instanceof Map ? collaborators : new Map();
+
+    safeCollaborators.forEach((collaborator, socketId) => {
       const userId = (collaborator.id || socketId) as ClientId;
       uniqueCollaboratorsMap.set(
         // filter on user id, else fall back on unique socketId
