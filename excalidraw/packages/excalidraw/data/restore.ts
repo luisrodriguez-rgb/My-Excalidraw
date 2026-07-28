@@ -96,6 +96,7 @@ import type {
   Collaborator,
   LibraryItem,
   NormalizedZoomValue,
+  SocketId,
 } from "../types";
 import type { ImportedDataState, LegacyAppState } from "./types";
 
@@ -117,9 +118,9 @@ type RestoredAppState = Omit<
  */
 export const normalizeCollaborators = (
   collaborators: unknown,
-): Map<string, Collaborator> => {
+): Map<SocketId, Collaborator> => {
   if (collaborators instanceof Map) {
-    return collaborators;
+    return collaborators as Map<SocketId, Collaborator>;
   }
 
   if (
@@ -134,7 +135,9 @@ export const normalizeCollaborators = (
       );
     }
     return new Map(
-      Object.entries(collaborators as Record<string, Collaborator>),
+      Object.entries(collaborators as Record<string, Collaborator>).map(
+        ([k, v]) => [k as SocketId, v],
+      ),
     );
   }
 
