@@ -356,7 +356,11 @@ import {
 
 import { exportCanvas, loadFromBlob } from "../data";
 import Library, { distributeLibraryItemsOnSquareGrid } from "../data/library";
-import { restoreAppState, restoreElements } from "../data/restore";
+import {
+  normalizeCollaborators,
+  restoreAppState,
+  restoreElements,
+} from "../data/restore";
 import { getCenter, getDistance } from "../gesture";
 import { History } from "../history";
 import { defaultLang, getLanguage, languages, setLanguage, t } from "../i18n";
@@ -5182,12 +5186,7 @@ class App extends React.Component<AppProps, AppState> {
       }
 
       if (collaborators) {
-        const safeCollaborators =
-          collaborators instanceof Map
-            ? collaborators
-            : collaborators && typeof collaborators === "object"
-              ? new Map(Object.entries(collaborators))
-              : new Map();
+        const safeCollaborators = normalizeCollaborators(collaborators);
         this.laserTrails.updateCollabTrails(safeCollaborators);
         this.setState({ collaborators: safeCollaborators });
       }

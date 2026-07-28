@@ -93,6 +93,7 @@ import {
 import type {
   AppState,
   BinaryFiles,
+  Collaborator,
   LibraryItem,
   NormalizedZoomValue,
 } from "../types";
@@ -102,6 +103,43 @@ type RestoredAppState = Omit<
   AppState,
   "offsetTop" | "offsetLeft" | "width" | "height"
 >;
+
+/**
+ * Normalizes `collaborators` to always be a `Map<SocketId, Collaborator>`.
+ *
+ * My-Excalidraw has two collab systems (Socket.IO + Supabase Realtime) that
+ * can both call `updateScene({ collaborators })`. During the window between
+ * state restoration and the first Supabase Presence sync, `collaborators` can
+ * arrive as a plain object `{}` from localStorage/JSON, causing
+ * `collaborators.forEach / .size / .get` to crash with TypeError.
+ *
+ * By normalizing at every entry point we guarantee all consumers receive a Map.
+ */
+export const normalizeCollaborators = (
+  collaborators: unknown,
+): Map<string, Collaborator> => {
+  if (collaborators instanceof Map) {
+    return collaborators;
+  }
+
+  if (
+    collaborators &&
+    typeof collaborators === "object" &&
+    !Array.isArray(collaborators)
+  ) {
+    if (import.meta.env.DEV) {
+      console.warn(
+        "[normalizeCollaborators] Received non-Map value — normalizing:",
+        collaborators,
+      );
+    }
+    return new Map(
+      Object.entries(collaborators as Record<string, Collaborator>),
+    );
+  }
+
+  return new Map();
+};
 
 const MAX_LINEAR_PX = 75_000;
 
@@ -1142,6 +1180,7 @@ export const restoreAppState = (
           : appState.zoom?.value ?? defaultAppState.zoom.value,
       ),
     },
+    collaborators: normalizeCollaborators((nextAppState as any).collaborators),
     openSidebar:
       // string (legacy)
       typeof (appState.openSidebar as any as string) === "string"
