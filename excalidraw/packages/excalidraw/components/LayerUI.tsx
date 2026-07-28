@@ -394,7 +394,7 @@ const LayerUI = ({
               },
             )}
           >
-            {defaultUIEnabled && appState.collaborators.size > 0 && (
+            {defaultUIEnabled && appState.collaborators instanceof Map && appState.collaborators.size > 0 && (
               <UserList
                 collaborators={appState.collaborators}
                 userToFollow={appState.userToFollow?.socketId || null}

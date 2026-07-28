@@ -71,7 +71,11 @@ export const renderRemoteCursors = ({
   for (const [socketId, pointer] of renderConfig.remotePointerViewportCoords) {
     let { x, y } = pointer;
 
-    const collaborator = appState.collaborators.get(socketId);
+    const collaborator =
+      appState.collaborators instanceof Map
+        ? appState.collaborators.get(socketId)
+        : undefined;
+
 
     x -= appState.offsetLeft;
     y -= appState.offsetTop;

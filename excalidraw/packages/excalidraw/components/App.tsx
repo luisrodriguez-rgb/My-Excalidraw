@@ -5182,8 +5182,14 @@ class App extends React.Component<AppProps, AppState> {
       }
 
       if (collaborators) {
-        this.laserTrails.updateCollabTrails(collaborators);
-        this.setState({ collaborators });
+        const safeCollaborators =
+          collaborators instanceof Map
+            ? collaborators
+            : collaborators && typeof collaborators === "object"
+              ? new Map(Object.entries(collaborators))
+              : new Map();
+        this.laserTrails.updateCollabTrails(safeCollaborators);
+        this.setState({ collaborators: safeCollaborators });
       }
     },
   );
