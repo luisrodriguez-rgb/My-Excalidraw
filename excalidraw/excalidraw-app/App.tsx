@@ -152,6 +152,7 @@ import { Minimap } from "./components/Minimap";
 import { PresenceBar } from "./components/PresenceBar";
 import { AuthModal } from "./components/AuthModal";
 import { PresentationMode } from "./components/PresentationMode";
+import { importPDFToCanvas } from "./data/pdfImporter";
 import DOMPurify from "dompurify";
 
 
@@ -2627,6 +2628,70 @@ const ExcalidrawWrapper = () => {
 
       {activeBoardId && (
         <button
+          className="floating-pdf-btn"
+          onClick={() => {
+            const input = document.createElement("input");
+            input.type = "file";
+            input.accept = "application/pdf";
+            input.onchange = async (e: any) => {
+              const file = e.target.files?.[0];
+              if (file && excalidrawAPI) {
+                try {
+                  const { images, elements } = await importPDFToCanvas(file);
+                  excalidrawAPI.addFiles(
+                    images.map((img) => ({
+                      id: img.id as any,
+                      dataURL: img.dataURL as any,
+                      mimeType: "image/webp",
+                      created: Date.now(),
+                    })),
+                  );
+                  excalidrawAPI.updateScene({
+                    elements: [
+                      ...(excalidrawAPI.getSceneElements() || []),
+                      ...elements,
+                    ],
+                  });
+                  excalidrawAPI.scrollToContent(elements, { fitToViewport: true });
+                } catch (err) {
+                  console.error("PDF import error:", err);
+                  alert("Ocurrió un error al importar el archivo PDF.");
+                }
+              }
+            };
+            input.click();
+          }}
+          title="Importar documento PDF al canvas"
+          style={{
+            position: "fixed",
+            bottom: "320px",
+            right: showNotesSidebar ? "360px" : "20px",
+            width: "50px",
+            height: "50px",
+            borderRadius: "50%",
+            backgroundColor: "white",
+            color: "#ef4444",
+            border: "1px solid var(--border-color)",
+            boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 10000,
+            transition: "all 0.2s ease",
+          }}
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <line x1="12" y1="18" x2="12" y2="12"/>
+            <polyline points="9 15 12 12 15 15"/>
+          </svg>
+        </button>
+      )}
+
+      {activeBoardId && (
+        <button
           className="floating-notes-btn"
           onClick={() => setShowNotesSidebar(!showNotesSidebar)}
           title={showNotesSidebar ? "Cerrar panel de notas" : "Ver notas del elemento (Markdown)"}
@@ -3262,7 +3327,7 @@ const ExcalidrawWrapper = () => {
                 padding: "8px 4px",
                 background: "none",
                 border: "none",
-                borderBottom: sidebarTab === "notes" ? "2px solid #a855f7" : "2px solid transparent",
+                borderBottom: sidebarTab === "notes" ? "2px solid #ef4444" : "2px solid transparent",
                 color: sidebarTab === "notes" ? "var(--text-primary)" : "var(--text-secondary, #64748b)",
                 fontWeight: sidebarTab === "notes" ? 700 : 500,
                 fontSize: "13px",
@@ -3278,7 +3343,7 @@ const ExcalidrawWrapper = () => {
                 padding: "8px 4px",
                 background: "none",
                 border: "none",
-                borderBottom: sidebarTab === "comments" ? "2px solid #a855f7" : "2px solid transparent",
+                borderBottom: sidebarTab === "comments" ? "2px solid #ef4444" : "2px solid transparent",
                 color: sidebarTab === "comments" ? "var(--text-primary)" : "var(--text-secondary, #64748b)",
                 fontWeight: sidebarTab === "comments" ? 700 : 500,
                 fontSize: "13px",
