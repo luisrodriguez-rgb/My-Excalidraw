@@ -2626,7 +2626,7 @@ const ExcalidrawWrapper = () => {
         </div>
       )}
 
-      {activeBoardId && (
+      {excalidrawAPI && (
         <button
           className="floating-pdf-btn"
           onClick={() => {
@@ -2652,7 +2652,7 @@ const ExcalidrawWrapper = () => {
                       ...elements,
                     ],
                   });
-                  excalidrawAPI.scrollToContent(elements, { fitToViewport: true });
+                  (excalidrawAPI as any).scrollToContent?.(elements, { fitToViewport: true });
                 } catch (err) {
                   console.error("PDF import error:", err);
                   alert("Ocurrió un error al importar el archivo PDF.");
@@ -2677,7 +2677,7 @@ const ExcalidrawWrapper = () => {
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            zIndex: 10000,
+            zIndex: 999999,
             transition: "all 0.2s ease",
           }}
         >
@@ -2690,7 +2690,7 @@ const ExcalidrawWrapper = () => {
         </button>
       )}
 
-      {activeBoardId && (
+      {excalidrawAPI && (
         <button
           className="floating-notes-btn"
           onClick={() => setShowNotesSidebar(!showNotesSidebar)}
@@ -2710,7 +2710,7 @@ const ExcalidrawWrapper = () => {
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            zIndex: 10000,
+            zIndex: 999999,
             transition: "all 0.2s ease",
           }}
         >

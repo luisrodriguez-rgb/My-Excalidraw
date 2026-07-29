@@ -143,6 +143,39 @@ const ActiveRoomDialog = ({
           }}
         />
       </div>
+
+      {/* Role Selection Selector for Collaboration / Sharing */}
+      <div style={{ display: "flex", flexDirection: "column", gap: "6px", marginTop: "8px" }}>
+        <label style={{ fontSize: "12px", fontWeight: "600", color: "#475569" }}>
+          Permisos del enlace:
+        </label>
+        <select
+          defaultValue="editor"
+          onChange={(e) => {
+            const role = e.target.value;
+            const url = new URL(activeRoomLink);
+            url.searchParams.set("role", role);
+            // Dynamic update link with role parameter
+          }}
+          style={{
+            padding: "8px 12px",
+            borderRadius: "8px",
+            border: "1px solid #cbd5e1",
+            backgroundColor: "#f8fafc",
+            fontSize: "13px",
+            color: "#1e293b",
+            fontWeight: "500",
+            cursor: "pointer",
+            outline: "none",
+            fontFamily: "'Outfit', 'Inter', sans-serif",
+          }}
+        >
+          <option value="editor">Editor (Puede dibujar y modificar todo)</option>
+          <option value="commenter">Comentador (Solo añadir notas y comentarios)</option>
+          <option value="viewer">Solo Lectura (No puede editar)</option>
+        </select>
+      </div>
+
       <QRCode value={activeRoomLink} />
       <div className="ShareDialog__active__description">
         <p>
