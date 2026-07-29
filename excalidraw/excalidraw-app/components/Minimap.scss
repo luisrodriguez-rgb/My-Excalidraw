@@ -2,12 +2,12 @@
   position: fixed;
   bottom: 20px;
   right: 20px;
-  background: rgba(255, 255, 255, 0.75);
+  background: rgba(255, 255, 255, 0.82);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.4);
+  border: 1px solid rgba(239, 68, 68, 0.15);
   border-radius: 14px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.02);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1), 0 2px 6px rgba(239, 68, 68, 0.06);
   padding: 12px;
   z-index: 999999;
   display: flex;
@@ -17,6 +17,7 @@
   user-select: none;
   font-family: "Outfit", "Inter", -apple-system, sans-serif;
   transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  max-height: calc(100vh - 40px); /* Never overflow the screen, grows upward */
 
   .minimap-header {
     display: flex;

@@ -2,26 +2,44 @@
 
 .excalidraw {
   .collab-button {
-    --button-bg: var(--color-primary);
-    --button-color: var(--color-surface-lowest);
-    --button-border: var(--color-primary);
+    /* Override with workspace red accent */
+    --button-bg: #ef4444;
+    --button-color: #fff;
+    --button-border: #ef4444;
 
     --button-width: var(--lg-button-size);
     --button-height: var(--lg-button-size);
 
-    --button-hover-bg: var(--color-primary-darker);
-    --button-hover-border: var(--color-primary-darker);
+    --button-hover-bg: #dc2626;
+    --button-hover-border: #dc2626;
+    --button-active-bg: #b91c1c;
 
-    --button-active-bg: var(--color-primary-darker);
-
-    box-shadow: 0 0 0 1px var(--color-surface-lowest);
+    box-shadow: 0 0 0 1px var(--color-surface-lowest),
+                0 2px 8px rgba(239, 68, 68, 0.25);
 
     flex-shrink: 0;
+    border-radius: 8px;
+    font-family: "Outfit", "Inter", -apple-system, sans-serif;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    transition: background 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
 
-    // double .active to force specificity
+    &:hover {
+      box-shadow: 0 0 0 1px var(--color-surface-lowest),
+                  0 4px 14px rgba(239, 68, 68, 0.35);
+      transform: translateY(-1px);
+    }
+
+    &:active {
+      transform: translateY(0);
+    }
+
+    // double .active to force specificity — when session is live
     &.active.active {
-      background-color: #0fb884;
-      border-color: #0fb884;
+      background-color: #16a34a;
+      border-color: #16a34a;
+      box-shadow: 0 0 0 1px var(--color-surface-lowest),
+                  0 2px 8px rgba(22, 163, 74, 0.35);
 
       svg {
         color: #fff;
@@ -29,8 +47,8 @@
 
       &:hover,
       &:active {
-        background-color: #0fb884;
-        border-color: #0fb884;
+        background-color: #15803d;
+        border-color: #15803d;
       }
     }
   }
@@ -51,16 +69,18 @@
     :root[dir="rtl"] & {
       left: -5px;
     }
-    min-width: 1em;
-    min-height: 1em;
+    min-width: 1.1em;
+    min-height: 1.1em;
     line-height: 1;
     position: absolute;
     bottom: -5px;
-    padding: 3px;
+    padding: 3px 5px;
     border-radius: 50%;
-    background-color: $color-green-2;
-    color: $color-green-9;
+    background: #ef4444;
+    color: #fff;
     font-size: 0.6rem;
-    font-family: "Cascadia";
+    font-family: "Outfit", "Inter", -apple-system, sans-serif;
+    font-weight: 700;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
   }
 }

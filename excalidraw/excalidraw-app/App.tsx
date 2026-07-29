@@ -300,26 +300,29 @@ const initializeScene = async (opts: {
           jsonBackendMatch[2],
         );
 
-        scene = {
-          elements: bumpElementVersions(
-            restoreElements(imported.elements, null, {
-              repairBindings: true,
-              deleteInvisibleElements: true,
-            }),
-            localDataState?.elements,
-          ),
-          appState: restoreAppState(
-            imported.appState,
-            // local appState when importing from backend to ensure we restore
-            // localStorage user settings which we do not persist on server.
-            localDataState?.appState,
-          ),
-        };
+        if (imported && imported.elements && imported.elements.length > 0) {
+          scene = {
+            elements: bumpElementVersions(
+              restoreElements(imported.elements, null, {
+                repairBindings: true,
+                deleteInvisibleElements: true,
+              }),
+              localDataState?.elements,
+            ),
+            appState: restoreAppState(
+              imported.appState,
+              localDataState?.appState,
+            ),
+          };
+        } else {
+          console.warn("Shared link returned empty or invalid elements. Preserving local scene.");
+        }
       }
       scene.scrollToContent = true;
       if (!roomLinkData) {
         window.history.replaceState({}, APP_NAME, window.location.origin);
       }
+
     } else {
       // https://github.com/excalidraw/excalidraw/issues/1919
       if (document.hidden) {
@@ -2758,7 +2761,7 @@ const ExcalidrawWrapper = () => {
               top: "20px",
               left: "50%",
               transform: "translateX(-50%)",
-              backgroundColor: "rgba(168, 85, 247, 0.95)",
+              backgroundColor: "rgba(239, 68, 68, 0.95)",
               color: "white",
               padding: "8px 16px",
               borderRadius: "20px",
@@ -2767,9 +2770,10 @@ const ExcalidrawWrapper = () => {
               boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
               zIndex: 999999,
               pointerEvents: "none",
+              fontFamily: "'Outfit', 'Inter', -apple-system, sans-serif",
             }}
           >
-            📌 Modo Comentarios: Haz clic en el lienzo para anclar una nota
+            Modo Comentarios: Haz clic en el lienzo para anclar una nota
           </div>
         </>
       )}

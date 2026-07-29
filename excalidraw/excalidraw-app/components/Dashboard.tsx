@@ -2485,20 +2485,29 @@ User request: "${aiPrompt}"`;
 
       {/* Version History Modal */}
       {showHistoryModal && (
-        <div className="dialog-overlay">
-          <div className="dialog-box" style={{ maxWidth: "500px" }}>
-            <h3>Historial de Versiones</h3>
-            <p className="dialog-desc">Restaura este tablero a una versión anterior. Se guardará la versión actual como un punto nuevo en el historial.</p>
+        <div className="dialog-overlay" onClick={() => setShowHistoryModal(false)}>
+          <div className="dialog-box history-modal-box" onClick={(e) => e.stopPropagation()} style={{ maxWidth: "520px" }}>
+            <div className="dialog-header-with-close">
+              <h3>Historial de Versiones</h3>
+              <button
+                className="dialog-close-icon"
+                onClick={() => setShowHistoryModal(false)}
+                title="Cerrar"
+              >
+                ✕
+              </button>
+            </div>
+            <p className="dialog-desc">Restaura este tablero a una versión previa. La versión actual se resguardará automáticamente.</p>
             <div className="versions-list">
               {boardVersions.length === 0 ? (
                 <div className="no-versions-msg">No hay versiones guardadas para este tablero todavía.</div>
               ) : (
                 boardVersions.map((version, index) => (
                   <div key={version.id} className="version-item">
-                    <div>
-                      <div className="version-name">Versión {boardVersions.length - index}</div>
+                    <div className="version-info">
+                      <div className="version-name-tag">Versión {boardVersions.length - index}</div>
                       <div className="version-time">
-                        {new Date(version.timestamp).toLocaleString()} ({version.elementsCount} elementos)
+                        {new Date(version.timestamp).toLocaleString()} • <span className="elements-count-badge">{version.elementsCount} elementos</span>
                       </div>
                     </div>
                     <button className="btn-confirm version-restore-btn" onClick={() => handleRestoreVersion(version.id)}>
@@ -2516,6 +2525,7 @@ User request: "${aiPrompt}"`;
           </div>
         </div>
       )}
+
 
       {/* Help Modal */}
       {showHelpModal && (

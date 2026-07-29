@@ -150,9 +150,7 @@ const ActiveRoomDialog = ({
             role="img"
             aria-hidden="true"
             className="ShareDialog__active__description__emoji"
-          >
-            🔒{" "}
-          </span>
+          />
           {t("roomDialog.desc_privacy")}
         </p>
         <p>{t("roomDialog.desc_exitSession")}</p>
@@ -234,6 +232,7 @@ const ShareDialogPicker = (props: ShareDialogProps) => {
               icon={LinkIcon}
               onClick={async () => {
                 await props.onExportToBackend();
+                // Only close if no error dialog was shown
                 props.handleClose();
               }}
             />

@@ -164,16 +164,24 @@ export const exportToBackend = async (
       .map((b) => b.toString(16).padStart(2, "0"))
       .join("");
 
-    // Serialize and compress — but strip out heavy file binary data from main payload
-    // to avoid OOM. Files are stored separately.
+    // Serialize and compress
     const serialized = serializeAsJSON(elements, appState, {}, "database");
-    const payload = await compressData(new TextEncoder().encode(serialized), {
+    const compressed = await compressData(new TextEncoder().encode(serialized), {
       encryptionKey,
     });
 
-    const payloadBase64 = btoa(
-      String.fromCharCode(...new Uint8Array(payload.buffer)),
-    );
+    // Chunked Base64 encoding to avoid stack overflow on large drawings
+    const bytes = new Uint8Array(compressed.buffer, compressed.byteOffset, compressed.byteLength);
+    let binary = "";
+    const len = bytes.byteLength;
+    const CHUNK_SIZE = 0x8000;
+    for (let i = 0; i < len; i += CHUNK_SIZE) {
+      binary += String.fromCharCode.apply(
+        null,
+        Array.from(bytes.subarray(i, Math.min(i + CHUNK_SIZE, len))),
+      );
+    }
+    const payloadBase64 = btoa(binary);
 
     // Store in Supabase shared_links table
     const { error } = await supabase.from("shared_links").insert({
@@ -190,8 +198,9 @@ export const exportToBackend = async (
       };
     }
 
-    // Build the shareable URL
-    const url = new URL(window.location.href);
+    // Build the shareable URL using only the origin to avoid conflicts
+    // with any active board hash/session
+    const url = new URL(window.location.origin);
     url.hash = `json=${id},${encryptionKey}`;
     const urlString = url.toString();
 
@@ -222,8 +231,14 @@ export const importFromBackend = async (
       throw new Error("Could not load shared link data");
     }
 
-    const binary = Uint8Array.from(atob(row.data), (c) => c.charCodeAt(0));
-    const { data: decompressed } = await decompressData(binary, {
+    const binaryStr = atob(row.data);
+    const len = binaryStr.length;
+    const bytes = new Uint8Array(len);
+    for (let i = 0; i < len; i++) {
+      bytes[i] = binaryStr.charCodeAt(i);
+    }
+
+    const { data: decompressed } = await decompressData(bytes, {
       decryptionKey,
     });
 
@@ -240,3 +255,4 @@ export const importFromBackend = async (
     return {};
   }
 };
+
