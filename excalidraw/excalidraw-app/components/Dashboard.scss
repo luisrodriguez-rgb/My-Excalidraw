@@ -1021,6 +1021,10 @@
           box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.25), var(--card-shadow) !important;
         }
 
+        &.menu-active {
+          z-index: 10000 !important;
+        }
+
         // Checkbox overlay (top-left corner)
         .board-select-checkbox {
           position: absolute;
@@ -1459,7 +1463,19 @@
           transform: translateY(-1px);
         }
 
-        .board-select-checkbox {
+        &.menu-active {
+          z-index: 10000 !important;
+          position: relative !important;
+
+          .card-info-container,
+          .title-row,
+          .card-menu-trigger-wrapper {
+            overflow: visible !important;
+            z-index: 10000 !important;
+          }
+        }
+
+        .card-select-checkbox {
           position: relative;
           top: auto;
           left: auto;

@@ -38,7 +38,11 @@ export const importPDFToCanvas = async (
     }
 
     const page = await pdf.getPage(i);
-    const viewport = page.getViewport({ scale: 1.5 }); // High definition rendering
+    const unscaledViewport = page.getViewport({ scale: 1.0 });
+    // Calculate adaptive scale to cap width at 1200px for crystal-clear HD & ultra-light memory footprint
+    const MAX_WIDTH = 1200;
+    const targetScale = unscaledViewport.width > MAX_WIDTH ? MAX_WIDTH / unscaledViewport.width : 1.5;
+    const viewport = page.getViewport({ scale: targetScale });
 
     const canvas = document.createElement("canvas");
     const context = canvas.getContext("2d");
@@ -53,7 +57,7 @@ export const importPDFToCanvas = async (
       viewport,
     }).promise;
 
-    const dataURL = canvas.toDataURL("image/webp", 0.85);
+    const dataURL = canvas.toDataURL("image/webp", 0.78);
     const fileId = `pdf_page_${Date.now()}_${i}_${Math.random().toString(36).substr(2, 9)}`;
 
     images.push({

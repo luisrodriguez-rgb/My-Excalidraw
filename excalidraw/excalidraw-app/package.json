@@ -45,6 +45,7 @@
     "vite": "5.4.21",
     "dompurify": "3.4.12",
     "@types/dompurify": "3.2.0",
+    "@vercel/analytics": "^1.4.0",
     "vite-plugin-html": "3.2.2",
     "vitest": "3.2.7"
   },

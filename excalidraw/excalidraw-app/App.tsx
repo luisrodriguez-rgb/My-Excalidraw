@@ -11,6 +11,7 @@ import {
 } from "@excalidraw/excalidraw";
 import { trackEvent } from "@excalidraw/excalidraw/analytics";
 import { getDefaultAppState } from "@excalidraw/excalidraw/appState";
+import { Analytics } from "@vercel/analytics/react";
 import {
   CommandPalette,
   DEFAULT_CATEGORIES,
@@ -290,8 +291,9 @@ const initializeScene = async (opts: {
     if (
       // don't prompt if scene is empty
       !scene.elements.length ||
-      // don't prompt for collab scenes because we don't override local storage
+      // don't prompt for collab scenes or shared json links because we don't override local storage
       roomLinkData ||
+      jsonBackendMatch ||
       // otherwise, prompt whether user wants to override current scene
       (await openConfirmModal(shareableLinkConfirmDialog))
     ) {
@@ -640,6 +642,67 @@ const ExcalidrawWrapper = () => {
       ALLOWED_ATTR: ["style"],
     });
   };
+
+  // Intercept PDF Drag & Drop files natively before Excalidraw throws "Couldn't load invalid file"
+  useEffect(() => {
+    const handleDragOver = (e: DragEvent) => {
+      if (e.dataTransfer?.types?.includes("Files")) {
+        const items = Array.from(e.dataTransfer.items || []);
+        const hasPDF = items.some((item) => item.type === "application/pdf" || item.kind === "file");
+        if (hasPDF) {
+          e.preventDefault();
+        }
+      }
+    };
+
+    const handleDrop = async (e: DragEvent) => {
+      const files = Array.from(e.dataTransfer?.files || []);
+      const pdfFile = files.find(
+        (f) => f.type === "application/pdf" || f.name.toLowerCase().endsWith(".pdf"),
+      );
+
+      if (pdfFile && excalidrawAPI) {
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+
+        if (isImportingPDF) return;
+        setIsImportingPDF(true);
+
+        try {
+          const { images, elements } = await importPDFToCanvas(pdfFile);
+          excalidrawAPI.addFiles(
+            images.map((img) => ({
+              id: img.id as any,
+              dataURL: img.dataURL as any,
+              mimeType: "image/webp",
+              created: Date.now(),
+            })),
+          );
+          excalidrawAPI.updateScene({
+            elements: [
+              ...(excalidrawAPI.getSceneElements() || []),
+              ...elements,
+            ],
+          });
+          (excalidrawAPI as any).scrollToContent?.(elements, { fitToViewport: true });
+        } catch (err) {
+          console.error("PDF Drag & Drop import error:", err);
+          alert("Ocurrió un error al importar el archivo PDF.");
+        } finally {
+          setIsImportingPDF(false);
+        }
+      }
+    };
+
+    window.addEventListener("dragover", handleDragOver, { capture: true });
+    window.addEventListener("drop", handleDrop, { capture: true });
+
+    return () => {
+      window.removeEventListener("dragover", handleDragOver, { capture: true });
+      window.removeEventListener("drop", handleDrop, { capture: true });
+    };
+  }, [excalidrawAPI, isImportingPDF]);
 
 
   const selectedElement = activeBoardId && selectedElementId && excalidrawAPI
@@ -3667,6 +3730,7 @@ const ExcalidrawApp = () => {
       <Provider store={appJotaiStore}>
         <ExcalidrawAPIProvider>
           <ExcalidrawWrapper />
+          <Analytics />
         </ExcalidrawAPIProvider>
       </Provider>
     </TopErrorBoundary>

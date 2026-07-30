@@ -1864,7 +1864,7 @@ User request: "${aiPrompt}"`;
                   return (
                     <div
                       key={board.id}
-                      className={`board-card-premium${isSelected ? " board-card-selected" : ""}`}
+                      className={`board-card-premium${isSelected ? " board-card-selected" : ""}${activeCardMenuId === board.id ? " menu-active" : ""}`}
                     >
                       {/* Multi-select checkbox */}
                       <div
