@@ -154,6 +154,7 @@ import { PresenceBar } from "./components/PresenceBar";
 import { AuthModal } from "./components/AuthModal";
 import { PresentationMode } from "./components/PresentationMode";
 import { importPDFToCanvas } from "./data/pdfImporter";
+import { parseSheetDataToExcalidraw } from "./data/sheetsImporter";
 import DOMPurify from "dompurify";
 
 
@@ -322,6 +323,17 @@ const initializeScene = async (opts: {
         }
       }
       scene.scrollToContent = true;
+      
+      // Enforce Role Security: Lock canvas if shared as viewer or commenter
+      const urlParams = new URLSearchParams(window.location.search);
+      const urlRole = urlParams.get("role");
+      if (urlRole === "viewer" || urlRole === "commenter") {
+        scene.appState = {
+          ...scene.appState,
+          viewModeEnabled: true,
+        };
+      }
+
       if (!roomLinkData) {
         window.history.replaceState({}, APP_NAME, window.location.origin);
       }
@@ -602,6 +614,8 @@ const ExcalidrawWrapper = () => {
   const [isPresenting, setIsPresenting] = useState(false);
   const [showNotesSidebar, setShowNotesSidebar] = useState(false);
   const [isImportingPDF, setIsImportingPDF] = useState(false);
+  const [showSheetsModal, setShowSheetsModal] = useState(false);
+  const [sheetInputText, setSheetInputText] = useState("");
   const [sidebarTab, setSidebarTab] = useState<"notes" | "comments">("notes");
   const [notesEditMode, setNotesEditMode] = useState<"edit" | "preview">("preview");
   const [selectedElementId, setSelectedElementId] = useState<string | null>(null);
@@ -675,7 +689,7 @@ const ExcalidrawWrapper = () => {
             images.map((img) => ({
               id: img.id as any,
               dataURL: img.dataURL as any,
-              mimeType: "image/webp",
+              mimeType: (img.mimeType || "image/jpeg") as any,
               created: Date.now(),
             })),
           );
@@ -2692,6 +2706,40 @@ const ExcalidrawWrapper = () => {
 
       {excalidrawAPI && (
         <button
+          className="floating-sheets-btn floating-action-btn"
+          onClick={() => setShowSheetsModal(true)}
+          title="Importar datos de Google Sheets / CSV a Tabla"
+          style={{
+            position: "fixed",
+            bottom: "380px",
+            right: showNotesSidebar ? "360px" : "20px",
+            width: "50px",
+            height: "50px",
+            borderRadius: "50%",
+            backgroundColor: "white",
+            color: "#64748b",
+            border: "1px solid #e2e8f0",
+            boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 999999,
+            transition: "all 0.2s ease",
+          }}
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+            <line x1="3" y1="9" x2="21" y2="9"/>
+            <line x1="3" y1="15" x2="21" y2="15"/>
+            <line x1="9" y1="3" x2="9" y2="21"/>
+            <line x1="15" y1="3" x2="15" y2="21"/>
+          </svg>
+        </button>
+      )}
+
+      {excalidrawAPI && (
+        <button
           className="floating-pdf-btn floating-action-btn"
           disabled={isImportingPDF}
           onClick={() => {
@@ -2710,7 +2758,7 @@ const ExcalidrawWrapper = () => {
                   images.map((img) => ({
                     id: img.id as any,
                     dataURL: img.dataURL as any,
-                    mimeType: "image/webp",
+                    mimeType: (img.mimeType || "image/jpeg") as any,
                     created: Date.now(),
                   })),
                 );
@@ -3686,6 +3734,131 @@ const ExcalidrawWrapper = () => {
           </div>
         </div>
       )}
+      {showSheetsModal && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            backgroundColor: "rgba(15, 23, 42, 0.6)",
+            backdropFilter: "blur(4px)",
+            zIndex: 9999999,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            fontFamily: "'Outfit', 'Inter', sans-serif",
+          }}
+          onClick={() => setShowSheetsModal(false)}
+        >
+          <div
+            style={{
+              backgroundColor: "#ffffff",
+              borderRadius: "16px",
+              padding: "24px",
+              width: "100%",
+              maxWidth: "520px",
+              boxShadow: "0 20px 40px rgba(0, 0, 0, 0.2)",
+              border: "1px solid #e2e8f0",
+              display: "flex",
+              flexDirection: "column",
+              gap: "16px",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                <div style={{ padding: "8px", borderRadius: "8px", backgroundColor: "#fef2f2", color: "#ef4444" }}>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                    <line x1="3" y1="9" x2="21" y2="9"/>
+                    <line x1="3" y1="15" x2="21" y2="15"/>
+                    <line x1="9" y1="3" x2="9" y2="21"/>
+                    <line x1="15" y1="3" x2="15" y2="21"/>
+                  </svg>
+                </div>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: "16px", fontWeight: 700, color: "#0f172a" }}>Importar Google Sheets / CSV</h3>
+                  <p style={{ margin: 0, fontSize: "12px", color: "#64748b" }}>Copia y pega celdas directamente desde Excel/Google Sheets o archivo CSV</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowSheetsModal(false)}
+                style={{ background: "none", border: "none", fontSize: "18px", cursor: "pointer", color: "#94a3b8" }}
+              >
+                ✕
+              </button>
+            </div>
+
+            <textarea
+              value={sheetInputText}
+              onChange={(e) => setSheetInputText(e.target.value)}
+              placeholder={"Pega las celdas aquí (ejemplo):\nNombre\tRol\tEstado\nJuan\tIngeniero\tActivo\nMaria\tDiseñadora\tEn revisión"}
+              rows={8}
+              style={{
+                width: "100%",
+                padding: "12px",
+                borderRadius: "10px",
+                border: "1px solid #cbd5e1",
+                fontSize: "13px",
+                fontFamily: "monospace",
+                outline: "none",
+                resize: "vertical",
+                boxSizing: "border-box",
+              }}
+            />
+
+            <div style={{ display: "flex", gap: "10px", justifyContent: "flex-end" }}>
+              <button
+                onClick={() => setShowSheetsModal(false)}
+                style={{
+                  padding: "9px 16px",
+                  borderRadius: "8px",
+                  border: "1px solid #cbd5e1",
+                  backgroundColor: "#ffffff",
+                  fontSize: "13px",
+                  fontWeight: 600,
+                  color: "#475569",
+                  cursor: "pointer",
+                }}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={() => {
+                  if (!sheetInputText.trim() || !excalidrawAPI) return;
+                  const { elements } = parseSheetDataToExcalidraw(sheetInputText, 150, 150);
+                  if (elements.length > 0) {
+                    excalidrawAPI.updateScene({
+                      elements: [
+                        ...(excalidrawAPI.getSceneElements() || []),
+                        ...elements,
+                      ],
+                    });
+                    (excalidrawAPI as any).scrollToContent?.(elements, { fitToViewport: true });
+                    setSheetInputText("");
+                    setShowSheetsModal(false);
+                  } else {
+                    alert("No se pudieron detectar celdas válidas en el texto pegado.");
+                  }
+                }}
+                style={{
+                  padding: "9px 18px",
+                  borderRadius: "8px",
+                  border: "none",
+                  backgroundColor: "#ef4444",
+                  color: "#ffffff",
+                  fontSize: "13px",
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  boxShadow: "0 2px 8px rgba(239, 68, 68, 0.3)",
+                }}
+              >
+                Generar Tabla en Canvas
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <WorkspaceCommandPalette
         activeBoardId={activeBoardId}
         boards={boardsList}

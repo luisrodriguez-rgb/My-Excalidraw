@@ -57,12 +57,13 @@ export const importPDFToCanvas = async (
       viewport,
     }).promise;
 
-    const dataURL = canvas.toDataURL("image/webp", 0.78);
-    const fileId = `pdf_page_${Date.now()}_${i}_${Math.random().toString(36).substr(2, 9)}`;
+    const dataURL = canvas.toDataURL("image/jpeg", 0.75);
+    const fileId = `pdf_page_${Date.now()}_${i}_${Math.random().toString(36).substring(2, 9)}`;
 
     images.push({
       id: fileId,
       dataURL,
+      mimeType: "image/jpeg",
       width: viewport.width,
       height: viewport.height,
     });
@@ -71,7 +72,7 @@ export const importPDFToCanvas = async (
     const imageElement = {
       type: "image",
       fileId,
-      status: "pending",
+      status: "saved",
       x: 100,
       y: currentY,
       width: viewport.width,
