@@ -4,7 +4,7 @@
 
 # My-Excalidraw
 
-**Plataforma de Pizarra Virtual, Colaboración en Tiempo Real, PDFs, Tablas de Google Sheets y Espacio de Estudio Infinito**
+**Workspace Visual para Estudiar, Colaborar, Documentar, Presentar y Construir con IA**
 
 [![Autor](https://img.shields.io/badge/Creador-luisrodriguez--rgb-ef4444?style=for-the-badge&logo=github)](https://github.com/luisrodriguez-rgb)
 [![Deploy Vercel](https://img.shields.io/badge/Vercel-Deployment-000000?style=for-the-badge&logo=vercel&logoColor=white)](https://my-excalidraw-nine.vercel.app)
@@ -12,7 +12,7 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Supabase](https://img.shields.io/badge/Supabase-Database-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white)](https://supabase.com)
 
-[🚀 Probar Aplicación en Vivo](https://my-excalidraw-nine.vercel.app) • [📊 Tabla Comparativa vs Excalidraw](#-tabla-comparativa-my-excalidraw-vs-excalidraw-original) • [📖 Arquitectura](#-arquitectura-del-sistema)
+[🚀 Probar Aplicación en Vivo](https://my-excalidraw-nine.vercel.app) • [🚀 Visión](#-visión-del-proyecto) • [🎯 Casos de Uso](#-casos-de-uso-principales) • [🧠 Templates + AI](#-próxima-generación-templates--ai) • [📖 Arquitectura](#-arquitectura-del-sistema)
 
 </div>
 
@@ -20,7 +20,71 @@
 
 ## 💡 Acerca del Proyecto
 
-**My-Excalidraw** es una extensión avanzada y personalizada de Excalidraw diseñada para transformar una simple pizarra virtual en un **entorno de trabajo, presentación y estudio todo-en-uno**. Permite integrar documentos **PDF**, tablas nativas importadas desde **Google Sheets / Excel**, notas enriquecidas en **Markdown**, salas de colaboración multi-usuario, roles de lectura y un **Modo Estudio** interactivo con tarjetas de memoria.
+**My-Excalidraw** transforma la tradicional pizarra a mano alzada en un **Workspace Visual todo-en-uno**. Permite integrar documentos **PDF**, tablas nativas importadas desde **Google Sheets / Excel**, especificaciones enriquecidas en **Markdown**, salas de colaboración multi-usuario, roles de lectura y un **Modo Estudio** interactivo con tarjetas de memoria.
+
+---
+
+## 🚀 Visión del Proyecto
+
+My-Excalidraw no busca ser únicamente una pizarra digital.
+
+Nuestra visión es construir un **Workspace Visual** donde estudiantes, profesionales y equipos puedan:
+
+- 🧠 **Pensar**: Bocetar e iterar libremente.
+- 📌 **Planificar**: Organizar proyectos y sprints.
+- 📚 **Aprender**: Estudiar PDFs y notas con memorización activa.
+- 📝 **Documentar**: Vincular especificaciones y arquitecturas.
+- 🎬 **Presentar**: Exponer ideas en modo diapositivas cine.
+- 🤝 **Colaborar**: Trabajar en equipo en tiempo real.
+
+todo desde un único espacio de trabajo.
+
+La evolución del proyecto se basa en tres pilares principales:
+
+- 📚 **Plantillas profesionales**: Estructuras predeterminadas para casos reales de universidad, ingeniería y producto.
+- 🧠 **Motores visuales reutilizables**: Integración nativa de PDFs, tablas de datos y tarjetas de repaso.
+- 🤖 **Skills de IA**: Capaces de transformar una idea o instrucción en un tablero estructurado listo para usar.
+
+---
+
+## 🎯 Casos de Uso Principales
+
+| Caso de Uso | Nivel de Cobertura | Beneficio Clave |
+| :--- | :---: | :--- |
+| 🎓 **Universidad & Estudio** | ⭐⭐⭐⭐⭐ | Lectura de PDFs en canvas + Modo Estudio (Flashcards) |
+| 🛠️ **Ingeniería & Software** | ⭐⭐⭐⭐⭐ | Diagramas de arquitectura, Kanban y prototipos |
+| 🏗️ **Arquitectura de Sistemas** | ⭐⭐⭐⭐⭐ | Plantillas de diseño hexagonal y microservicios |
+| 🤖 **IA & Agentes** | ⭐⭐⭐⭐⭐ | Generación asistida de tableros estructurados |
+| 💼 **Product Management** | ⭐⭐⭐⭐ | Importación de Google Sheets y seguimiento de sprints |
+| 🎬 **Workshops & Presentaciones** | ⭐⭐⭐⭐ | Modo presentación diapositivas + Exportación a PPTX |
+| 💡 **Brainstorming Rápido** | ⭐⭐⭐⭐⭐ | Pizarra infinita colaborativa Local-First instantánea |
+
+---
+
+## 🧠 Próxima Generación: Templates + AI
+
+My-Excalidraw está evolucionando hacia un sistema de generación visual asistido por Inteligencia Artificial.
+
+La plataforma incorpora:
+
+- 📚 **Plantillas profesionales**: Diseños estructurales precargados para ingeniería y aprendizaje.
+- 🎨 **Bibliotecas reutilizables**: Componentes gráficos vectoriales listos para arrastrar.
+- ⚙️ **Motores visuales**: Renderizado nativo de documentos PDF y datos tabulares.
+- 🤖 **Skills de IA especializadas**: Agentes capaces de estructurar diagramas complejos en segundos.
+
+La IA no generará diagramas arbitrarios sin estructura. En su lugar:
+
+```text
+Idea / Prompt
+      ↓
+Plantilla adecuada
+      ↓
+Contenido estructurado
+      ↓
+Motor visual
+      ↓
+Tablero listo para usar
+```
 
 ---
 
@@ -28,41 +92,25 @@
 
 | Característica | Excalidraw Estándar | My-Excalidraw (Este Proyecto) |
 | :--- | :---: | :---: |
-| **Documentos PDF en Canvas** | ❌ No soportado | ⚡ **Renderizado nativo con compresión JPEG 75% (~70KB/pág)** |
-| **Tablas de Google Sheets & CSV** | ❌ No soportado | 📊 **Conversión instantánea a tablas reticulares editables** |
+| **Documentos PDF en Canvas** | ❌ No soportado | ⚡ **Renderizado nativo ultra-liviano** |
+| **Tablas de Google Sheets & CSV** | ❌ No soportado | 📊 **Conversión instantánea a tablas editables** |
 | **Modo Estudio & Flashcards** | ❌ No soportado | 🎓 **Tarjetas de memorización activa con progreso** |
 | **Control de Roles por URL** | ❌ No disponible | 🔒 **Modo Lector (`?role=viewer`) y Comentador (`?role=commenter`)** |
-| **Dashboard y Workspaces** | ❌ Pizarra única volátil | 📂 **Gestión de carpetas, papelera de reciclaje y filtros** |
+| **Dashboard y Workspaces** | ❌ Pizarra única volátil | 📂 **Gestión por carpetas, papelera y filtros** |
 | **Persistencia de Datos** | ⚠️ Solo LocalStorage básico | 🔄 **Local-First (IndexedDB) + Nube (Supabase Cloud Sync)** |
 | **Notas Enriquecidas** | ❌ Texto plano | 📝 **Panel lateral de especificaciones en Markdown** |
 | **Comentarios Interactivos** | ❌ No disponible | 💬 **Hilos de comentarios anclados a figuras** |
 | **Modo Presentación Cine** | ⚠️ Básico | 🎬 **Marcos estilo diapositiva + Exportación a PPTX** |
-| **Navegación & Chat Colaborativo**| ❌ No disponible | 🗺️ **Minimapa 120 FPS + Chat lateral en tiempo real** |
-| **Gestión de Cuota / Planes** | ❌ No disponible | 💳 **Persistencia de planes Pro/Empresarial (Free / Pro / Ent)** |
+| **Navegación & Chat Colaborativo**| ❌ No disponible | 🗺️ **Minimapa flotante + Chat lateral en tiempo real** |
+| **Gestión de Cuota / Planes** | ❌ No disponible | 💳 **Persistencia de planes Pro/Empresarial** |
 
 ---
 
-## ✨ Novedades y Capacidades Extendidas
-
-```mermaid
-graph TD
-    A[My-Excalidraw Suite] --> B[⚡ PDFs dentro del Canvas]
-    A --> C[📊 Tablas Google Sheets & CSV]
-    A --> D[🔒 Control de Roles por URL]
-    A --> E[🎓 Modo Estudio Flashcards]
-    A --> F[💳 Persistencia de Planes Pro]
-
-    B --> B1[JPEG 75% Compression - 70KB/pag]
-    C --> C1[Auto-formato con Encabezados Rojos]
-    D --> D1[?role=viewer / commenter]
-    E --> E1[Repaso Interactivo de Notas]
-    F --> F1[Local-First + Supabase Sync]
-```
+## ⚡ Capacidades Clave
 
 ### ⚡ 1. Importación Ultra-Rápida de PDF (Motor Local Sin Lag)
 - Renderiza archivos PDF de múltiples páginas directamente sobre la pizarra.
-- **Compresión Inteligente JPEG (75%)**: reduce el tamaño por página de ~800 KB a solo **~70 KB**, permitiendo hacer zoom, anotar y vincular diagramas sin sobrecargar el navegador.
-- **Renderizado Blanco Sólido**: elimina transparencias o marcas en blanco al instante.
+- Permite hacer zoom, realizar anotaciones directas y vincular esquemas a páginas específicas sin congelar la aplicación.
 
 ### 🔒 2. Control de Permisos de Roles por URL
 - **Modo Lector**: `?role=viewer`
@@ -71,7 +119,6 @@ graph TD
 
 ### 📊 3. Importador de Google Sheets & CSV
 - Copia celdas de Excel o Google Sheets (`Cmd+C` / `Ctrl+C`) y genera tablas vectoriales formateadas en un clic (`Cmd+V` / `Ctrl+V`).
-- Soporta presupuestos, inventarios y cronogramas de hasta 500 celdas por tabla.
 
 ### 🎓 4. Modo Estudio (Flashcards Interactivas)
 - Convierte tus apuntes y diagramas en un sistema de memorización activa.
