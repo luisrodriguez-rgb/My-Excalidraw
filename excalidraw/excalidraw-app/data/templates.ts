@@ -106,7 +106,7 @@ export const TEMPLATES: Template[] = [
     id: "kanban",
     name: "Tablero Kanban",
     description: "Organiza tus tareas en columnas de Por Hacer, En Proceso y Listo.",
-    icon: "📋",
+    icon: "grid",
     category: "Product & Engineering",
     getElements: (content?: Record<string, any>) => {
       const colWidth = 280;
@@ -116,9 +116,9 @@ export const TEMPLATES: Template[] = [
       const elements: any[] = [];
 
       const columns = [
-        { title: "Por Hacer 📌", color: "#fee2e2", key: "todo" },
-        { title: "En Proceso ⚡", color: "#fef3c7", key: "progress" },
-        { title: "Listo 🎉", color: "#dcfce7", key: "done" },
+        { title: "Por Hacer", color: "#fee2e2", key: "todo" },
+        { title: "En Proceso", color: "#fef3c7", key: "progress" },
+        { title: "Listo", color: "#dcfce7", key: "done" },
       ];
 
       columns.forEach((col, index) => {
@@ -174,7 +174,7 @@ export const TEMPLATES: Template[] = [
     id: "retro",
     name: "Retrospectiva del Equipo",
     description: "Analiza qué salió bien, qué se puede mejorar y nuevas ideas en equipo.",
-    icon: "🔄",
+    icon: "refresh",
     category: "Product & Engineering",
     getElements: (content?: Record<string, any>) => {
       const cardWidth = 320;
@@ -184,9 +184,9 @@ export const TEMPLATES: Template[] = [
       const elements: any[] = [];
 
       const categories = [
-        { title: "Qué Salió Bien 👍", color: "#dcfce7", key: "well" },
-        { title: "Qué Mejorar 👎", color: "#fee2e2", key: "improve" },
-        { title: "Ideas y Sugerencias 💡", color: "#e0f2fe", key: "ideas" },
+        { title: "Qué Salió Bien", color: "#dcfce7", key: "well" },
+        { title: "Qué Mejorar", color: "#fee2e2", key: "improve" },
+        { title: "Ideas y Sugerencias", color: "#e0f2fe", key: "ideas" },
       ];
 
       categories.forEach((cat, index) => {
@@ -299,10 +299,10 @@ export const TEMPLATES: Template[] = [
       );
 
       const quadrants = [
-        { label: "🚀 Prioridad Alta (Ganancias rápidas)", x: startX + 20, y: startY + 20, key: "high_impact_low_effort" },
-        { label: "📈 Proyectos Clave (Planificar)", x: startX + size / 2 + 20, y: startY + 20, key: "high_impact_high_effort" },
-        { label: "💤 Relleno (Hacer luego)", x: startX + 20, y: startY + size / 2 + 20, key: "low_impact_low_effort" },
-        { label: "❌ Descartar (Sin valor)", x: startX + size / 2 + 20, y: startY + size / 2 + 20, key: "low_impact_high_effort" },
+        { label: "Prioridad Alta (Ganancias rápidas)", x: startX + 20, y: startY + 20, key: "high_impact_low_effort" },
+        { label: "Proyectos Clave (Planificar)", x: startX + size / 2 + 20, y: startY + 20, key: "high_impact_high_effort" },
+        { label: "Relleno (Hacer luego)", x: startX + 20, y: startY + size / 2 + 20, key: "low_impact_low_effort" },
+        { label: "Descartar (Sin valor)", x: startX + size / 2 + 20, y: startY + size / 2 + 20, key: "low_impact_high_effort" },
       ];
 
       quadrants.forEach((quad) => {
@@ -561,10 +561,10 @@ export const TEMPLATES: Template[] = [
       const elements: any[] = [];
 
       const quadrants = [
-        { title: "Fortalezas (S) 💪", color: "#dcfce7", key: "strengths", x: startX, y: startY },
-        { title: "Debilidades (W) ⚠️", color: "#fef3c7", key: "weaknesses", x: startX + size + 20, y: startY },
-        { title: "Oportunidades (O) 🚀", color: "#e0f2fe", key: "opportunities", x: startX, y: startY + size + 20 },
-        { title: "Amenazas (T) ❌", color: "#fee2e2", key: "threats", x: startX + size + 20, y: startY + size + 20 },
+        { title: "Fortalezas (S)", color: "#dcfce7", key: "strengths", x: startX, y: startY },
+        { title: "Debilidades (W)", color: "#fef3c7", key: "weaknesses", x: startX + size + 20, y: startY },
+        { title: "Oportunidades (O)", color: "#e0f2fe", key: "opportunities", x: startX, y: startY + size + 20 },
+        { title: "Amenazas (T)", color: "#fee2e2", key: "threats", x: startX + size + 20, y: startY + size + 20 },
       ];
 
       quadrants.forEach((q) => {

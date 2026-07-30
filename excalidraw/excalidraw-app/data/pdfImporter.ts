@@ -17,7 +17,7 @@ export const importPDFToCanvas = async (
   file: File,
   onProgress?: (progress: PDFImportProgress) => void,
 ): Promise<{
-  images: { id: string; dataURL: string; width: number; height: number }[];
+  images: { id: string; dataURL: string; mimeType: string; width: number; height: number }[];
   elements: any[];
 }> => {
   // Dynamically load pdfjs from CDN
@@ -26,7 +26,7 @@ export const importPDFToCanvas = async (
   const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
   const totalPages = pdf.numPages;
 
-  const images: { id: string; dataURL: string; width: number; height: number }[] = [];
+  const images: { id: string; dataURL: string; mimeType: string; width: number; height: number }[] = [];
   const elements: any[] = [];
 
   let currentY = 100;

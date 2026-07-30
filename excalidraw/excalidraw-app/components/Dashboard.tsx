@@ -1261,7 +1261,13 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
         {storageUsed >= PLAN_LIMITS[activePlan] && (
           <div className="quota-alert-banner">
-            <span className="alert-icon">⚠️</span>
+            <span className="alert-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                <line x1="12" y1="9" x2="12" y2="13"/>
+                <line x1="12" y1="17" x2="12.01" y2="17"/>
+              </svg>
+            </span>
             <div className="alert-content">
               <strong>Límite de Almacenamiento Excedido:</strong> Estás utilizando {storageUsed < 1024 * 1024 ? (storageUsed / 1024).toFixed(1) + " KB" : (storageUsed / (1024 * 1024)).toFixed(2) + " MB"} de tu plan actual ({PLAN_LIMITS[activePlan] / (1024 * 1024)} MB). La creación de tableros y la sincronización con la nube están bloqueadas.
             </div>
@@ -1273,7 +1279,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
         {/* Welcome Section */}
         <div className="welcome-banner-premium">
-          <h2>¡Buenos días, {userDisplayName}! 👋</h2>
+          <h2>¡Buenos días, {userDisplayName}!</h2>
         </div>
 
         {/* Compact Stats Cards Grid */}
@@ -1689,7 +1695,9 @@ User request: "${aiPrompt}"`;
                             <img src={tmpl.thumbnail} className="template-thumbnail-img" alt={tmpl.name} />
                           </div>
                         ) : (
-                          <div className="template-thumbnail-placeholder">📁</div>
+                          <div className="template-thumbnail-placeholder">
+                            <FolderIcon />
+                          </div>
                         )}
                         <h4>{tmpl.name}</h4>
                       </div>
@@ -1923,7 +1931,7 @@ User request: "${aiPrompt}"`;
                             toggleFavorite(board.id, board.isFavorite);
                           }}
                         >
-                          {board.isFavorite ? "★ Quitar" : "★ Favorito"}
+                          {board.isFavorite ? "Quitar" : "Favorito"}
                         </button>
                         <button
                           className="btn-quick-action"
