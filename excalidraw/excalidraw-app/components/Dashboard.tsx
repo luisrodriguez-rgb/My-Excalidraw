@@ -329,7 +329,15 @@ export const Dashboard: React.FC<DashboardProps> = ({
   const notificationMenuRef = useRef<HTMLDivElement>(null);
 
   // Storage & Plan States
-  const [activePlan, setActivePlan] = useState<"free" | "pro" | "enterprise">("free");
+  const [activePlan, setActivePlan] = useState<"free" | "pro" | "enterprise">(() => {
+    try {
+      const saved = localStorage.getItem("my-excalidraw-plan");
+      if (saved === "pro" || saved === "enterprise" || saved === "free") {
+        return saved;
+      }
+    } catch (e) {}
+    return "free";
+  });
   const [showPlanModal, setShowPlanModal] = useState(false);
   const [storageUsed, setStorageUsed] = useState(0);
 
@@ -2579,82 +2587,136 @@ User request: "${aiPrompt}"`;
       {/* Plan Selector Modal */}
       {showPlanModal && (
         <div className="dialog-overlay">
-          <div className="dialog-box" style={{ maxWidth: "520px" }}>
-            <h3>Gestión de Planes de Almacenamiento</h3>
-            <p className="dialog-desc">Elige un plan para aumentar tu límite de almacenamiento y habilitar todas las funciones:</p>
-            <div style={{ display: "flex", flexDirection: "column", gap: "12px", margin: "18px 0" }}>
+          <div className="dialog-box" style={{ maxWidth: "540px", borderRadius: "16px", padding: "24px" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "12px" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                <div style={{ width: "36px", height: "36px", borderRadius: "10px", backgroundColor: "#fef2f2", color: "#ef4444", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: "17px", fontWeight: 700, color: "var(--text-primary)" }}>Gestión de Planes de Almacenamiento</h3>
+                  <p style={{ margin: 0, fontSize: "12px", color: "var(--text-secondary)" }}>Elige tu plan para aumentar la capacidad de tus proyectos y sincronización</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowPlanModal(false)}
+                style={{ background: "none", border: "none", fontSize: "18px", cursor: "pointer", color: "var(--text-secondary)" }}
+              >
+                ✕
+              </button>
+            </div>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: "12px", margin: "20px 0" }}>
+              {/* Plan Gratuito */}
               <div 
                 style={{ 
                   display: "flex", 
                   justifyContent: "space-between", 
                   alignItems: "center", 
-                  padding: "12px", 
-                  borderRadius: "8px", 
-                  border: activePlan === "free" ? "2px solid #6366f1" : "1px solid var(--border-color)",
-                  backgroundColor: activePlan === "free" ? "rgba(99, 102, 241, 0.05)" : "transparent",
-                  cursor: "pointer"
+                  padding: "14px 16px", 
+                  borderRadius: "12px", 
+                  border: activePlan === "free" ? "2px solid #ef4444" : "1px solid var(--border-color)",
+                  backgroundColor: activePlan === "free" ? "rgba(239, 68, 68, 0.05)" : "var(--bg-card)",
+                  cursor: "pointer",
+                  transition: "all 0.2s ease",
                 }}
-                onClick={() => setActivePlan("free")}
+                onClick={() => {
+                  setActivePlan("free");
+                  localStorage.setItem("my-excalidraw-plan", "free");
+                }}
               >
                 <div>
-                  <div style={{ fontWeight: 700, fontSize: "14px" }}>Plan Gratuito</div>
-                  <div style={{ fontSize: "11px", color: "var(--text-secondary)" }}>Límite de 10 MB. Características básicas locales.</div>
+                  <div style={{ fontWeight: 700, fontSize: "14.5px", color: "var(--text-primary)", display: "flex", alignItems: "center", gap: "6px" }}>
+                    Plan Gratuito
+                  </div>
+                  <div style={{ fontSize: "12px", color: "var(--text-secondary)", marginTop: "2px" }}>Capacidad de 10 MB. Almacenamiento local básico.</div>
                 </div>
                 <div style={{ textAlign: "right" }}>
-                  <div style={{ fontWeight: 700, fontSize: "14px" }}>$0 / mes</div>
-                  {activePlan === "free" && <span style={{ fontSize: "10px", color: "#6366f1", fontWeight: 600 }}>Activo</span>}
+                  <div style={{ fontWeight: 700, fontSize: "15px", color: "var(--text-primary)" }}>$0 / mes</div>
+                  {activePlan === "free" && <span style={{ fontSize: "11px", color: "#ef4444", fontWeight: 700 }}>● Activo</span>}
                 </div>
               </div>
 
+              {/* Plan Pro */}
               <div 
                 style={{ 
                   display: "flex", 
                   justifyContent: "space-between", 
                   alignItems: "center", 
-                  padding: "12px", 
-                  borderRadius: "8px", 
-                  border: activePlan === "pro" ? "2px solid #6366f1" : "1px solid var(--border-color)",
-                  backgroundColor: activePlan === "pro" ? "rgba(99, 102, 241, 0.05)" : "transparent",
-                  cursor: "pointer"
+                  padding: "14px 16px", 
+                  borderRadius: "12px", 
+                  border: activePlan === "pro" ? "2px solid #ef4444" : "1px solid var(--border-color)",
+                  backgroundColor: activePlan === "pro" ? "rgba(239, 68, 68, 0.05)" : "var(--bg-card)",
+                  cursor: "pointer",
+                  transition: "all 0.2s ease",
                 }}
-                onClick={() => setActivePlan("pro")}
+                onClick={() => {
+                  setActivePlan("pro");
+                  localStorage.setItem("my-excalidraw-plan", "pro");
+                }}
               >
                 <div>
-                  <div style={{ fontWeight: 700, fontSize: "14px" }}>Plan Pro</div>
-                  <div style={{ fontSize: "11px", color: "var(--text-secondary)" }}>Límite de 100 MB. Soporte prioritario y copias de seguridad.</div>
+                  <div style={{ fontWeight: 700, fontSize: "14.5px", color: "var(--text-primary)", display: "flex", alignItems: "center", gap: "6px" }}>
+                    Plan Pro
+                    <span style={{ backgroundColor: "#ef4444", color: "#ffffff", fontSize: "10px", padding: "2px 6px", borderRadius: "6px", fontWeight: 700 }}>RECOMENDADO</span>
+                  </div>
+                  <div style={{ fontSize: "12px", color: "var(--text-secondary)", marginTop: "2px" }}>Capacidad de 100 MB. Nube ilimitada, PDFs y analíticas.</div>
                 </div>
                 <div style={{ textAlign: "right" }}>
-                  <div style={{ fontWeight: 700, fontSize: "14px" }}>$9 / mes</div>
-                  {activePlan === "pro" && <span style={{ fontSize: "10px", color: "#6366f1", fontWeight: 600 }}>Activo</span>}
+                  <div style={{ fontWeight: 700, fontSize: "15px", color: "#ef4444" }}>$9 / mes</div>
+                  {activePlan === "pro" && <span style={{ fontSize: "11px", color: "#ef4444", fontWeight: 700 }}>● Activo</span>}
                 </div>
               </div>
 
+              {/* Plan Empresarial */}
               <div 
                 style={{ 
                   display: "flex", 
                   justifyContent: "space-between", 
                   alignItems: "center", 
-                  padding: "12px", 
-                  borderRadius: "8px", 
-                  border: activePlan === "enterprise" ? "2px solid #6366f1" : "1px solid var(--border-color)",
-                  backgroundColor: activePlan === "enterprise" ? "rgba(99, 102, 241, 0.05)" : "transparent",
-                  cursor: "pointer"
+                  padding: "14px 16px", 
+                  borderRadius: "12px", 
+                  border: activePlan === "enterprise" ? "2px solid #ef4444" : "1px solid var(--border-color)",
+                  backgroundColor: activePlan === "enterprise" ? "rgba(239, 68, 68, 0.05)" : "var(--bg-card)",
+                  cursor: "pointer",
+                  transition: "all 0.2s ease",
                 }}
-                onClick={() => setActivePlan("enterprise")}
+                onClick={() => {
+                  setActivePlan("enterprise");
+                  localStorage.setItem("my-excalidraw-plan", "enterprise");
+                }}
               >
                 <div>
-                  <div style={{ fontWeight: 700, fontSize: "14px" }}>Plan Empresarial</div>
-                  <div style={{ fontSize: "11px", color: "var(--text-secondary)" }}>Límite de 1 GB. Espacio ilimitado de tableros y colaboración mutua.</div>
+                  <div style={{ fontWeight: 700, fontSize: "14.5px", color: "var(--text-primary)", display: "flex", alignItems: "center", gap: "6px" }}>
+                    Plan Empresarial
+                  </div>
+                  <div style={{ fontSize: "12px", color: "var(--text-secondary)", marginTop: "2px" }}>Capacidad de 1 GB. Roles avanzados y soporte 24/7.</div>
                 </div>
                 <div style={{ textAlign: "right" }}>
-                  <div style={{ fontWeight: 700, fontSize: "14px" }}>$29 / mes</div>
-                  {activePlan === "enterprise" && <span style={{ fontSize: "10px", color: "#6366f1", fontWeight: 600 }}>Activo</span>}
+                  <div style={{ fontWeight: 700, fontSize: "15px", color: "var(--text-primary)" }}>$29 / mes</div>
+                  {activePlan === "enterprise" && <span style={{ fontSize: "11px", color: "#ef4444", fontWeight: 700 }}>● Activo</span>}
                 </div>
               </div>
             </div>
-            <div className="dialog-buttons">
-              <button className="btn-cancel" onClick={() => setShowPlanModal(false)}>
-                Cerrar
+
+            <div style={{ display: "flex", justifyContent: "flex-end" }}>
+              <button
+                onClick={() => setShowPlanModal(false)}
+                style={{
+                  padding: "10px 24px",
+                  borderRadius: "10px",
+                  border: "none",
+                  backgroundColor: "#ef4444",
+                  color: "#ffffff",
+                  fontSize: "13.5px",
+                  fontWeight: 700,
+                  cursor: "pointer",
+                  boxShadow: "0 4px 12px rgba(239, 68, 68, 0.25)",
+                }}
+              >
+                Guardar y Cerrar
               </button>
             </div>
           </div>

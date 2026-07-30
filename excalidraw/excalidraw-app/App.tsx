@@ -152,6 +152,7 @@ import { Minimap } from "./components/Minimap";
 import { PresenceBar } from "./components/PresenceBar";
 import { AuthModal } from "./components/AuthModal";
 import { PresentationMode } from "./components/PresentationMode";
+import { StudyMode } from "./components/StudyMode";
 import { importPDFToCanvas } from "./data/pdfImporter";
 import { parseSheetDataToExcalidraw } from "./data/sheetsImporter";
 import DOMPurify from "dompurify";
@@ -614,6 +615,7 @@ const ExcalidrawWrapper = () => {
   const [showNotesSidebar, setShowNotesSidebar] = useState(false);
   const [isImportingPDF, setIsImportingPDF] = useState(false);
   const [showSheetsModal, setShowSheetsModal] = useState(false);
+  const [showStudyMode, setShowStudyMode] = useState(false);
   const [sheetInputText, setSheetInputText] = useState("");
   const [sidebarTab, setSidebarTab] = useState<"notes" | "comments">("notes");
   const [notesEditMode, setNotesEditMode] = useState<"edit" | "preview">("preview");
@@ -2705,6 +2707,37 @@ const ExcalidrawWrapper = () => {
 
       {excalidrawAPI && (
         <button
+          className="floating-study-btn floating-action-btn"
+          onClick={() => setShowStudyMode(true)}
+          title="Modo Estudio (Tarjetas de Repaso & Flashcards)"
+          style={{
+            position: "fixed",
+            bottom: "440px",
+            right: showNotesSidebar ? "360px" : "20px",
+            width: "50px",
+            height: "50px",
+            borderRadius: "50%",
+            backgroundColor: "white",
+            color: "#ef4444",
+            border: "1px solid #e2e8f0",
+            boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 999999,
+            transition: "all 0.2s ease",
+          }}
+        >
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+          </svg>
+        </button>
+      )}
+
+      {excalidrawAPI && (
+        <button
           className="floating-sheets-btn floating-action-btn"
           onClick={() => setShowSheetsModal(true)}
           title="Importar datos de Google Sheets / CSV a Tabla"
@@ -3788,7 +3821,7 @@ const ExcalidrawWrapper = () => {
                 </div>
                 <div>
                   <h3 style={{ margin: 0, fontSize: "16px", fontWeight: 700, color: "#0f172a" }}>Importar Google Sheets / CSV</h3>
-                  <p style={{ margin: 0, fontSize: "12px", color: "#64748b" }}>Copia y pega celdas directamente desde Excel/Google Sheets o archivo CSV</p>
+                  <p style={{ margin: 0, fontSize: "12px", color: "#64748b" }}>Convierte celdas de Excel o Google Sheets en tablas nativas editables</p>
                 </div>
               </div>
               <button
@@ -3797,6 +3830,10 @@ const ExcalidrawWrapper = () => {
               >
                 ✕
               </button>
+            </div>
+
+            <div style={{ backgroundColor: "#f8fafc", borderRadius: "8px", padding: "10px 14px", border: "1px solid #e2e8f0", fontSize: "12px", color: "#475569", lineHeight: 1.4 }}>
+              <strong>Capacidad y Soporte:</strong> Copia cualquier rango de celdas (hasta 500 celdas) en Google Sheets/Excel (`Cmd+C` / `Ctrl+C`) y pégalas abajo (`Cmd+V` / `Ctrl+V`). La primera fila se asignará automáticamente como encabezado destacado.
             </div>
 
             <textarea
@@ -3868,7 +3905,10 @@ const ExcalidrawWrapper = () => {
             </div>
           </div>
         </div>
-      )}
+      <StudyMode
+        isOpen={showStudyMode}
+        onClose={() => setShowStudyMode(false)}
+      />
 
       <WorkspaceCommandPalette
         activeBoardId={activeBoardId}

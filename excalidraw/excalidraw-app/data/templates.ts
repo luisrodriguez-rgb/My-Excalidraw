@@ -98,6 +98,7 @@ export interface Template {
   description: string;
   icon: string;
   category: "Business & Strategy" | "Product & Engineering" | "Design & UI";
+  thumbnail?: string;
   getElements: (content?: Record<string, any>) => any[];
 }
 

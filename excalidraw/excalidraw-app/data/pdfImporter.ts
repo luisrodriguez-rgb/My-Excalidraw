@@ -51,6 +51,10 @@ export const importPDFToCanvas = async (
     canvas.width = viewport.width;
     canvas.height = viewport.height;
 
+    // Fill white background explicitly to prevent transparent background
+    context.fillStyle = "#ffffff";
+    context.fillRect(0, 0, viewport.width, viewport.height);
+
     // Use page rendering with promise
     await page.render({
       canvasContext: context,
@@ -114,14 +118,26 @@ const loadPdfJs = async (): Promise<any> => {
 
   return new Promise((resolve, reject) => {
     const script = document.createElement("script");
-    script.src = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js";
+    script.src = "https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.min.js";
     script.onload = () => {
       const pdfjs = (window as any).pdfjsLib;
       pdfjs.GlobalWorkerOptions.workerSrc =
-        "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+        "https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js";
       resolve(pdfjs);
     };
-    script.onerror = () => reject(new Error("No se pudo cargar la librería PDF.js"));
+    script.onerror = () => {
+      // Fallback to cdnjs if unpkg fails
+      const fallbackScript = document.createElement("script");
+      fallbackScript.src = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js";
+      fallbackScript.onload = () => {
+        const pdfjs = (window as any).pdfjsLib;
+        pdfjs.GlobalWorkerOptions.workerSrc =
+          "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+        resolve(pdfjs);
+      };
+      fallbackScript.onerror = () => reject(new Error("No se pudo cargar la librería PDF.js"));
+      document.head.appendChild(fallbackScript);
+    };
     document.head.appendChild(script);
   });
 };
