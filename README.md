@@ -1,10 +1,10 @@
 <div align="center">
 
-<img src="https://github.com/luisrodriguez-rgb.png" width="110" height="110" style="border-radius: 50%; border: 4px solid #ef4444; margin-bottom: 12px;" alt="luisrodriguez-rgb avatar" />
+<img src="https://res.cloudinary.com/lucho-cloude/image/upload/v1785392444/logo-custom_s94xrr.png" width="100%" max-width="850" style="border-radius: 16px; box-shadow: 0 12px 32px rgba(0,0,0,0.25); margin-bottom: 20px;" alt="My-Excalidraw Banner" />
 
 # My-Excalidraw
 
-**Plataforma de Pizarra Virtual, Colaboración en Tiempo Real y Espacio de Estudio Infinito**
+**Plataforma de Pizarra Virtual, Colaboración en Tiempo Real, PDFs, Tablas de Google Sheets y Espacio de Estudio Infinito**
 
 [![Autor](https://img.shields.io/badge/Creador-luisrodriguez--rgb-ef4444?style=for-the-badge&logo=github)](https://github.com/luisrodriguez-rgb)
 [![Deploy Vercel](https://img.shields.io/badge/Vercel-Deployment-000000?style=for-the-badge&logo=vercel&logoColor=white)](https://my-excalidraw-nine.vercel.app)
@@ -12,7 +12,7 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Supabase](https://img.shields.io/badge/Supabase-Database-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white)](https://supabase.com)
 
-[🚀 Probar Aplicación en Vivo](https://my-excalidraw-nine.vercel.app) • [📖 Arquitectura](#-arquitectura-del-sistema) • [✨ Novedades 2026](#-novedades-destacadas)
+[🚀 Probar Aplicación en Vivo](https://my-excalidraw-nine.vercel.app) • [📊 Tabla Comparativa vs Excalidraw](#-tabla-comparativa-my-excalidraw-vs-excalidraw-original) • [📖 Arquitectura](#-arquitectura-del-sistema)
 
 </div>
 
@@ -20,11 +20,29 @@
 
 ## 💡 Acerca del Proyecto
 
-**My-Excalidraw** es una extensión avanzada y personalizada de Excalidraw diseñada para transformar una simple pizarra virtual en un **entorno de trabajo y estudio todo-en-uno**. Permite integrar documentos **PDF**, tablas nativas importadas desde **Google Sheets / Excel**, notas en **Markdown**, salas de colaboración multi-usuario y un **Modo Estudio** interactivo con tarjetas de memoria.
+**My-Excalidraw** es una extensión avanzada y personalizada de Excalidraw diseñada para transformar una simple pizarra virtual en un **entorno de trabajo, presentación y estudio todo-en-uno**. Permite integrar documentos **PDF**, tablas nativas importadas desde **Google Sheets / Excel**, notas enriquecidas en **Markdown**, salas de colaboración multi-usuario, roles de lectura y un **Modo Estudio** interactivo con tarjetas de memoria.
 
 ---
 
-## ✨ Novedades Destacadas
+## 📊 Tabla Comparativa: My-Excalidraw vs. Excalidraw Original
+
+| Característica | Excalidraw Estándar | My-Excalidraw (Este Proyecto) |
+| :--- | :---: | :---: |
+| **Documentos PDF en Canvas** | ❌ No soportado | ⚡ **Renderizado nativo con compresión JPEG 75% (~70KB/pág)** |
+| **Tablas de Google Sheets & CSV** | ❌ No soportado | 📊 **Conversión instantánea a tablas reticulares editables** |
+| **Modo Estudio & Flashcards** | ❌ No soportado | 🎓 **Tarjetas de memorización activa con progreso** |
+| **Control de Roles por URL** | ❌ No disponible | 🔒 **Modo Lector (`?role=viewer`) y Comentador (`?role=commenter`)** |
+| **Dashboard y Workspaces** | ❌ Pizarra única volátil | 📂 **Gestión de carpetas, papelera de reciclaje y filtros** |
+| **Persistencia de Datos** | ⚠️ Solo LocalStorage básico | 🔄 **Local-First (IndexedDB) + Nube (Supabase Cloud Sync)** |
+| **Notas Enriquecidas** | ❌ Texto plano | 📝 **Panel lateral de especificaciones en Markdown** |
+| **Comentarios Interactivos** | ❌ No disponible | 💬 **Hilos de comentarios anclados a figuras** |
+| **Modo Presentación Cine** | ⚠️ Básico | 🎬 **Marcos estilo diapositiva + Exportación a PPTX** |
+| **Navegación & Chat Colaborativo**| ❌ No disponible | 🗺️ **Minimapa 120 FPS + Chat lateral en tiempo real** |
+| **Gestión de Cuota / Planes** | ❌ No disponible | 💳 **Persistencia de planes Pro/Empresarial (Free / Pro / Ent)** |
+
+---
+
+## ✨ Novedades y Capacidades Extendidas
 
 ```mermaid
 graph TD
@@ -59,7 +77,10 @@ graph TD
 - Convierte tus apuntes y diagramas en un sistema de memorización activa.
 - Voltea tarjetas de repaso, mide tu porcentaje de dominio y marca temas para revisar luego.
 
-### 💳 5. Gestión y Persistencia de Planes
+### 📂 5. Dashboard, Carpetas y Workspaces
+- Organiza tus proyectos en carpetas, aplica etiquetas de estado y recupera tableros desde la papelera de reciclaje.
+
+### 💳 6. Gestión y Persistencia de Planes
 - Guarda la suscripción del usuario (*Gratuito / Pro / Empresarial*) en `localStorage` y la sincroniza con la cuenta de Supabase.
 
 ---
@@ -107,7 +128,7 @@ Desarrollado y mantenido por **Luis Rodriguez** ([@luisrodriguez-rgb](https://gi
 
 <div align="center">
   <a href="https://github.com/luisrodriguez-rgb">
-    <img src="https://github.com/luisrodriguez-rgb.png" width="80" height="80" style="border-radius:50%;" alt="Luis Rodriguez" />
+    <img src="https://github.com/luisrodriguez-rgb.png" width="90" height="90" style="border-radius: 50%; border: 3px solid #ef4444;" alt="Luis Rodriguez" />
     <br/>
     <strong>Luis Rodriguez (luisrodriguez-rgb)</strong>
   </a>
