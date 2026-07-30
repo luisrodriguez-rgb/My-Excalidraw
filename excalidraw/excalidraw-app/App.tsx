@@ -3905,6 +3905,8 @@ const ExcalidrawWrapper = () => {
             </div>
           </div>
         </div>
+      )}
+
       <StudyMode
         isOpen={showStudyMode}
         onClose={() => setShowStudyMode(false)}
