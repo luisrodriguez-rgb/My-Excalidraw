@@ -4,7 +4,7 @@
 
 # My-Excalidraw
 
-**Workspace Visual para Estudiar, Colaborar, Documentar, Presentar y Construir con IA**
+**Workspace Visual para PDFs, Estudio, Colaboración, Diagramación y Documentación**
 
 [![Autor](https://img.shields.io/badge/Creador-luisrodriguez--rgb-ef4444?style=for-the-badge&logo=github)](https://github.com/luisrodriguez-rgb)
 [![Deploy Vercel](https://img.shields.io/badge/Vercel-Deployment-000000?style=for-the-badge&logo=vercel&logoColor=white)](https://my-excalidraw-nine.vercel.app)
@@ -12,7 +12,7 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Supabase](https://img.shields.io/badge/Supabase-Database-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white)](https://supabase.com)
 
-[🚀 Probar Aplicación en Vivo](https://my-excalidraw-nine.vercel.app) • [🚀 Visión](#-visión-del-proyecto) • [🎯 Casos de Uso](#-casos-de-uso-principales) • [🧠 Templates + AI](#-próxima-generación-templates--ai) • [📖 Arquitectura](#-arquitectura-del-sistema)
+[🚀 Probar Aplicación en Vivo](https://my-excalidraw-nine.vercel.app) • [✅ Funciones Hoy](#-lo-que-existe-hoy) • [📊 Comparativa vs Excalidraw](#-tabla-comparativa-my-excalidraw-vs-excalidraw-original) • [🛣️ Roadmap 2026](#%EF%B8%8F-roadmap-2026)
 
 </div>
 
@@ -39,11 +39,23 @@ Nuestra visión es construir un **Workspace Visual** donde estudiantes, profesio
 
 todo desde un único espacio de trabajo.
 
-La evolución del proyecto se basa en tres pilares principales:
+---
 
-- 📚 **Plantillas profesionales**: Estructuras predeterminadas para casos reales de universidad, ingeniería y producto.
-- 🧠 **Motores visuales reutilizables**: Integración nativa de PDFs, tablas de datos y tarjetas de repaso.
-- 🤖 **Skills de IA**: Capaces de transformar una idea o instrucción en un tablero estructurado listo para usar.
+## ✅ Lo que Existe Hoy (100% Funcional)
+
+Las siguientes capacidades se encuentran completamente implementadas y listas para usar en producción:
+
+| Módulo | Estado | Descripción |
+| :--- | :---: | :--- |
+| ⚡ **PDF Fast Engine** | `✅ Disponible` | Renderizado nativo de PDFs multicapa sobre el canvas con compresión ultraliviana. |
+| 📊 **Google Sheets Importer** | `✅ Disponible` | Conversión de celdas copiadas de Excel/Sheets (`Cmd+C`) a tablas editables (`Cmd+V`). |
+| 🎓 **Modo Estudio (Flashcards)** | `✅ Disponible` | Tarjetas de memorización activa con seguimiento de progreso e interfaz interactiva. |
+| 🔒 **Control de Roles por URL** | `✅ Disponible` | Enlaces de solo lectura (`?role=viewer`) y comentarios (`?role=commenter`). |
+| 📂 **Dashboard & Workspaces** | `✅ Disponible` | Organización por carpetas, filtros de búsqueda y papelera de reciclaje. |
+| 🔄 **Persistencia Híbrida** | `✅ Disponible` | Arquitectura Local-First (IndexedDB) con sincronización automática en la nube (Supabase). |
+| 📝 **Notas Markdown & Comentarios** | `✅ Disponible` | Panel lateral de especificaciones en Markdown y hilos de comentarios anclados. |
+| 🎬 **Modo Presentación Cine** | `✅ Disponible` | Marcos estilo diapositivas con zoom reactivo y exportación a PowerPoint (.pptx). |
+| 💳 **Persistencia de Planes** | `✅ Disponible` | Gestión de suscripciones (*Gratuito / Pro / Empresarial*) persistida en cuenta y storage. |
 
 ---
 
@@ -54,37 +66,9 @@ La evolución del proyecto se basa en tres pilares principales:
 | 🎓 **Universidad & Estudio** | ⭐⭐⭐⭐⭐ | Lectura de PDFs en canvas + Modo Estudio (Flashcards) |
 | 🛠️ **Ingeniería & Software** | ⭐⭐⭐⭐⭐ | Diagramas de arquitectura, Kanban y prototipos |
 | 🏗️ **Arquitectura de Sistemas** | ⭐⭐⭐⭐⭐ | Plantillas de diseño hexagonal y microservicios |
-| 🤖 **IA & Agentes** | ⭐⭐⭐⭐⭐ | Generación asistida de tableros estructurados |
 | 💼 **Product Management** | ⭐⭐⭐⭐ | Importación de Google Sheets y seguimiento de sprints |
 | 🎬 **Workshops & Presentaciones** | ⭐⭐⭐⭐ | Modo presentación diapositivas + Exportación a PPTX |
 | 💡 **Brainstorming Rápido** | ⭐⭐⭐⭐⭐ | Pizarra infinita colaborativa Local-First instantánea |
-
----
-
-## 🧠 Próxima Generación: Templates + AI
-
-My-Excalidraw está evolucionando hacia un sistema de generación visual asistido por Inteligencia Artificial.
-
-La plataforma incorpora:
-
-- 📚 **Plantillas profesionales**: Diseños estructurales precargados para ingeniería y aprendizaje.
-- 🎨 **Bibliotecas reutilizables**: Componentes gráficos vectoriales listos para arrastrar.
-- ⚙️ **Motores visuales**: Renderizado nativo de documentos PDF y datos tabulares.
-- 🤖 **Skills de IA especializadas**: Agentes capaces de estructurar diagramas complejos en segundos.
-
-La IA no generará diagramas arbitrarios sin estructura. En su lugar:
-
-```text
-Idea / Prompt
-      ↓
-Plantilla adecuada
-      ↓
-Contenido estructurado
-      ↓
-Motor visual
-      ↓
-Tablero listo para usar
-```
 
 ---
 
@@ -106,29 +90,70 @@ Tablero listo para usar
 
 ---
 
-## ⚡ Capacidades Clave
+## 🛣️ Roadmap 2026
 
-### ⚡ 1. Importación Ultra-Rápida de PDF (Motor Local Sin Lag)
-- Renderiza archivos PDF de múltiples páginas directamente sobre la pizarra.
-- Permite hacer zoom, realizar anotaciones directas y vincular esquemas a páginas específicas sin congelar la aplicación.
+Nivel de madurez actual del ecosistema:
 
-### 🔒 2. Control de Permisos de Roles por URL
-- **Modo Lector**: `?role=viewer`
-- **Modo Comentador**: `?role=commenter`
-- Bloquea forzosamente la edición del canvas (`viewModeEnabled = true`) para usuarios invitados, protegiendo tus esquemas originales.
+```text
+✅ Workspace / Dashboard           90%
+✅ PDFs                            95%
+✅ Google Sheets                   90%
+✅ Flashcards                      85%
+✅ Comentarios                     80%
+✅ Roles                           80%
 
-### 📊 3. Importador de Google Sheets & CSV
-- Copia celdas de Excel o Google Sheets (`Cmd+C` / `Ctrl+C`) y genera tablas vectoriales formateadas en un clic (`Cmd+V` / `Ctrl+V`).
+🚧 Librerías Premium              60%
+🚧 Plantillas Profesionales        35%
+🚧 Motores Visuales                20%
+🚧 Skills IA                       5%
+```
 
-### 🎓 4. Modo Estudio (Flashcards Interactivas)
-- Convierte tus apuntes y diagramas en un sistema de memorización activa.
-- Voltea tarjetas de repaso, mide tu porcentaje de dominio y marca temas para revisar luego.
+---
 
-### 📂 5. Dashboard, Carpetas y Workspaces
-- Organiza tus proyectos en carpetas, aplica etiquetas de estado y recupera tableros desde la papelera de reciclaje.
+### 🔹 Fase 1 — Núcleo del Workspace (✅ 100% Completado)
+- [x] Persistencia Local-First con IndexedDB y Supabase Cloud Sync
+- [x] Motor de importación de PDFs en canvas
+- [x] Conversión de Google Sheets / CSV a tablas vectoriales
+- [x] Modo Estudio con tarjetas de memoria interactiva (Flashcards)
+- [x] Enlaces compartidos con restricción de roles (`?role=viewer` / `?role=commenter`)
 
-### 💳 6. Gestión y Persistencia de Planes
-- Guarda la suscripción del usuario (*Gratuito / Pro / Empresarial*) en `localStorage` y la sincroniza con la cuenta de Supabase.
+---
+
+### 🔹 Fase 2 — Librerías & Plantillas Profesionales (🚧 En Desarrollo)
+- [x] Catálogo base de plantillas por taxonomías (Kanban, Retro, SWOT)
+- [ ] Catálogo extendido con más de 150 plantillas profesionales (Estrategia, Educación, IA, Producto)
+- [ ] Librerías de componentes vectoriales precargados
+
+---
+
+### 🔹 Fase 3 — Motores Visuales Específicos (🚧 En Diseño)
+- [ ] Motor A — Cerebro (Mapas mentales dinámicos)
+- [ ] Motor C — Flujo (Diagramación de procesos)
+- [ ] Motor F — Red (Arquitectura de microservicios y nodos)
+- [ ] Motor G — Matriz (Cuadrantes de prioridad e impacto)
+- [ ] Motor I — Árbol (Estructuras jerárquicas)
+- [ ] Motor J — Timeline (Líneas de tiempo e hitos)
+- [ ] Motor K — Board (Tableros de estado avanzado)
+
+---
+
+### 🔹 Fase 4 — Generación Asistida por IA & Skills (📝 Investigación)
+Arquitectura propuesta para la integración de IA:
+
+```text
+Idea / Prompt
+      ↓
+Plantilla adecuada
+      ↓
+Contenido estructurado
+      ↓
+Motor visual
+      ↓
+Tablero listo para usar
+```
+
+- [ ] Generación automática de tableros a partir de prompts estructurados
+- [ ] Asistente de resumen e inteligencia espacial para notas y PDFs
 
 ---
 
