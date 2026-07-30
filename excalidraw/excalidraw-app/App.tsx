@@ -599,6 +599,7 @@ const ExcalidrawWrapper = () => {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [isPresenting, setIsPresenting] = useState(false);
   const [showNotesSidebar, setShowNotesSidebar] = useState(false);
+  const [isImportingPDF, setIsImportingPDF] = useState(false);
   const [sidebarTab, setSidebarTab] = useState<"notes" | "comments">("notes");
   const [notesEditMode, setNotesEditMode] = useState<"edit" | "preview">("preview");
   const [selectedElementId, setSelectedElementId] = useState<string | null>(null);
@@ -2628,40 +2629,47 @@ const ExcalidrawWrapper = () => {
 
       {excalidrawAPI && (
         <button
-          className="floating-pdf-btn"
+          className="floating-pdf-btn floating-action-btn"
+          disabled={isImportingPDF}
           onClick={() => {
+            if (isImportingPDF) return;
             const input = document.createElement("input");
             input.type = "file";
             input.accept = "application/pdf";
+            // Remove input after use to prevent ghost events
             input.onchange = async (e: any) => {
               const file = e.target.files?.[0];
-              if (file && excalidrawAPI) {
-                try {
-                  const { images, elements } = await importPDFToCanvas(file);
-                  excalidrawAPI.addFiles(
-                    images.map((img) => ({
-                      id: img.id as any,
-                      dataURL: img.dataURL as any,
-                      mimeType: "image/webp",
-                      created: Date.now(),
-                    })),
-                  );
-                  excalidrawAPI.updateScene({
-                    elements: [
-                      ...(excalidrawAPI.getSceneElements() || []),
-                      ...elements,
-                    ],
-                  });
-                  (excalidrawAPI as any).scrollToContent?.(elements, { fitToViewport: true });
-                } catch (err) {
-                  console.error("PDF import error:", err);
-                  alert("Ocurrió un error al importar el archivo PDF.");
-                }
+              if (!file || !excalidrawAPI) return;
+              setIsImportingPDF(true);
+              try {
+                const { images, elements } = await importPDFToCanvas(file);
+                excalidrawAPI.addFiles(
+                  images.map((img) => ({
+                    id: img.id as any,
+                    dataURL: img.dataURL as any,
+                    mimeType: "image/webp",
+                    created: Date.now(),
+                  })),
+                );
+                excalidrawAPI.updateScene({
+                  elements: [
+                    ...(excalidrawAPI.getSceneElements() || []),
+                    ...elements,
+                  ],
+                });
+                (excalidrawAPI as any).scrollToContent?.(elements, { fitToViewport: true });
+              } catch (err) {
+                console.error("PDF import error:", err);
+                alert("Ocurrió un error al importar el archivo PDF.");
+              } finally {
+                setIsImportingPDF(false);
+                input.remove();
               }
             };
+            document.body.appendChild(input);
             input.click();
           }}
-          title="Importar documento PDF al canvas"
+          title={isImportingPDF ? "Importando PDF..." : "Importar documento PDF al canvas"}
           style={{
             position: "fixed",
             bottom: "320px",
@@ -2669,32 +2677,40 @@ const ExcalidrawWrapper = () => {
             width: "50px",
             height: "50px",
             borderRadius: "50%",
-            backgroundColor: "white",
-            color: "#ef4444",
-            border: "1px solid var(--border-color)",
-            boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
-            cursor: "pointer",
+            backgroundColor: isImportingPDF ? "#ef4444" : "white",
+            color: isImportingPDF ? "white" : "#64748b",
+            border: "1px solid #e2e8f0",
+            boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+            cursor: isImportingPDF ? "wait" : "pointer",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             zIndex: 999999,
             transition: "all 0.2s ease",
+            opacity: isImportingPDF ? 0.8 : 1,
           }}
         >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
-            <polyline points="14 2 14 8 20 8"/>
-            <line x1="12" y1="18" x2="12" y2="12"/>
-            <polyline points="9 15 12 12 15 15"/>
-          </svg>
+          {isImportingPDF ? (
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+              style={{ animation: "spin 1s linear infinite" }}>
+              <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+            </svg>
+          ) : (
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
+              <polyline points="14 2 14 8 20 8"/>
+              <line x1="12" y1="18" x2="12" y2="12"/>
+              <polyline points="9 15 12 12 15 15"/>
+            </svg>
+          )}
         </button>
       )}
 
       {excalidrawAPI && (
         <button
-          className="floating-notes-btn"
+          className="floating-notes-btn floating-action-btn"
           onClick={() => setShowNotesSidebar(!showNotesSidebar)}
-          title={showNotesSidebar ? "Cerrar panel de notas" : "Ver notas del elemento (Markdown)"}
+          title={showNotesSidebar ? "Cerrar panel de notas" : "Notas del elemento"}
           style={{
             position: "fixed",
             bottom: "260px",

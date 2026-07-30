@@ -409,6 +409,35 @@
 
 /* Grouped Right Floating Buttons Docking & Positioning */
 .excalidraw-app {
+  .floating-action-btn,
+  .floating-notes-btn,
+  .floating-presentation-btn,
+  .floating-comment-mode-btn,
+  .floating-pdf-btn {
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    background-color: #ffffff !important;
+    color: #1e293b !important;
+    border: 1px solid rgba(226, 232, 240, 0.8) !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08) !important;
+
+    &:hover {
+      background-color: #ef4444 !important;
+      color: #ffffff !important;
+      border-color: #ef4444 !important;
+      transform: translateY(-3px) scale(1.05) !important;
+      box-shadow: 0 8px 20px rgba(239, 68, 68, 0.35) !important;
+    }
+
+    &:active {
+      transform: translateY(-1px) scale(0.98) !important;
+    }
+  }
+
+  .floating-pdf-btn {
+    bottom: 320px !important;
+    right: 20px !important;
+  }
+
   .floating-notes-btn {
     bottom: 260px !important;
     right: 20px !important;

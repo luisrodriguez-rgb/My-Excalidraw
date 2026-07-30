@@ -145,34 +145,55 @@ const ActiveRoomDialog = ({
       </div>
 
       {/* Role Selection Selector for Collaboration / Sharing */}
-      <div style={{ display: "flex", flexDirection: "column", gap: "6px", marginTop: "8px" }}>
-        <label style={{ fontSize: "12px", fontWeight: "600", color: "#475569" }}>
-          Permisos del enlace:
-        </label>
+      <div
+        className="ShareDialog__role_selector"
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: "8px",
+          marginTop: "12px",
+          marginBottom: "8px",
+          padding: "12px 14px",
+          backgroundColor: "#f8fafc",
+          borderRadius: "12px",
+          border: "1px solid rgba(239, 68, 68, 0.2)",
+          boxShadow: "0 2px 8px rgba(0, 0, 0, 0.04)",
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+          </svg>
+          <label style={{ fontSize: "12.5px", fontWeight: "700", color: "#1e293b", letterSpacing: "-0.01em" }}>
+            Permisos de Colaboración
+          </label>
+        </div>
         <select
           defaultValue="editor"
           onChange={(e) => {
             const role = e.target.value;
             const url = new URL(activeRoomLink);
             url.searchParams.set("role", role);
-            // Dynamic update link with role parameter
           }}
           style={{
-            padding: "8px 12px",
+            width: "100%",
+            padding: "9px 12px",
             borderRadius: "8px",
             border: "1px solid #cbd5e1",
-            backgroundColor: "#f8fafc",
+            backgroundColor: "#ffffff",
             fontSize: "13px",
-            color: "#1e293b",
-            fontWeight: "500",
+            color: "#0f172a",
+            fontWeight: "600",
             cursor: "pointer",
             outline: "none",
+            boxShadow: "0 1px 2px rgba(0, 0, 0, 0.05)",
             fontFamily: "'Outfit', 'Inter', sans-serif",
+            transition: "border-color 0.2s ease",
           }}
         >
-          <option value="editor">Editor (Puede dibujar y modificar todo)</option>
-          <option value="commenter">Comentador (Solo añadir notas y comentarios)</option>
-          <option value="viewer">Solo Lectura (No puede editar)</option>
+          <option value="editor">Editor — Puede dibujar y modificar todo</option>
+          <option value="commenter">Comentador — Solo añadir notas y comentarios</option>
+          <option value="viewer">Solo Lectura — No puede editar ni modificar</option>
         </select>
       </div>
 

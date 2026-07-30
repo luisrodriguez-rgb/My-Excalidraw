@@ -47,13 +47,14 @@ export const importPDFToCanvas = async (
     canvas.width = viewport.width;
     canvas.height = viewport.height;
 
+    // Use page rendering with promise
     await page.render({
       canvasContext: context,
       viewport,
     }).promise;
 
     const dataURL = canvas.toDataURL("image/webp", 0.85);
-    const fileId = `pdf_page_${Date.now()}_${i}`;
+    const fileId = `pdf_page_${Date.now()}_${i}_${Math.random().toString(36).substr(2, 9)}`;
 
     images.push({
       id: fileId,
@@ -90,6 +91,9 @@ export const importPDFToCanvas = async (
 
     elements.push(imageElement);
     currentY += viewport.height + PAGE_SPACING;
+
+    // Yield control to the browser main thread to avoid freezing/lagging the UI
+    await new Promise((resolve) => setTimeout(resolve, 10));
   }
 
   return { images, elements };

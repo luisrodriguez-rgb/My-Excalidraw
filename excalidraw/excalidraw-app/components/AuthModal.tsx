@@ -13,17 +13,23 @@ type AuthMode = "login" | "signup" | "forgot";
 
 // CN-009: User-friendly error messages to avoid exposing Supabase internals
 const AUTH_ERROR_MESSAGES: Record<string, string> = {
-  "Invalid login credentials": "Correo o contrasena incorrectos.",
-  "Email not confirmed": "Verifica tu correo antes de iniciar sesion.",
+  "Invalid login credentials": "Correo o contraseña incorrectos.",
+  "Email not confirmed": "Verifica tu correo antes de iniciar sesión.",
   "User already registered": "Ya existe una cuenta con este correo.",
-  "Password should be at least 6 characters": "La contrasena debe tener al menos 6 caracteres.",
+  "Password should be at least 6 characters": "La contraseña debe tener al menos 6 caracteres.",
   "For security purposes, you can only request this once every 60 seconds":
     "Por seguridad, espera 60 segundos antes de intentarlo de nuevo.",
-  "signup is disabled": "El registro esta temporalmente deshabilitado.",
+  "signup is disabled": "El registro está temporalmente deshabilitado.",
+  "Unsupported provider: provider is not enabled":
+    "El inicio de sesión con Google requiere activar el proveedor Google en el panel de Supabase Auth.",
 };
 
-const getAuthErrorMessage = (err: any): string =>
-  AUTH_ERROR_MESSAGES[err?.message] || "Ha ocurrido un error. Intenta de nuevo.";
+const getAuthErrorMessage = (err: any): string => {
+  if (err?.message?.includes("provider is not enabled") || err?.message?.includes("Unsupported provider")) {
+    return "El inicio de sesión con Google aún no ha sido activado en las configuraciones de Supabase Auth.";
+  }
+  return AUTH_ERROR_MESSAGES[err?.message] || err?.message || "Ha ocurrido un error. Intenta de nuevo.";
+};
 
 
 export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onSuccess }) => {
