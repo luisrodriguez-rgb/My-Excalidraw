@@ -11,7 +11,6 @@ import {
 } from "@excalidraw/excalidraw";
 import { trackEvent } from "@excalidraw/excalidraw/analytics";
 import { getDefaultAppState } from "@excalidraw/excalidraw/appState";
-import { Analytics } from "@vercel/analytics/react";
 import {
   CommandPalette,
   DEFAULT_CATEGORIES,
@@ -686,7 +685,7 @@ const ExcalidrawWrapper = () => {
         try {
           const { images, elements } = await importPDFToCanvas(pdfFile);
           excalidrawAPI.addFiles(
-            images.map((img) => ({
+            images.map((img: any) => ({
               id: img.id as any,
               dataURL: img.dataURL as any,
               mimeType: (img.mimeType || "image/jpeg") as any,
@@ -1092,7 +1091,7 @@ const ExcalidrawWrapper = () => {
       .on("presence", { event: "leave" }, ({ key, leftPresences }) => {
         if (key !== socketId && leftPresences.length > 0) {
           const user = leftPresences[0].username || "Alguien";
-          excalidrawAPI.setToast({ message: `👋 ${user} abandonó la sala`, duration: 3000 });
+          excalidrawAPI.setToast({ message: `${user} abandonó la sala`, duration: 3000 });
           if ("Notification" in window && Notification.permission === "granted") {
             new Notification("Desconexión", { body: `${user} abandonó la sala colaborativa.` });
           }
@@ -2027,7 +2026,7 @@ const ExcalidrawWrapper = () => {
 
       const boardName = excalidrawAPI.getName() || "presentacion";
       await pres.writeFile({ fileName: `${boardName}.pptx` });
-      excalidrawAPI.setToast({ message: "¡Exportación a PPTX completada!" });
+      excalidrawAPI.setToast({ message: "Exportación a PPTX completada!" });
     } catch (error: any) {
       console.error("Error exporting to PPTX:", error);
       excalidrawAPI.setToast({
@@ -2755,7 +2754,7 @@ const ExcalidrawWrapper = () => {
               try {
                 const { images, elements } = await importPDFToCanvas(file);
                 excalidrawAPI.addFiles(
-                  images.map((img) => ({
+                  images.map((img: any) => ({
                     id: img.id as any,
                     dataURL: img.dataURL as any,
                     mimeType: (img.mimeType || "image/jpeg") as any,
@@ -3016,7 +3015,9 @@ const ExcalidrawWrapper = () => {
               }}
               title={`Comentario de ${comment.author}`}
             >
-              💬
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+              </svg>
             </div>
           );
         })}
@@ -3208,7 +3209,10 @@ const ExcalidrawWrapper = () => {
                     flexShrink: 0,
                   }}
                 >
-                  ↑
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="12" y1="19" x2="12" y2="5"></line>
+                    <polyline points="5 12 12 5 19 12"></polyline>
+                  </svg>
                 </button>
               </div>
 
@@ -3583,7 +3587,14 @@ const ExcalidrawWrapper = () => {
                         color: "var(--text-secondary, #64748b)",
                         marginTop: "20px"
                       }}>
-                        <span style={{ fontSize: "36px", marginBottom: "12px" }}>📝</span>
+                        <div style={{ width: "40px", height: "40px", borderRadius: "50%", backgroundColor: "#f1f5f9", display: "flex", alignItems: "center", justifyContent: "center", color: "#64748b", marginBottom: "12px" }}>
+                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                            <polyline points="14 2 14 8 20 8"/>
+                            <line x1="16" y1="13" x2="8" y2="13"/>
+                            <line x1="16" y1="17" x2="8" y2="17"/>
+                          </svg>
+                        </div>
                         <h4 style={{ margin: "0 0 6px 0", fontSize: "14px", fontWeight: 600, color: "var(--text-primary)" }}>
                           Sin especificaciones
                         </h4>
@@ -3892,6 +3903,14 @@ const ExcalidrawWrapper = () => {
 };
 
 const ExcalidrawApp = () => {
+  useEffect(() => {
+    // Dynamic import to prevent build and IDE type errors
+    // @ts-ignore
+    import("@vercel/analytics")
+      .then((m) => m?.inject?.())
+      .catch(() => {});
+  }, []);
+
   const isCloudExportWindow =
     window.location.pathname === "/excalidraw-plus-export";
   if (isCloudExportWindow) {
@@ -3903,7 +3922,6 @@ const ExcalidrawApp = () => {
       <Provider store={appJotaiStore}>
         <ExcalidrawAPIProvider>
           <ExcalidrawWrapper />
-          <Analytics />
         </ExcalidrawAPIProvider>
       </Provider>
     </TopErrorBoundary>
