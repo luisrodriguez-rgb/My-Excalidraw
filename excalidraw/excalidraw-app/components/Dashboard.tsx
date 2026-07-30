@@ -1479,212 +1479,23 @@ export const Dashboard: React.FC<DashboardProps> = ({
                     className="btn-ai-generate"
                     onClick={async () => {
                       if (!aiPrompt.trim()) return;
-                      let apiKey = import.meta.env.VITE_GEMINI_API_KEY || localStorage.getItem("my-excalidraw-gemini-key") || "";
-
-                      if (!apiKey) {
-                        const inputKey = prompt("No se encontró clave API en .env. Por favor introduce tu Gemini API Key (la cual se guardará localmente en este navegador):");
-                        if (!inputKey) return;
-                        apiKey = inputKey;
-                        localStorage.setItem("my-excalidraw-gemini-key", apiKey);
-                      }
-
                       setIsGeneratingTemplate(true);
                       try {
-                        const systemPrompt = `You are an AI Template Content Assistant. Your task is to analyze the user request and map it to the best matching template from this list:
-- "kanban" (Tablero Kanban)
-- "retro" (Retrospectiva del Equipo)
-- "matrix" (Matriz de Priorización 2x2)
-- "sipoc" (Diagrama SIPOC)
-- "lean_canvas" (Lean Canvas de Modelo de Negocio)
-- "customer_journey" (Customer Journey Map)
-- "swot" (Análisis FODA / SWOT)
-- "roadmap" (Product Roadmap por Q1-Q4)
-
-Return ONLY a valid JSON object matching this schema. Do not write markdown code blocks or any explanation.
-
-For "kanban":
-{
-  "templateId": "kanban",
-  "content": {
-    "todo": ["card task 1", "card task 2", "card task 3"],
-    "progress": ["card task 4", "card task 5"],
-    "done": ["card task 6"]
-  }
-}
-
-For "retro":
-{
-  "templateId": "retro",
-  "content": {
-    "well": ["what went well item 1", "what went well item 2"],
-    "improve": ["what to improve item 1", "what to improve item 2"],
-    "ideas": ["action item/idea 1", "action item/idea 2"]
-  }
-}
-
-For "matrix":
-{
-  "templateId": "matrix",
-  "content": {
-    "high_impact_low_effort": ["quick win task 1", "quick win task 2"],
-    "high_impact_high_effort": ["major project 1", "major project 2"],
-    "low_impact_low_effort": ["low priority fill-in 1"],
-    "low_impact_high_effort": ["thankless task/discard 1"]
-  }
-}
-
-For "sipoc":
-{
-  "templateId": "sipoc",
-  "content": {
-    "suppliers": ["supplier 1", "supplier 2"],
-    "inputs": ["input 1", "input 2"],
-    "process": ["process step 1", "process step 2", "process step 3"],
-    "outputs": ["output 1", "output 2"],
-    "customers": ["customer segment 1", "customer segment 2"]
-  }
-}
-
-For "lean_canvas":
-{
-  "templateId": "lean_canvas",
-  "content": {
-    "problema": "1. [Problem 1]\\n2. [Problem 2]",
-    "solucion": "1. [Solution 1]\\n2. [Solution 2]",
-    "metricas": "1. [Metric 1]\\n2. [Metric 2]",
-    "propuesta": "1. [Value Proposition]",
-    "ventaja": "1. [Unfair Advantage]",
-    "canales": "1. [Channel 1]\\n2. [Channel 2]",
-    "segmentos": "1. [Customer Segment 1]\\n2. [Customer Segment 2]",
-    "costes": "1. [Cost Structure 1]\\n2. [Cost Structure 2]",
-    "ingresos": "1. [Revenue Stream 1]\\n2. [Revenue Stream 2]"
-  }
-}
-
-For "customer_journey":
-{
-  "templateId": "customer_journey",
-  "content": {
-    "acciones": ["Descubrimiento action", "Consideración action", "Compra action", "Uso action", "Soporte action"],
-    "contactos": ["Descubrimiento touchpoint", "Consideración touchpoint", "Compra touchpoint", "Uso touchpoint", "Soporte touchpoint"],
-    "dolores": ["Descubrimiento pain point", "Consideración pain point", "Compra pain point", "Uso pain point", "Soporte pain point"],
-    "oportunidades": ["Descubrimiento opportunity", "Consideración opportunity", "Compra opportunity", "Uso opportunity", "Soporte opportunity"]
-  }
-}
-
-For "swot":
-{
-  "templateId": "swot",
-  "content": {
-    "strengths": ["strength 1", "strength 2"],
-    "weaknesses": ["weakness 1", "weakness 2"],
-    "opportunities": ["opportunity 1", "opportunity 2"],
-    "threats": ["threat 1", "threat 2"]
-  }
-}
-
-For "roadmap":
-{
-  "templateId": "roadmap",
-  "content": {
-    "frontend": [
-      ["Q1 item 1", "Q1 item 2"],
-      ["Q2 item 1"],
-      ["Q3 item 1"],
-      ["Q4 item 1"]
-    ],
-    "backend": [
-      ["Q1 item 1"],
-      ["Q2 item 1", "Q2 item 2"],
-      ["Q3 item 1"],
-      ["Q4 item 1"]
-    ],
-    "marketing": [
-      ["Q1 item 1"],
-      ["Q2 item 1"],
-      ["Q3 item 1", "Q3 item 2"],
-      ["Q4 item 1"]
-    ]
-  }
-}
-
-User request: "${aiPrompt}"`;
-
-                        const isOpenRouter = apiKey.startsWith("sk-or-v1-");
-                        let response: Response;
-
-                        if (isOpenRouter) {
-                          response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-                            method: "POST",
-                            headers: {
-                              "Content-Type": "application/json",
-                              "Authorization": `Bearer ${apiKey}`,
-                              "HTTP-Referer": window.location.origin || "https://excalidraw.com",
-                              "X-Title": "My Excalidraw"
-                            },
-                            body: JSON.stringify({
-                              model: "google/gemini-2.5-flash",
-                              messages: [{ role: "user", content: systemPrompt }],
-                              max_tokens: 4000
-                            })
-                          });
-                        } else {
-                          response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
-                            method: "POST",
-                            headers: {
-                              "Content-Type": "application/json"
-                            },
-                            body: JSON.stringify({
-                              contents: [{
-                                parts: [{
-                                  text: systemPrompt
-                                }]
-                              }]
-                            })
-                          });
-                        }
-
-                        if (!response.ok) {
-                          const errText = await response.text();
-                          let parsedError = "";
-                          try {
-                            const errObj = JSON.parse(errText);
-                            parsedError = errObj?.error?.message || errObj?.error || JSON.stringify(errObj);
-                          } catch (e) {
-                            parsedError = errText;
-                          }
-                          throw new Error(`API respondió con estado ${response.status}. Detalles: ${parsedError}`);
-                        }
-
-                        const result = await response.json();
-                        let text = "";
-                        if (isOpenRouter) {
-                          text = result?.choices?.[0]?.message?.content || "";
-                        } else {
-                          text = result?.candidates?.[0]?.content?.parts?.[0]?.text || "";
-                        }
-
-                        const sanitized = text.replace(/```json/g, "").replace(/```/g, "").trim();
-                        const payload = JSON.parse(sanitized);
-
-                        const { templateId, content } = payload;
-                        const template = TEMPLATES.find((t) => t.id === templateId) || TEMPLATES[0];
-                        const elements = template.getElements(content);
-
+                        const { processAIPromptToCanvas } = await import("../data/aiSkillEngine");
+                        const result = processAIPromptToCanvas(aiPrompt);
                         const id = `board_${crypto.randomUUID().replace(/-/g, "").substring(0, 12)}`;
-                        await saveBoard(id, { name: `${template.name} - ${aiPrompt.substring(0, 20)}...` }, elements, {}, {});
+                        await saveBoard(id, { name: result.title || aiPrompt }, result.elements, {}, {});
                         onSelectBoard(id);
                       } catch (err: any) {
                         console.error("AI Generation failed:", err);
-                        localStorage.removeItem("my-excalidraw-gemini-key");
-                        alert(`No se pudo generar la plantilla asistida.\n\nDetalles del error:\n${err?.message || err}\n\nSe ha borrado la clave API. Por favor, introduce una clave correcta e inténtalo de nuevo.`);
+                        alert(`No se pudo generar el diagrama asistido.\n\nDetalles: ${err?.message || err}`);
                       } finally {
                         setIsGeneratingTemplate(false);
                       }
                     }}
                     disabled={isGeneratingTemplate || !aiPrompt.trim()}
                   >
-                    {isGeneratingTemplate ? "Generando diagrama..." : "Generar con IA (Gemini)"}
+                    {isGeneratingTemplate ? "Generando diagrama..." : "Generar Diagrama en Canvas"}
                   </button>
                 </div>
               </div>

@@ -2214,6 +2214,11 @@ const ExcalidrawWrapper = () => {
       if (template) {
         name = template.name;
         elements = template.getElements();
+      } else {
+        const { processAIPromptToCanvas } = await import("./data/aiSkillEngine");
+        const aiResult = processAIPromptToCanvas(templateId);
+        name = aiResult.title;
+        elements = aiResult.elements;
       }
     }
     await saveBoard(id, { name }, elements, {}, {});
