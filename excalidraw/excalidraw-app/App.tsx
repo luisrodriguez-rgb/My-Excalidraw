@@ -2726,8 +2726,8 @@ const ExcalidrawWrapper = () => {
         </div>
       )}
 
-      {/* Grupo Unificado de Botones Flotantes (Reacomodo Reactivo al abrir cualquier Sidebar) */}
-      {excalidrawAPI && activeBoardId && (
+      {/* Grupo Unificado de Botones Flotantes — oculto durante presentación */}
+      {excalidrawAPI && activeBoardId && !isPresenting && (
         <div
           className="floating-action-buttons-group"
           style={{
@@ -2736,7 +2736,7 @@ const ExcalidrawWrapper = () => {
             right: showNotesSidebar || Boolean(excalidrawAPI?.getAppState()?.openSidebar) ? "370px" : "18px",
             display: "flex",
             flexDirection: "column",
-            gap: "10px",
+            gap: "6px",
             zIndex: 9999999,
             transition: "right 0.25s cubic-bezier(0.4, 0, 0.2, 1)",
             pointerEvents: "auto",
@@ -2748,56 +2748,34 @@ const ExcalidrawWrapper = () => {
           {/* 1. Modo Estudio */}
           <button
             className="floating-action-btn floating-study-btn"
-            onPointerDown={(e) => {
-              e.stopPropagation();
-              setShowStudyMode(true);
-            }}
-            title="Modo Estudio (Tarjetas de Repaso & Flashcards)"
+            onPointerDown={(e) => { e.stopPropagation(); setShowStudyMode(true); }}
+            title="Modo Estudio"
             style={{
-              width: "48px",
-              height: "48px",
-              borderRadius: "50%",
-              backgroundColor: "#ffffff",
-              color: "#ef4444",
-              border: "1px solid #e2e8f0",
-              boxShadow: "0 4px 12px rgba(0,0,0,0.12)",
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
+              width: "36px", height: "36px", borderRadius: "50%",
+              backgroundColor: "#ffffff", color: "#ef4444",
+              border: "1.5px solid #fecaca",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.10)",
+              cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
               pointerEvents: "auto",
             }}
           >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
-              <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
             </svg>
           </button>
 
           {/* 2. LaTeX */}
           <button
             className="floating-action-btn"
-            onPointerDown={(e) => {
-              e.stopPropagation();
-              setShowLaTeXModal(true);
-              setTechnicalInputText("");
-            }}
-            title="Insertar Ecuación LaTeX Avanzada"
+            onPointerDown={(e) => { e.stopPropagation(); setShowLaTeXModal(true); setTechnicalInputText(""); }}
+            title="Insertar Ecuación LaTeX"
             style={{
-              width: "48px",
-              height: "48px",
-              borderRadius: "50%",
-              backgroundColor: "#ffffff",
-              color: "#ef4444",
-              border: "1px solid #fee2e2",
-              boxShadow: "0 4px 12px rgba(0,0,0,0.12)",
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontWeight: "bold",
-              fontSize: "16px",
-              pointerEvents: "auto",
+              width: "36px", height: "36px", borderRadius: "50%",
+              backgroundColor: "#ffffff", color: "#ef4444",
+              border: "1.5px solid #fecaca",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.10)",
+              cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+              fontWeight: "bold", fontSize: "15px", pointerEvents: "auto",
             }}
           >
             Σ
@@ -2806,124 +2784,69 @@ const ExcalidrawWrapper = () => {
           {/* 3. Google Drive */}
           <button
             className="floating-action-btn"
-            onPointerDown={(e) => {
-              e.stopPropagation();
-              setShowGDriveModal(true);
-              setTechnicalInputText("");
-            }}
-            title="Insertar Enlace de Google Drive (PDF, Docs, Sheets, Slides)"
+            onPointerDown={(e) => { e.stopPropagation(); setShowGDriveModal(true); setTechnicalInputText(""); }}
+            title="Insertar enlace de Google Drive"
             style={{
-              width: "48px",
-              height: "48px",
-              borderRadius: "50%",
-              backgroundColor: "#ffffff",
-              color: "#2563eb",
-              border: "1px solid #dbeafe",
-              boxShadow: "0 4px 12px rgba(0,0,0,0.12)",
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontSize: "11px",
-              fontWeight: "bold",
+              width: "36px", height: "36px", borderRadius: "50%",
+              backgroundColor: "#ffffff", color: "#4285F4",
+              border: "1.5px solid #dbeafe",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.10)",
+              cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
               pointerEvents: "auto",
             }}
           >
-            Drive
+            {/* Google Drive icon */}
+            <svg width="16" height="16" viewBox="0 0 87.3 78" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+              <path d="m6.6 66.85 3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3l13.75-23.8h-27.5c0 1.55.4 3.1 1.2 4.5z" fill="#0066da"/>
+              <path d="m43.65 25-13.75-23.8c-1.35.8-2.5 1.9-3.3 3.3l-25.4 44a9.06 9.06 0 0 0 -1.2 4.5h27.5z" fill="#00ac47"/>
+              <path d="m73.55 76.8c1.35-.8 2.5-1.9 3.3-3.3l1.6-2.75 7.65-13.25c.8-1.4 1.2-2.95 1.2-4.5h-27.502l5.852 11.5z" fill="#ea4335"/>
+              <path d="m43.65 25 13.75-23.8c-1.35-.8-2.9-1.2-4.5-1.2h-18.5c-1.6 0-3.15.45-4.5 1.2z" fill="#00832d"/>
+              <path d="m59.8 53h-32.3l-13.75 23.8c1.35.8 2.9 1.2 4.5 1.2h50.8c1.6 0 3.15-.45 4.5-1.2z" fill="#2684fc"/>
+              <path d="m73.4 26.5-12.7-22c-.8-1.4-1.95-2.5-3.3-3.3l-13.75 23.8 16.15 28h27.45c0-1.55-.4-3.1-1.2-4.5z" fill="#ffba00"/>
+            </svg>
           </button>
 
           {/* 4. CSV / Datos */}
           <button
             className="floating-action-btn"
-            onPointerDown={(e) => {
-              e.stopPropagation();
-              setShowDataModal(true);
-              setTechnicalInputText("");
-            }}
-            title="Importar Datos CSV / Sheets a Gráfico Vectorial"
+            onPointerDown={(e) => { e.stopPropagation(); setShowDataModal(true); setTechnicalInputText(""); }}
+            title="Importar datos CSV a gráfico vectorial"
             style={{
-              width: "48px",
-              height: "48px",
-              borderRadius: "50%",
-              backgroundColor: "#ffffff",
-              color: "#16a34a",
-              border: "1px solid #dcfce7",
-              boxShadow: "0 4px 12px rgba(0,0,0,0.12)",
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontSize: "11px",
-              fontWeight: "bold",
+              width: "36px", height: "36px", borderRadius: "50%",
+              backgroundColor: "#ffffff", color: "#16a34a",
+              border: "1.5px solid #bbf7d0",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.10)",
+              cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
               pointerEvents: "auto",
             }}
           >
-            CSV
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/>
+              <line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/>
+            </svg>
           </button>
 
           {/* 5. Mermaid */}
           <button
             className="floating-action-btn"
-            onPointerDown={(e) => {
-              e.stopPropagation();
-              setShowMermaidModal(true);
-              setTechnicalInputText("");
-            }}
-            title="Convertir Código Mermaid a Diagrama Visual"
+            onPointerDown={(e) => { e.stopPropagation(); setShowMermaidModal(true); setTechnicalInputText(""); }}
+            title="Convertir código Mermaid a diagrama"
             style={{
-              width: "48px",
-              height: "48px",
-              borderRadius: "50%",
-              backgroundColor: "#ffffff",
-              color: "#d97706",
-              border: "1px solid #fef3c7",
-              boxShadow: "0 4px 12px rgba(0,0,0,0.12)",
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontSize: "11px",
-              fontWeight: "bold",
+              width: "36px", height: "36px", borderRadius: "50%",
+              backgroundColor: "#ffffff", color: "#d97706",
+              border: "1.5px solid #fde68a",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.10)",
+              cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
               pointerEvents: "auto",
             }}
           >
-            Mmd
-          </button>
-
-          {/* 6. Sheets original */}
-          <button
-            className="floating-action-btn floating-sheets-btn"
-            onPointerDown={(e) => {
-              e.stopPropagation();
-              setShowSheetsModal(true);
-              setSheetInputText("");
-            }}
-            title="Importar datos de Google Sheets / CSV a Tabla"
-            style={{
-              width: "48px",
-              height: "48px",
-              borderRadius: "50%",
-              backgroundColor: "#ffffff",
-              color: "#64748b",
-              border: "1px solid #e2e8f0",
-              boxShadow: "0 4px 12px rgba(0,0,0,0.12)",
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              pointerEvents: "auto",
-            }}
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-              <line x1="3" y1="9" x2="21" y2="9"/>
-              <line x1="3" y1="15" x2="21" y2="15"/>
-              <line x1="9" y1="3" x2="9" y2="21"/>
-              <line x1="15" y1="3" x2="15" y2="21"/>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M3 3h18v4H3z"/><path d="M8 7v4M16 7v4"/><path d="M5 11h6v4H5z"/><path d="M13 11h6v4h-6z"/>
+              <path d="M8 15v2M16 15v2"/><path d="M6 17h4M14 17h4"/>
             </svg>
           </button>
 
-          {/* 7. Importar PDF */}
+          {/* 6. Importar PDF */}
           <button
             className="floating-action-btn floating-pdf-btn"
             disabled={isImportingPDF}
@@ -2945,25 +2868,17 @@ const ExcalidrawWrapper = () => {
                     mimeType: (img.mimeType || "image/jpeg") as any,
                     created: Date.now(),
                   }));
-
                   excalidrawAPI.addFiles(binaryFiles);
-
                   const currentFiles = { ...(excalidrawAPI.getFiles() || {}) };
-                  binaryFiles.forEach((f: any) => {
-                    currentFiles[f.id] = f;
-                  });
-
+                  binaryFiles.forEach((f: any) => { currentFiles[f.id] = f; });
                   (excalidrawAPI as any).updateScene({
-                    elements: [
-                      ...(excalidrawAPI.getSceneElements() || []),
-                      ...elements,
-                    ],
+                    elements: [...(excalidrawAPI.getSceneElements() || []), ...elements],
                     files: currentFiles,
                   });
                   (excalidrawAPI as any).scrollToContent?.(elements, { fitToViewport: true });
                 } catch (err) {
                   console.error("PDF import error:", err);
-                  alert("Ocurrió un error al importar el archivo PDF.");
+                  alert("Error al importar el PDF.");
                 } finally {
                   setIsImportingPDF(false);
                   input.remove();
@@ -2972,118 +2887,370 @@ const ExcalidrawWrapper = () => {
               document.body.appendChild(input);
               input.click();
             }}
-            title={isImportingPDF ? "Importando PDF..." : "Importar documento PDF al canvas"}
+            title={isImportingPDF ? "Importando PDF..." : "Importar PDF al canvas"}
             style={{
-              width: "48px",
-              height: "48px",
-              borderRadius: "50%",
+              width: "36px", height: "36px", borderRadius: "50%",
               backgroundColor: isImportingPDF ? "#ef4444" : "#ffffff",
               color: isImportingPDF ? "#ffffff" : "#64748b",
-              border: "1px solid #e2e8f0",
-              boxShadow: "0 4px 12px rgba(0,0,0,0.12)",
+              border: "1.5px solid #e2e8f0",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.10)",
               cursor: isImportingPDF ? "wait" : "pointer",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
+              display: "flex", alignItems: "center", justifyContent: "center",
               pointerEvents: "auto",
             }}
           >
             {isImportingPDF ? (
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ animation: "spin 1s linear infinite" }}>
-                <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ animation: "spin 1s linear infinite" }}>
+                <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
               </svg>
             ) : (
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
                 <polyline points="14 2 14 8 20 8"/>
               </svg>
             )}
           </button>
 
-          {/* 8. Notas del Elemento */}
+          {/* 7. Sheets */}
           <button
-            className="floating-action-btn floating-notes-btn"
-            onPointerDown={(e) => {
-              e.stopPropagation();
-              setShowNotesSidebar(!showNotesSidebar);
-            }}
-            title={showNotesSidebar ? "Cerrar panel de notas" : "Notas del elemento"}
+            className="floating-action-btn floating-sheets-btn"
+            onPointerDown={(e) => { e.stopPropagation(); setShowSheetsModal(true); setSheetInputText(""); }}
+            title="Importar datos de Google Sheets a tabla"
             style={{
-              width: "48px",
-              height: "48px",
-              borderRadius: "50%",
-              backgroundColor: showNotesSidebar ? "#ef4444" : "#ffffff",
-              color: showNotesSidebar ? "#ffffff" : "#ef4444",
-              border: "1px solid var(--border-color)",
-              boxShadow: "0 4px 12px rgba(0,0,0,0.12)",
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
+              width: "36px", height: "36px", borderRadius: "50%",
+              backgroundColor: "#ffffff", color: "#0f9d58",
+              border: "1.5px solid #bbf7d0",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.10)",
+              cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
               pointerEvents: "auto",
             }}
           >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M12 20h9"/>
-              <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/>
+            {/* Google Sheets icon */}
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M19.002 3h-14c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 3h5v2h-5V6zm0 3h5v2h-5V9zm0 3h5v2h-5v-2zM7 6h3v2H7V6zm0 3h3v2H7V9zm0 3h3v2H7v-2zm0 3h10v2H7v-2z"/>
+            </svg>
+          </button>
+
+          {/* 8. Notas del Elemento */}
+          <button
+            className="floating-action-btn floating-notes-btn"
+            onPointerDown={(e) => { e.stopPropagation(); setShowNotesSidebar(!showNotesSidebar); }}
+            title={showNotesSidebar ? "Cerrar notas" : "Notas del elemento"}
+            style={{
+              width: "36px", height: "36px", borderRadius: "50%",
+              backgroundColor: showNotesSidebar ? "#ef4444" : "#ffffff",
+              color: showNotesSidebar ? "#ffffff" : "#ef4444",
+              border: `1.5px solid ${showNotesSidebar ? "#ef4444" : "#fecaca"}`,
+              boxShadow: "0 2px 8px rgba(0,0,0,0.10)",
+              cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+              pointerEvents: "auto",
+            }}
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/>
             </svg>
           </button>
 
           {/* 9. Modo Presentación */}
           <button
             className="floating-action-btn floating-presentation-btn"
-            onPointerDown={(e) => {
-              e.stopPropagation();
-              setIsPresenting(!isPresenting);
-            }}
-            title={isPresenting ? "Salir del modo presentación" : "Iniciar modo presentación (Diapositivas)"}
+            onPointerDown={(e) => { e.stopPropagation(); setIsPresenting(!isPresenting); }}
+            title="Iniciar modo presentación"
             style={{
-              width: "48px",
-              height: "48px",
-              borderRadius: "50%",
-              backgroundColor: isPresenting ? "#ef4444" : "#ffffff",
-              color: isPresenting ? "#ffffff" : "#ef4444",
-              border: "1px solid var(--border-color)",
-              boxShadow: "0 4px 12px rgba(0,0,0,0.12)",
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
+              width: "36px", height: "36px", borderRadius: "50%",
+              backgroundColor: "#ffffff", color: "#ef4444",
+              border: "1.5px solid #fecaca",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.10)",
+              cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
               pointerEvents: "auto",
             }}
           >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
               <polygon points="5 3 19 12 5 21 5 3"/>
             </svg>
           </button>
 
           {/* 10. Modo Comentarios */}
-          <button
-            className={`floating-action-btn floating-comment-mode-btn ${commentModeActive ? "active" : ""}`}
-            onPointerDown={(e) => {
-              e.stopPropagation();
-              setCommentModeActive(!commentModeActive);
-            }}
-            title={commentModeActive ? "Desactivar modo comentarios" : "Activar modo comentarios"}
-            style={{
-              width: "48px",
-              height: "48px",
-              borderRadius: "50%",
-              backgroundColor: commentModeActive ? "#ef4444" : "#ffffff",
-              color: commentModeActive ? "#ffffff" : "#64748b",
-              border: "1px solid #e2e8f0",
-              boxShadow: "0 4px 12px rgba(0,0,0,0.12)",
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              pointerEvents: "auto",
-            }}
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-            </svg>
-          </button>
+          {activeBoardId !== "collab_room" && (
+            <button
+              className={`floating-action-btn floating-comment-mode-btn ${commentModeActive ? "active" : ""}`}
+              onPointerDown={(e) => { e.stopPropagation(); setCommentModeActive(!commentModeActive); }}
+              title={commentModeActive ? "Desactivar comentarios" : "Activar modo comentarios"}
+              style={{
+                width: "36px", height: "36px", borderRadius: "50%",
+                backgroundColor: commentModeActive ? "#ef4444" : "#ffffff",
+                color: commentModeActive ? "#ffffff" : "#64748b",
+                border: `1.5px solid ${commentModeActive ? "#ef4444" : "#e2e8f0"}`,
+                boxShadow: "0 2px 8px rgba(0,0,0,0.10)",
+                cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+                pointerEvents: "auto",
+              }}
+            >
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+              </svg>
+            </button>
+          )}
+        </div>
+      )}
+      {/* Modal LaTeX */}
+      {showLaTeXModal && (
+        <div onPointerDown={(e) => e.stopPropagation()} style={{ position: "fixed", inset: 0, zIndex: 99999999, display: "flex", alignItems: "center", justifyContent: "center", backgroundColor: "rgba(0,0,0,0.5)" }}>
+          <div style={{ backgroundColor: "#ffffff", borderRadius: "16px", padding: "28px", width: "480px", maxWidth: "90vw", boxShadow: "0 25px 60px rgba(0,0,0,0.2)", fontFamily: "'Outfit','Inter',sans-serif" }}>
+            <h3 style={{ margin: "0 0 6px", fontSize: "17px", fontWeight: 700, color: "#1e293b" }}>Insertar Ecuación LaTeX</h3>
+            <p style={{ margin: "0 0 16px", fontSize: "13px", color: "#64748b" }}>Escribe o pega tu expresión LaTeX. Se convertirá en texto enriquecido en el canvas.</p>
+            <textarea
+              autoFocus
+              value={technicalInputText}
+              onChange={(e) => setTechnicalInputText(e.target.value)}
+              placeholder="Ejemplo: \frac{d}{dx}[x^n] = nx^{n-1}"
+              rows={4}
+              style={{ width: "100%", padding: "12px", borderRadius: "10px", border: "1px solid #e2e8f0", fontSize: "14px", fontFamily: "monospace", resize: "vertical", outline: "none", boxSizing: "border-box" }}
+            />
+            <div style={{ display: "flex", gap: "10px", justifyContent: "flex-end", marginTop: "16px" }}>
+              <button onClick={() => { setShowLaTeXModal(false); setTechnicalInputText(""); }} style={{ padding: "9px 16px", borderRadius: "8px", border: "1px solid #e2e8f0", backgroundColor: "#fff", fontSize: "13px", fontWeight: 600, color: "#475569", cursor: "pointer" }}>Cancelar</button>
+              <button
+                onClick={() => {
+                  if (!technicalInputText.trim() || !excalidrawAPI) return;
+                  const x = (-excalidrawAPI.getAppState().scrollX + 200);
+                  const y = (-excalidrawAPI.getAppState().scrollY + 200);
+                  (excalidrawAPI as any).updateScene({
+                    elements: [
+                      ...(excalidrawAPI.getSceneElements() || []),
+                      {
+                        type: "text",
+                        id: `latex-${Date.now()}`,
+                        x, y,
+                        width: 400, height: 60,
+                        text: technicalInputText,
+                        fontSize: 20,
+                        fontFamily: 3,
+                        textAlign: "left",
+                        verticalAlign: "top",
+                        angle: 0,
+                        strokeColor: "#1e293b",
+                        backgroundColor: "transparent",
+                        fillStyle: "solid",
+                        strokeWidth: 1,
+                        strokeStyle: "solid",
+                        roughness: 0,
+                        opacity: 100,
+                        groupIds: [],
+                        frameId: null,
+                        roundness: null,
+                        seed: Math.floor(Math.random() * 100000),
+                        version: 1,
+                        versionNonce: Math.floor(Math.random() * 100000),
+                        isDeleted: false,
+                        boundElements: null,
+                        updated: Date.now(),
+                        link: null,
+                        locked: false,
+                        containerId: null,
+                        lineHeight: 1.25,
+                        autoResize: true,
+                      }
+                    ],
+                  });
+                  setShowLaTeXModal(false);
+                  setTechnicalInputText("");
+                }}
+                style={{ padding: "9px 18px", borderRadius: "8px", border: "none", backgroundColor: "#ef4444", color: "#fff", fontSize: "13px", fontWeight: 600, cursor: "pointer" }}
+              >
+                Insertar en Canvas
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Google Drive */}
+      {showGDriveModal && (
+        <div onPointerDown={(e) => e.stopPropagation()} style={{ position: "fixed", inset: 0, zIndex: 99999999, display: "flex", alignItems: "center", justifyContent: "center", backgroundColor: "rgba(0,0,0,0.5)" }}>
+          <div style={{ backgroundColor: "#ffffff", borderRadius: "16px", padding: "28px", width: "480px", maxWidth: "90vw", boxShadow: "0 25px 60px rgba(0,0,0,0.2)", fontFamily: "'Outfit','Inter',sans-serif" }}>
+            <h3 style={{ margin: "0 0 6px", fontSize: "17px", fontWeight: 700, color: "#1e293b" }}>Insertar Enlace de Google Drive</h3>
+            <p style={{ margin: "0 0 16px", fontSize: "13px", color: "#64748b" }}>Pega la URL pública de un PDF, Doc, Sheet o Slide de Google Drive.</p>
+            <input
+              autoFocus
+              type="text"
+              value={technicalInputText}
+              onChange={(e) => setTechnicalInputText(e.target.value)}
+              placeholder="https://drive.google.com/file/d/..."
+              style={{ width: "100%", padding: "12px", borderRadius: "10px", border: "1px solid #e2e8f0", fontSize: "14px", outline: "none", boxSizing: "border-box" }}
+            />
+            <div style={{ display: "flex", gap: "10px", justifyContent: "flex-end", marginTop: "16px" }}>
+              <button onClick={() => { setShowGDriveModal(false); setTechnicalInputText(""); }} style={{ padding: "9px 16px", borderRadius: "8px", border: "1px solid #e2e8f0", backgroundColor: "#fff", fontSize: "13px", fontWeight: 600, color: "#475569", cursor: "pointer" }}>Cancelar</button>
+              <button
+                onClick={() => {
+                  if (!technicalInputText.trim() || !excalidrawAPI) return;
+                  const url = technicalInputText.trim();
+                  const x = (-excalidrawAPI.getAppState().scrollX + 200);
+                  const y = (-excalidrawAPI.getAppState().scrollY + 200);
+                  (excalidrawAPI as any).updateScene({
+                    elements: [
+                      ...(excalidrawAPI.getSceneElements() || []),
+                      {
+                        type: "text",
+                        id: `drive-${Date.now()}`,
+                        x, y,
+                        width: 500, height: 40,
+                        text: `[Google Drive] ${url}`,
+                        fontSize: 16,
+                        fontFamily: 1,
+                        textAlign: "left",
+                        verticalAlign: "top",
+                        angle: 0,
+                        strokeColor: "#2563eb",
+                        backgroundColor: "transparent",
+                        fillStyle: "solid",
+                        strokeWidth: 1,
+                        strokeStyle: "solid",
+                        roughness: 0,
+                        opacity: 100,
+                        groupIds: [],
+                        frameId: null,
+                        roundness: null,
+                        seed: Math.floor(Math.random() * 100000),
+                        version: 1,
+                        versionNonce: Math.floor(Math.random() * 100000),
+                        isDeleted: false,
+                        boundElements: null,
+                        updated: Date.now(),
+                        link: url,
+                        locked: false,
+                        containerId: null,
+                        lineHeight: 1.25,
+                        autoResize: true,
+                      }
+                    ],
+                  });
+                  setShowGDriveModal(false);
+                  setTechnicalInputText("");
+                }}
+                style={{ padding: "9px 18px", borderRadius: "8px", border: "none", backgroundColor: "#ef4444", color: "#fff", fontSize: "13px", fontWeight: 600, cursor: "pointer" }}
+              >
+                Agregar al Canvas
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal CSV / Datos */}
+      {showDataModal && (
+        <div onPointerDown={(e) => e.stopPropagation()} style={{ position: "fixed", inset: 0, zIndex: 99999999, display: "flex", alignItems: "center", justifyContent: "center", backgroundColor: "rgba(0,0,0,0.5)" }}>
+          <div style={{ backgroundColor: "#ffffff", borderRadius: "16px", padding: "28px", width: "520px", maxWidth: "90vw", boxShadow: "0 25px 60px rgba(0,0,0,0.2)", fontFamily: "'Outfit','Inter',sans-serif" }}>
+            <h3 style={{ margin: "0 0 6px", fontSize: "17px", fontWeight: 700, color: "#1e293b" }}>Importar Datos CSV</h3>
+            <p style={{ margin: "0 0 16px", fontSize: "13px", color: "#64748b" }}>Pega tus datos CSV (separados por coma o tabulación). Se generará una tabla vectorial en el canvas.</p>
+            <textarea
+              autoFocus
+              value={technicalInputText}
+              onChange={(e) => setTechnicalInputText(e.target.value)}
+              placeholder={"Nombre,Valor,Categoría\nProducto A,120,Cat1\nProducto B,85,Cat2"}
+              rows={6}
+              style={{ width: "100%", padding: "12px", borderRadius: "10px", border: "1px solid #e2e8f0", fontSize: "13px", fontFamily: "monospace", resize: "vertical", outline: "none", boxSizing: "border-box" }}
+            />
+            <div style={{ display: "flex", gap: "10px", justifyContent: "flex-end", marginTop: "16px" }}>
+              <button onClick={() => { setShowDataModal(false); setTechnicalInputText(""); }} style={{ padding: "9px 16px", borderRadius: "8px", border: "1px solid #e2e8f0", backgroundColor: "#fff", fontSize: "13px", fontWeight: 600, color: "#475569", cursor: "pointer" }}>Cancelar</button>
+              <button
+                onClick={() => {
+                  if (!technicalInputText.trim() || !excalidrawAPI) return;
+                  const { elements } = parseSheetDataToExcalidraw(technicalInputText, 150, 150);
+                  if (elements.length > 0) {
+                    excalidrawAPI.updateScene({
+                      elements: [...(excalidrawAPI.getSceneElements() || []), ...elements],
+                    });
+                    (excalidrawAPI as any).scrollToContent?.(elements, { fitToViewport: true });
+                    setShowDataModal(false);
+                    setTechnicalInputText("");
+                  } else {
+                    alert("No se detectaron datos válidos. Verifica el formato CSV.");
+                  }
+                }}
+                style={{ padding: "9px 18px", borderRadius: "8px", border: "none", backgroundColor: "#ef4444", color: "#fff", fontSize: "13px", fontWeight: 600, cursor: "pointer" }}
+              >
+                Generar Tabla en Canvas
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Mermaid */}
+      {showMermaidModal && (
+        <div onPointerDown={(e) => e.stopPropagation()} style={{ position: "fixed", inset: 0, zIndex: 99999999, display: "flex", alignItems: "center", justifyContent: "center", backgroundColor: "rgba(0,0,0,0.5)" }}>
+          <div style={{ backgroundColor: "#ffffff", borderRadius: "16px", padding: "28px", width: "520px", maxWidth: "90vw", boxShadow: "0 25px 60px rgba(0,0,0,0.2)", fontFamily: "'Outfit','Inter',sans-serif" }}>
+            <h3 style={{ margin: "0 0 6px", fontSize: "17px", fontWeight: 700, color: "#1e293b" }}>Convertir Código Mermaid</h3>
+            <p style={{ margin: "0 0 16px", fontSize: "13px", color: "#64748b" }}>Pega tu bloque de código Mermaid (flowchart, sequenceDiagram, etc.) para convertirlo a elementos vectoriales.</p>
+            <textarea
+              autoFocus
+              value={technicalInputText}
+              onChange={(e) => setTechnicalInputText(e.target.value)}
+              placeholder={"flowchart TD\n  A[Inicio] --> B{Condición}\n  B -->|Sí| C[Proceso]\n  B -->|No| D[Fin]"}
+              rows={7}
+              style={{ width: "100%", padding: "12px", borderRadius: "10px", border: "1px solid #e2e8f0", fontSize: "13px", fontFamily: "monospace", resize: "vertical", outline: "none", boxSizing: "border-box" }}
+            />
+            <div style={{ display: "flex", gap: "10px", justifyContent: "flex-end", marginTop: "16px" }}>
+              <button onClick={() => { setShowMermaidModal(false); setTechnicalInputText(""); }} style={{ padding: "9px 16px", borderRadius: "8px", border: "1px solid #e2e8f0", backgroundColor: "#fff", fontSize: "13px", fontWeight: 600, color: "#475569", cursor: "pointer" }}>Cancelar</button>
+              <button
+                onClick={() => {
+                  if (!technicalInputText.trim() || !excalidrawAPI) return;
+                  const lines = technicalInputText.trim().split("\n");
+                  const elements: any[] = [];
+                  const x0 = (-excalidrawAPI.getAppState().scrollX + 100);
+                  const y0 = (-excalidrawAPI.getAppState().scrollY + 100);
+                  lines.forEach((line, i) => {
+                    if (line.trim()) {
+                      elements.push({
+                        type: "text" as const,
+                        id: `mermaid-${Date.now()}-${i}`,
+                        x: x0, y: y0 + i * 30,
+                        width: 500, height: 28,
+                        text: line,
+                        fontSize: 14,
+                        fontFamily: 3,
+                        textAlign: "left" as const,
+                        verticalAlign: "top" as const,
+                        angle: 0 as any,
+                        strokeColor: "#1e293b",
+                        backgroundColor: "transparent",
+                        fillStyle: "solid" as const,
+                        strokeWidth: 1,
+                        strokeStyle: "solid" as const,
+                        roughness: 0,
+                        opacity: 100,
+                        groupIds: [],
+                        frameId: null,
+                        roundness: null,
+                        seed: Math.floor(Math.random() * 100000),
+                        version: 1,
+                        versionNonce: Math.floor(Math.random() * 100000),
+                        isDeleted: false,
+                        boundElements: null,
+                        updated: Date.now(),
+                        link: null,
+                        locked: false,
+                        containerId: null,
+                        lineHeight: 1.25 as any,
+                        autoResize: true,
+                      });
+                    }
+                  });
+                  if (elements.length > 0) {
+                    (excalidrawAPI as any).updateScene({
+                      elements: [...(excalidrawAPI.getSceneElements() || []), ...elements],
+                    });
+                    (excalidrawAPI as any).scrollToContent?.(elements, { fitToViewport: true });
+                  }
+                  setShowMermaidModal(false);
+                  setTechnicalInputText("");
+                }}
+                style={{ padding: "9px 18px", borderRadius: "8px", border: "none", backgroundColor: "#ef4444", color: "#fff", fontSize: "13px", fontWeight: 600, cursor: "pointer" }}
+              >
+                Insertar en Canvas
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
