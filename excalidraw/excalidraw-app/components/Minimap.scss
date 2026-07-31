@@ -214,3 +214,26 @@
   }
 }
 
+// Corner exacto e integrado
+.minimap-panel {
+  bottom: 0 !important;
+  right: 0 !important;
+  border-bottom: none !important;
+  border-right: none !important;
+  border-bottom-left-radius: 0 !important;
+  border-bottom-right-radius: 0 !important;
+  border-top-right-radius: 0 !important;
+  margin: 0 !important;
+}
+
+.minimap-toggle-btn {
+  bottom: 0 !important;
+  right: 0 !important;
+  border-bottom: none !important;
+  border-right: none !important;
+  border-bottom-left-radius: 0 !important;
+  border-bottom-right-radius: 0 !important;
+  border-top-right-radius: 0 !important;
+  margin: 0 !important;
+}
+

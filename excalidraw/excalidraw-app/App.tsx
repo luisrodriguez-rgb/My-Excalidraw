@@ -2829,6 +2829,25 @@ const ExcalidrawWrapper = () => {
             </svg>
           </button>
 
+          {/* 5. Sheets — tabla vectorial desde datos pegados */}
+          <button
+            className="floating-action-btn floating-sheets-btn"
+            onPointerDown={(e) => { e.stopPropagation(); setShowSheetsModal(true); setSheetInputText(""); }}
+            title="Importar tabla desde Google Sheets o CSV"
+            style={{
+              width: "36px", height: "36px", borderRadius: "50%",
+              backgroundColor: "#ffffff", color: "#0f9d58",
+              border: "1.5px solid #bbf7d0",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.10)",
+              cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+              pointerEvents: "auto",
+            }}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M19.002 3h-14c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 3h5v2h-5V6zm0 3h5v2h-5V9zm0 3h5v2h-5v-2zM7 6h3v2H7V6zm0 3h3v2H7V9zm0 3h3v2H7v-2zm0 3h10v2H7v-2z"/>
+            </svg>
+          </button>
+
           {/* 6. Importar PDF */}
           <button
             className="floating-action-btn floating-pdf-btn"
@@ -2898,26 +2917,6 @@ const ExcalidrawWrapper = () => {
             )}
           </button>
 
-          {/* 7. Sheets */}
-          <button
-            className="floating-action-btn floating-sheets-btn"
-            onPointerDown={(e) => { e.stopPropagation(); setShowSheetsModal(true); setSheetInputText(""); }}
-            title="Importar datos de Google Sheets a tabla"
-            style={{
-              width: "36px", height: "36px", borderRadius: "50%",
-              backgroundColor: "#ffffff", color: "#0f9d58",
-              border: "1.5px solid #bbf7d0",
-              boxShadow: "0 2px 8px rgba(0,0,0,0.10)",
-              cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
-              pointerEvents: "auto",
-            }}
-          >
-            {/* Google Sheets icon */}
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M19.002 3h-14c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 3h5v2h-5V6zm0 3h5v2h-5V9zm0 3h5v2h-5v-2zM7 6h3v2H7V6zm0 3h3v2H7V9zm0 3h3v2H7v-2zm0 3h10v2H7v-2z"/>
-            </svg>
-          </button>
-
           {/* 8. Notas del Elemento */}
           <button
             className="floating-action-btn floating-notes-btn"
@@ -2978,37 +2977,6 @@ const ExcalidrawWrapper = () => {
               </svg>
             </button>
           )}
-
-          {/* 11. Mapa del Canvas (toggle Minimap) */}
-          <button
-            className="floating-action-btn"
-            onPointerDown={(e) => {
-              e.stopPropagation();
-              // Trigger the minimap toggle by clicking its collapsed button if exists
-              const collapseBtn = document.querySelector<HTMLButtonElement>(".minimap-toggle-btn.collapsed");
-              const closeBtn = document.querySelector<HTMLButtonElement>(".minimap-close");
-              if (collapseBtn) {
-                collapseBtn.click();
-              } else if (closeBtn) {
-                closeBtn.click();
-              }
-            }}
-            title="Mapa del canvas"
-            style={{
-              width: "36px", height: "36px", borderRadius: "50%",
-              backgroundColor: "#ffffff", color: "#64748b",
-              border: "1.5px solid #e2e8f0",
-              boxShadow: "0 2px 8px rgba(0,0,0,0.10)",
-              cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
-              pointerEvents: "auto",
-            }}
-          >
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/>
-              <line x1="9" y1="3" x2="9" y2="18"/>
-              <line x1="15" y1="6" x2="15" y2="21"/>
-            </svg>
-          </button>
         </div>
       )}
       {/* Modal LaTeX */}
