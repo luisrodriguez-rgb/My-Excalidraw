@@ -94,7 +94,7 @@ export const convertMermaidToCanvas = (
 
     // Rectángulo nativo
     elements.push({
-      type: "rectangle",
+      type: "rectangle" as any,
       id: rectId,
       x,
       y,
@@ -102,24 +102,24 @@ export const convertMermaidToCanvas = (
       height,
       strokeColor: "#ef4444",
       backgroundColor: "#fef2f2",
-      fillStyle: "solid",
+      fillStyle: "solid" as any,
       strokeWidth: 2,
-      strokeStyle: "solid",
+      strokeStyle: "solid" as any,
       roughness: 0,
       opacity: 100,
       groupIds: [],
       frameId: null,
-      roundness: { type: 3 },
+      roundness: { type: 3 } as any,
       seed: Math.floor(Math.random() * 100000),
       version: 1,
       isDeleted: false,
       updated: Date.now(),
-      boundElements: [{ id: textId, type: "text" }],
+      boundElements: [{ id: textId, type: "text" as any }],
     });
 
     // Texto descriptivo centrado
     elements.push({
-      type: "text",
+      type: "text" as any,
       id: textId,
       x: x + 10,
       y: y + 18,
@@ -128,14 +128,14 @@ export const convertMermaidToCanvas = (
       text: node.label,
       fontSize: 14,
       fontFamily: 1,
-      textAlign: "center",
-      verticalAlign: "middle",
+      textAlign: "center" as any,
+      verticalAlign: "middle" as any,
       containerId: rectId,
       strokeColor: "#1e293b",
       backgroundColor: "transparent",
-      fillStyle: "solid",
+      fillStyle: "solid" as any,
       strokeWidth: 1,
-      strokeStyle: "solid",
+      strokeStyle: "solid" as any,
       roughness: 0,
       opacity: 100,
       groupIds: [],
@@ -190,7 +190,7 @@ export const convertMermaidToCanvas = (
     }
 
     elements.push({
-      type: "arrow",
+      type: "arrow" as any,
       id: `arrow-${conn.from}-${conn.to}-${index}-${Date.now()}`,
       x: startX_arrow,
       y: startY_arrow,
@@ -198,12 +198,12 @@ export const convertMermaidToCanvas = (
       height: Math.abs(endY_arrow - startY_arrow),
       strokeColor: "#475569",
       strokeWidth: 2,
-      strokeStyle: "solid",
+      strokeStyle: "solid" as any,
       roughness: 0,
       opacity: 100,
       groupIds: [],
       frameId: null,
-      roundness: { type: 2 },
+      roundness: { type: 2 } as any,
       seed: Math.floor(Math.random() * 100000),
       version: 1,
       isDeleted: false,
@@ -212,7 +212,7 @@ export const convertMermaidToCanvas = (
         [0, 0],
         [endX_arrow - startX_arrow, endY_arrow - startY_arrow],
       ],
-      endArrowhead: "arrow",
+      endArrowhead: "arrow" as any,
     });
   });
 

@@ -1,6 +1,6 @@
 /**
- * katexEngine.ts — Motor de LaTeX Avanzado para My-Excalidraw (Tier S - Módulo 1)
- * Renderiza ecuaciones matemáticas compuestas client-side a elementos del canvas.
+ * katexEngine.ts — Motor de LaTeX Avanzado para My-Excalidraw
+ * Renderiza ecuaciones matemáticas compuestas client-side a elementos SVG nativos del canvas.
  */
 
 export interface LaTeXPreset {
@@ -30,57 +30,130 @@ export const LATEX_PRESETS: LaTeXPreset[] = [
 ];
 
 /**
- * Convierte un código LaTeX a un contenedor de imagen/texto vectorial en coordenadas (x, y)
+ * Helper to dynamically load MathJax from CDN
  */
-export const createLaTeXCanvasElement = (
-  latexCode: string,
-  startX = 150,
-  startY = 150,
-): any => {
-  const elementId = `latex_${Math.random().toString(36).substring(2, 9)}`;
-  const containerId = `latex_container_${Math.random().toString(36).substring(2, 9)}`;
-
-  // Elemento contenedor rectangular
-  const containerRect = {
-    id: containerId,
-    type: "rectangle",
-    x: startX,
-    y: startY,
-    width: 320,
-    height: 90,
-    strokeColor: "#ef4444",
-    backgroundColor: "#ffffff",
-    fillStyle: "solid",
-    strokeWidth: 2,
-    strokeStyle: "solid",
-    roughness: 0,
-    opacity: 100,
-    seed: Math.floor(Math.random() * 100000),
-    version: 1,
-    isDeleted: false,
-    updated: Date.now(),
-    boundElements: [{ id: elementId, type: "text" }],
-  };
-
-  // Texto notación LaTeX
-  const textElement = {
-    id: elementId,
-    type: "text",
-    x: startX + 15,
-    y: startY + 25,
-    width: 290,
-    height: 40,
-    text: `$$ ${latexCode} $$`,
-    originalText: `$$ ${latexCode} $$`,
-    fontSize: 16,
-    fontFamily: 1,
-    strokeColor: "#0f172a",
-    textAlign: "center",
-    verticalAlign: "middle",
-    containerId: containerId,
-    isDeleted: false,
-    updated: Date.now(),
-  };
-
-  return [containerRect, textElement];
+const loadMathJax = async (): Promise<any> => {
+  if ((window as any).MathJax) {
+    return (window as any).MathJax;
+  }
+  return new Promise((resolve, reject) => {
+    (window as any).MathJax = {
+      tex: { inlineMath: [['$', '$'], ['\\(', '\\)']] },
+      svg: { fontCache: 'global' },
+      startup: {
+        ready: () => {
+          resolve((window as any).MathJax);
+        }
+      }
+    };
+    const script = document.createElement("script");
+    script.src = "https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js";
+    script.async = true;
+    script.onerror = () => reject(new Error("No se pudo cargar MathJax"));
+    document.head.appendChild(script);
+  });
 };
+
+/**
+ * Renderiza una ecuación LaTeX a un string SVG con dimensiones estimadas
+ */
+export const renderLaTeXToSVG = async (
+  latex: string,
+): Promise<{ svgString: string; width: number; height: number }> => {
+  const mathjax = await loadMathJax();
+  const container = mathjax.tex2svg(latex);
+  const svgElement = container.querySelector("svg");
+  if (!svgElement) {
+    throw new Error("No se pudo compilar la ecuación a SVG");
+  }
+
+  const widthAttr = svgElement.getAttribute("width");
+  const heightAttr = svgElement.getAttribute("height");
+  
+  const widthEx = parseFloat(widthAttr || "10");
+  const heightEx = parseFloat(heightAttr || "2");
+  
+  // Escalar proporcionalmente ex a px
+  const width = Math.max(120, Math.round(widthEx * 9.5));
+  const height = Math.max(36, Math.round(heightEx * 9.5));
+
+  svgElement.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+
+  const serializer = new XMLSerializer();
+  const svgString = serializer.serializeToString(svgElement);
+
+  return { svgString, width, height };
+};
+
+/**
+ * Compila LaTeX a SVG vectorial, lo sube a Excalidraw files e inserta el elemento de imagen
+ */
+export const insertLaTeXSVGToCanvas = async (
+  latex: string,
+  api: any,
+  x: number,
+  y: number,
+): Promise<void> => {
+  try {
+    const { svgString, width, height } = await renderLaTeXToSVG(latex);
+    const dataURL = `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(svgString)))}`;
+    const fileId = `latex_svg_${Date.now()}`;
+
+    const imageElement = {
+      type: "image" as any,
+      id: `latex_el_${Date.now()}`,
+      fileId,
+      status: "saved" as any,
+      x,
+      y,
+      width,
+      height,
+      strokeColor: "transparent",
+      backgroundColor: "transparent",
+      fillStyle: "solid" as any,
+      strokeWidth: 1,
+      strokeStyle: "solid" as any,
+      roughness: 0,
+      opacity: 100,
+      groupIds: [],
+      frameId: null,
+      roundness: null,
+      isDeleted: false,
+      boundElements: null,
+      updated: Date.now(),
+      link: null,
+      locked: false,
+      customData: {
+        latexCode: latex,
+      },
+    };
+
+    api.addFiles([
+      {
+        id: fileId,
+        dataURL,
+        mimeType: "image/svg+xml",
+        created: Date.now(),
+      },
+    ]);
+
+    const currentFiles = { ...(api.getFiles() || {}) };
+    currentFiles[fileId] = {
+      id: fileId,
+      dataURL,
+      mimeType: "image/svg+xml",
+      created: Date.now(),
+    };
+
+    api.updateScene({
+      elements: [...(api.getSceneElements() || []), imageElement],
+      files: currentFiles,
+    });
+
+    api.scrollToContent([imageElement], { fitToViewport: true, viewportZoomFactor: 1.2 });
+  } catch (err) {
+    console.error("LaTeX SVG integration error:", err);
+    throw err;
+  }
+};
+
