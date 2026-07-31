@@ -3267,52 +3267,16 @@ const ExcalidrawWrapper = () => {
               <button
                 onClick={() => {
                   if (!technicalInputText.trim() || !excalidrawAPI) return;
-                  const lines = technicalInputText.trim().split("\n");
-                  const elements: any[] = [];
-                  const x0 = (-excalidrawAPI.getAppState().scrollX + 100);
-                  const y0 = (-excalidrawAPI.getAppState().scrollY + 100);
-                  lines.forEach((line, i) => {
-                    if (line.trim()) {
-                      elements.push({
-                        type: "text" as const,
-                        id: `mermaid-${Date.now()}-${i}`,
-                        x: x0, y: y0 + i * 30,
-                        width: 500, height: 28,
-                        text: line,
-                        fontSize: 14,
-                        fontFamily: 3,
-                        textAlign: "left" as const,
-                        verticalAlign: "top" as const,
-                        angle: 0 as any,
-                        strokeColor: "#1e293b",
-                        backgroundColor: "transparent",
-                        fillStyle: "solid" as const,
-                        strokeWidth: 1,
-                        strokeStyle: "solid" as const,
-                        roughness: 0,
-                        opacity: 100,
-                        groupIds: [],
-                        frameId: null,
-                        roundness: null,
-                        seed: Math.floor(Math.random() * 100000),
-                        version: 1,
-                        versionNonce: Math.floor(Math.random() * 100000),
-                        isDeleted: false,
-                        boundElements: null,
-                        updated: Date.now(),
-                        link: null,
-                        locked: false,
-                        containerId: null,
-                        lineHeight: 1.25 as any,
-                        autoResize: true,
-                      });
-                    }
-                  });
-                  if (elements.length > 0) {
+                  const x = (-excalidrawAPI.getAppState().scrollX + 150);
+                  const y = (-excalidrawAPI.getAppState().scrollY + 150);
+                  const { elements } = convertMermaidToCanvas(technicalInputText.trim(), x, y);
+                  if (elements && elements.length > 0) {
                     (excalidrawAPI as any).updateScene({
                       elements: [...(excalidrawAPI.getSceneElements() || []), ...elements],
                     });
                     (excalidrawAPI as any).scrollToContent?.(elements, { fitToViewport: true });
+                  } else {
+                    alert("No se pudieron generar elementos válidos del código Mermaid. Verifica la sintaxis.");
                   }
                   setShowMermaidModal(false);
                   setTechnicalInputText("");
