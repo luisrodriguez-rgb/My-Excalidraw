@@ -154,6 +154,10 @@ import { AuthModal } from "./components/AuthModal";
 import { PresentationMode } from "./components/PresentationMode";
 import { StudyMode } from "./components/StudyMode";
 import { importPDFToCanvas } from "./data/pdfImporter";
+import { createLaTeXCanvasElement, LATEX_PRESETS } from "./data/katexEngine";
+import { parseGoogleDriveUrl, createGoogleDriveCard } from "./data/googleDriveSuite";
+import { parseCSVData, renderBarChart } from "./data/dataPipelines";
+import { convertMermaidToCanvas } from "./data/mermaidConverter";
 import { parseSheetDataToExcalidraw } from "./data/sheetsImporter";
 import DOMPurify from "dompurify";
 
@@ -614,6 +618,11 @@ const ExcalidrawWrapper = () => {
   const [isPresenting, setIsPresenting] = useState(false);
   const [showNotesSidebar, setShowNotesSidebar] = useState(false);
   const [isImportingPDF, setIsImportingPDF] = useState(false);
+  const [showLaTeXModal, setShowLaTeXModal] = useState(false);
+  const [showGDriveModal, setShowGDriveModal] = useState(false);
+  const [showDataModal, setShowDataModal] = useState(false);
+  const [showMermaidModal, setShowMermaidModal] = useState(false);
+  const [technicalInputText, setTechnicalInputText] = useState("");
   const [showSheetsModal, setShowSheetsModal] = useState(false);
   const [showStudyMode, setShowStudyMode] = useState(false);
   const [sheetInputText, setSheetInputText] = useState("");
@@ -700,7 +709,7 @@ const ExcalidrawWrapper = () => {
             currentFiles[f.id] = f;
           });
 
-          excalidrawAPI.updateScene({
+          (excalidrawAPI as any).updateScene({
             elements: [
               ...(excalidrawAPI.getSceneElements() || []),
               ...elements,
@@ -2812,7 +2821,7 @@ const ExcalidrawWrapper = () => {
                   currentFiles[f.id] = f;
                 });
 
-                excalidrawAPI.updateScene({
+                (excalidrawAPI as any).updateScene({
                   elements: [
                     ...(excalidrawAPI.getSceneElements() || []),
                     ...elements,
