@@ -2726,6 +2726,112 @@ const ExcalidrawWrapper = () => {
         </div>
       )}
 
+      {/* Barra de Herramientas Técnicas Horizontal (Tier S) */}
+      {excalidrawAPI && activeBoardId && (
+        <div
+          className="technical-tools-bar"
+          style={{
+            position: "fixed",
+            top: "14px",
+            left: "290px",
+            display: "flex",
+            alignItems: "center",
+            gap: "6px",
+            backgroundColor: "#ffffff",
+            padding: "4px 8px",
+            borderRadius: "10px",
+            border: "1px solid #cbd5e1",
+            boxShadow: "0 2px 10px rgba(0,0,0,0.08)",
+            zIndex: 999999,
+          }}
+        >
+          <span style={{ fontSize: "11px", fontWeight: "bold", color: "#64748b", paddingRight: "2px" }}>
+            Técnico:
+          </span>
+          
+          <button
+            onClick={() => { setShowLaTeXModal(true); setTechnicalInputText(""); }}
+            title="Insertar Ecuación LaTeX Avanzada"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "4px",
+              padding: "4px 10px",
+              borderRadius: "6px",
+              border: "1px solid #fee2e2",
+              backgroundColor: "#fff5f5",
+              color: "#ef4444",
+              fontSize: "12px",
+              fontWeight: "600",
+              cursor: "pointer",
+            }}
+          >
+            <span style={{ fontWeight: "bold" }}>Σ</span>
+            <span>LaTeX</span>
+          </button>
+
+          <button
+            onClick={() => { setShowGDriveModal(true); setTechnicalInputText(""); }}
+            title="Insertar Enlace de Google Drive (PDF, Docs, Sheets, Slides)"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "4px",
+              padding: "4px 10px",
+              borderRadius: "6px",
+              border: "1px solid #dbeafe",
+              backgroundColor: "#eff6ff",
+              color: "#2563eb",
+              fontSize: "12px",
+              fontWeight: "600",
+              cursor: "pointer",
+            }}
+          >
+            <span>Drive</span>
+          </button>
+
+          <button
+            onClick={() => { setShowDataModal(true); setTechnicalInputText(""); }}
+            title="Importar Datos CSV / Sheets a Gráfico Vectorial"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "4px",
+              padding: "4px 10px",
+              borderRadius: "6px",
+              border: "1px solid #dcfce7",
+              backgroundColor: "#f0fdf4",
+              color: "#16a34a",
+              fontSize: "12px",
+              fontWeight: "600",
+              cursor: "pointer",
+            }}
+          >
+            <span>CSV / Datos</span>
+          </button>
+
+          <button
+            onClick={() => { setShowMermaidModal(true); setTechnicalInputText(""); }}
+            title="Convertir Código Mermaid a Diagrama Visual"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "4px",
+              padding: "4px 10px",
+              borderRadius: "6px",
+              border: "1px solid #fef3c7",
+              backgroundColor: "#fffbeb",
+              color: "#d97706",
+              fontSize: "12px",
+              fontWeight: "600",
+              cursor: "pointer",
+            }}
+          >
+            <span>Mermaid</span>
+          </button>
+        </div>
+      )}
+
       {excalidrawAPI && (
         <button
           className="floating-study-btn floating-action-btn"
