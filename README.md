@@ -4,7 +4,7 @@
 
 # My-Excalidraw
 
-**Workspace Visual para PDFs, Estudio, Colaboración, Diagramación y Documentación**
+**Workspace Visual para PDFs, Ingeniería, Matemáticas Aplicadas, Programación y Estudio**
 
 [![Autor](https://img.shields.io/badge/Creador-luisrodriguez--rgb-ef4444?style=for-the-badge&logo=github)](https://github.com/luisrodriguez-rgb)
 [![Deploy Vercel](https://img.shields.io/badge/Vercel-Deployment-000000?style=for-the-badge&logo=vercel&logoColor=white)](https://my-excalidraw-nine.vercel.app)
@@ -12,7 +12,7 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Supabase](https://img.shields.io/badge/Supabase-Database-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white)](https://supabase.com)
 
-[🚀 Probar Aplicación en Vivo](https://my-excalidraw-nine.vercel.app) • [✅ Funciones Hoy](#-lo-que-existe-hoy) • [📊 Comparativa vs Excalidraw](#-tabla-comparativa-my-excalidraw-vs-excalidraw-original) • [🛣️ Roadmap 2026](#%EF%B8%8F-roadmap-2026)
+[🚀 Probar Aplicación en Vivo](https://my-excalidraw-nine.vercel.app) • [✅ Funciones Hoy](#-lo-que-existe-hoy) • [🔬 Ecosistema Técnico](#-ecosistema-acad%C3%A9mico--t%C3%A9cnico-de-alto-impacto) • [📊 Comparativa vs Excalidraw](#-tabla-comparativa-my-excalidraw-vs-excalidraw-original) • [🛣️ Roadmap 2026](#%EF%B8%8F-roadmap-2026)
 
 </div>
 
@@ -26,18 +26,33 @@
 
 ## 🚀 Visión del Proyecto
 
-My-Excalidraw no busca ser únicamente una pizarra digital.
+My-Excalidraw está optimizado para el **estudiante técnico, ingeniero y programador**. Nuestra visión es construir un **Workspace Visual** donde se integre el flujo completo de aprendizaje y desarrollo:
 
-Nuestra visión es construir un **Workspace Visual** donde estudiantes, profesionales y equipos puedan:
+```text
+Profesor / Equipo entrega PDF
+              ↓
+  Importación al Canvas (PDF Engine)
+              ↓
+ Gráfica interactiva GeoGebra + Ecuaciones LaTeX
+              ↓
+  Vista previa de Notebook Google Colab / Python
+              ↓
+     Notas en Markdown & Flashcards
+              ↓
+   Repaso activo antes del examen o entrega
+```
 
-- 🧠 **Pensar**: Bocetar e iterar libremente.
-- 📌 **Planificar**: Organizar proyectos y sprints.
-- 📚 **Aprender**: Estudiar PDFs y notas con memorización activa.
-- 📝 **Documentar**: Vincular especificaciones y arquitecturas.
-- 🎬 **Presentar**: Exponer ideas en modo diapositivas cine.
-- 🤝 **Colaborar**: Trabajar en equipo en tiempo real.
+---
 
-todo desde un único espacio de trabajo.
+## 🔬 Ecosistema Académico & Técnico de Alto Impacto
+
+My-Excalidraw integra directamente herramientas que generan y representan conocimiento visual científico y de ingeniería:
+
+1. **🐍 Google Colab & Jupyter Cards**: Tarjetas enriquecidas con vista previa de celdas de código Python y gráficas.
+2. **📐 GeoGebra Web Embed**: Embebido interactivo de construcciones geométricas, cálculo y álgebra lineal (costo 0.0).
+3. **𝚺 LaTeX Avanzado (KaTeX Engine)**: Compilación local instantánea de matrices, integrales, derivadas e Investigación Operativa.
+4. **📊 Data-to-Chart Pipeline**: Conversión de datos copiados de Excel/Sheets o archivos `.csv` en gráficos vectoriales.
+5. **🧜‍♂️ Mermaid.js Code-to-Diagram**: Generación de diagramas de secuencia, flujos y arquitecturas a partir de código.
 
 ---
 
@@ -63,10 +78,10 @@ Las siguientes capacidades se encuentran completamente implementadas y listas pa
 
 | Caso de Uso | Nivel de Cobertura | Beneficio Clave |
 | :--- | :---: | :--- |
-| 🎓 **Universidad & Estudio** | ⭐⭐⭐⭐⭐ | Lectura de PDFs en canvas + Modo Estudio (Flashcards) |
-| 🛠️ **Ingeniería & Software** | ⭐⭐⭐⭐⭐ | Diagramas de arquitectura, Kanban y prototipos |
-| 🏗️ **Arquitectura de Sistemas** | ⭐⭐⭐⭐⭐ | Plantillas de diseño hexagonal y microservicios |
-| 💼 **Product Management** | ⭐⭐⭐⭐ | Importación de Google Sheets y seguimiento de sprints |
+| 🎓 **Universidad & Ingeniería** | ⭐⭐⭐⭐⭐ | PDFs en canvas + GeoGebra + LaTeX + Modo Estudio (Flashcards) |
+| 🛠️ **Programación & Data Science** | ⭐⭐⭐⭐⭐ | Google Colab Cards, Mermaid.js y diagramas de arquitectura |
+| 🏗️ **Arquitectura de Sistemas** | ⭐⭐⭐⭐⭐ | Plantillas de diseño hexagonal, microservicios y RAG |
+| 💼 **Product Management & Análisis** | ⭐⭐⭐⭐ | Importación de Google Sheets y seguimiento de sprints |
 | 🎬 **Workshops & Presentaciones** | ⭐⭐⭐⭐ | Modo presentación diapositivas + Exportación a PPTX |
 | 💡 **Brainstorming Rápido** | ⭐⭐⭐⭐⭐ | Pizarra infinita colaborativa Local-First instantánea |
 
@@ -104,8 +119,9 @@ Nivel de madurez actual del ecosistema:
 
 🚧 Librerías Premium              60%
 🚧 Plantillas Profesionales        35%
-🚧 Motores Visuales                20%
-🚧 Skills IA                       5%
+🚧 Motores Visuales (DSL)          30%
+🚧 Ecosistema Académico-Técnico    20%
+🚧 Skills IA                       10%
 ```
 
 ---
@@ -119,60 +135,33 @@ Nivel de madurez actual del ecosistema:
 
 ---
 
-### 🔹 Fase 2 — Librerías & Plantillas Profesionales (🚧 En Desarrollo)
-- [x] Catálogo base de plantillas por taxonomías (Kanban, Retro, SWOT)
-- [ ] Catálogo extendido con más de 150 plantillas profesionales (Estrategia, Educación, IA, Producto)
-- [ ] Librerías de componentes vectoriales precargados
+### 🔹 Fase 2 — Ecosistema Académico & Técnico (🚧 En Desarrollo)
+- [x] Motor LaTeX KaTeX básico
+- [ ] Renderizado nativo de ecuaciones LaTeX compuestas
+- [ ] Componente `GeoGebraEmbedNode` para trazado dinámico de funciones
+- [ ] Tarjetas enriquecidas de Google Colab & Jupyter Notebooks
+- [ ] Conversor de código Mermaid.js a elementos vectoriales Excalidraw
 
 ---
 
-### 🔹 Fase 3 — Motores Visuales Específicos (🚧 En Diseño)
-- [ ] Motor A — Cerebro (Mapas mentales dinámicos)
-- [ ] Motor C — Flujo (Diagramación de procesos)
-- [ ] Motor F — Red (Arquitectura de microservicios y nodos)
-- [ ] Motor G — Matriz (Cuadrantes de prioridad e impacto)
-- [ ] Motor I — Árbol (Estructuras jerárquicas)
-- [ ] Motor J — Timeline (Líneas de tiempo e hitos)
-- [ ] Motor K — Board (Tableros de estado avanzado)
+### 🔹 Fase 3 — Motores Visuales & Schemas (🚧 En Progreso)
+- [x] Motor `matriz` (SWOT, Lean Canvas, RICE)
+- [x] Motor `board` (Kanban, Scrum, Pipelines)
+- [x] Motor `flujo` (Process, User Journey, SOP)
+- [x] Motor `timeline` (Gantt, Roadmaps, Calendarios)
+- [x] Motor `red` (System Design, Microservicios, RAG)
+- [x] Motor `dashboard` (KPIs, Operaciones, Finanzas)
+- [x] Motor `cerebro` (Mind Maps, Radial Hubs)
+- [x] Motor `arbol` (Org Chart, Trees)
+- [x] Motor `storyboard` (Slides, Pitch Decks)
+- [ ] Catálogo extendido con más de 230 plantillas en Schemas JSON
 
 ---
 
 ### 🔹 Fase 4 — Generación Asistida por IA & Skills (📝 Investigación)
-Arquitectura propuesta para la integración de IA:
-
-```text
-Idea / Prompt
-      ↓
-Plantilla adecuada
-      ↓
-Contenido estructurado
-      ↓
-Motor visual
-      ↓
-Tablero listo para usar
-```
-
-- [ ] Generación automática de tableros a partir de prompts estructurados
+- [x] Clasificador de intenciones por lenguaje natural (`aiSkillEngine.ts`)
+- [ ] Generación automática de diagramas complejos a partir de prompts estructurados
 - [ ] Asistente de resumen e inteligencia espacial para notas y PDFs
-
----
-
-## 📖 Arquitectura del Sistema
-
-```mermaid
-sequenceDiagram
-    autonumber
-    actor Usuario
-    participant Frontend as Vite + React (Local-First)
-    participant IDB as IndexedDB (Local Storage)
-    participant Backend as Supabase (PostgreSQL + Auth)
-    participant Collab as Socket.IO (Server)
-
-    Usuario->>Frontend: Abre tablero / Carga PDF o Tabla
-    Frontend->>IDB: Guarda copia instantánea offline
-    Frontend->>Backend: Sincroniza metadatos y preferencias
-    Frontend->>Collab: Emite cursores y cambios en tiempo real a otros usuarios
-```
 
 ---
 
