@@ -1,0 +1,6 @@
+{
+  "buildCommand": "cd excalidraw && yarn install && yarn build",
+  "outputDirectory": "excalidraw/excalidraw-app/build",
+  "installCommand": "cd excalidraw && yarn install",
+  "framework": "vite"
+}
