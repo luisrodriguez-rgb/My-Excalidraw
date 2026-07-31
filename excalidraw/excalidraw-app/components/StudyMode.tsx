@@ -5,12 +5,14 @@ export interface Flashcard {
   question: string;
   answer: string;
   topic?: string;
+  elementId?: string; // ID del elemento en Excalidraw vinculado a esta tarjeta
 }
 
 interface StudyModeProps {
   isOpen: boolean;
   onClose: () => void;
   cards?: Flashcard[];
+  onFocusElement?: (elementId: string) => void;
 }
 
 const DEFAULT_CARDS: Flashcard[] = [
@@ -38,6 +40,7 @@ export const StudyMode: React.FC<StudyModeProps> = ({
   isOpen,
   onClose,
   cards = DEFAULT_CARDS,
+  onFocusElement,
 }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
@@ -148,9 +151,53 @@ export const StudyMode: React.FC<StudyModeProps> = ({
               {currentCard.topic}
             </span>
           )}
-          <span style={{ position: "absolute", top: "14px", right: "16px", fontSize: "11px", fontWeight: 600, color: "#94a3b8" }}>
-            {isFlipped ? "Respuesta" : "Pregunta (Haz clic para voltear)"}
-          </span>
+          
+          {/* Botón Ver en Canvas */}
+          {currentCard.elementId && onFocusElement && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                if (currentCard.elementId) {
+                  onFocusElement(currentCard.elementId);
+                }
+              }}
+              title="Centrar elemento en el lienzo"
+              style={{
+                position: "absolute",
+                top: "12px",
+                right: "12px",
+                padding: "6px 10px",
+                borderRadius: "8px",
+                border: "1px solid #ef4444",
+                backgroundColor: "#ffffff",
+                color: "#ef4444",
+                fontSize: "11px",
+                fontWeight: 600,
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                gap: "4px",
+                boxShadow: "0 2px 4px rgba(239, 68, 68, 0.08)",
+                transition: "all 0.15s ease",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = "#ef4444";
+                e.currentTarget.style.color = "#ffffff";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = "#ffffff";
+                e.currentTarget.style.color = "#ef4444";
+              }}
+            >
+              👁️ Ver en Canvas
+            </button>
+          )}
+
+          {!currentCard.elementId && (
+            <span style={{ position: "absolute", top: "14px", right: "16px", fontSize: "11px", fontWeight: 600, color: "#94a3b8" }}>
+              {isFlipped ? "Respuesta" : "Pregunta (Haz clic para voltear)"}
+            </span>
+          )}
 
           <p style={{ fontSize: "16px", fontWeight: isFlipped ? 500 : 700, color: isFlipped ? "#991b1b" : "#0f172a", margin: 0, lineHeight: 1.5 }}>
             {isFlipped ? currentCard.answer : currentCard.question}

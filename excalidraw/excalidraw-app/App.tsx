@@ -653,6 +653,13 @@ const ExcalidrawWrapper = () => {
       .replace(/\*(.*)\*/gim, "<em>$1</em>")
       .replace(/`(.*?)`/gim, "<code style='background: #f1f5f9; padding: 2px 6px; border-radius: 4px; font-family: monospace; font-size: 12px;'>$1</code>")
       .replace(/^\s*-\s+(.*$)/gim, "<li>$1</li>");
+      
+    // Parse Wiki-style links [[elementId]] or [[elementId|Label]]
+    html = html.replace(/\[\[([a-zA-Z0-9_-]+)(?:\|([^\]]+))?\]\]/g, (match, id, label) => {
+      const displayLabel = label ? label.trim() : id;
+      return `<span class="wiki-link" data-element-id="${id}" style="color: #ef4444; font-weight: 600; text-decoration: underline; cursor: pointer;">🔗 ${displayLabel}</span>`;
+    });
+
     html = html.replace(/(<li>.*<\/li>)/gim, "<ul>$1</ul>");
     const rawHtml = html.split(/\n\n+/).map(p => {
       if (p.trim().startsWith("<h") || p.trim().startsWith("<ul") || p.trim().startsWith("<li")) {
@@ -662,8 +669,8 @@ const ExcalidrawWrapper = () => {
     }).join("\n");
     // Sanitize to prevent XSS from stored notes (CN-002)
     return DOMPurify.sanitize(rawHtml, {
-      ALLOWED_TAGS: ["h1", "h2", "h3", "strong", "em", "code", "ul", "li", "p", "br"],
-      ALLOWED_ATTR: ["style"],
+      ALLOWED_TAGS: ["h1", "h2", "h3", "strong", "em", "code", "ul", "li", "p", "br", "span"],
+      ALLOWED_ATTR: ["style", "class", "data-element-id"],
     });
   };
 
@@ -768,6 +775,65 @@ const ExcalidrawWrapper = () => {
     setLocalNotes(notesText);
     if (selectedElementId) {
       debouncedUpdateNotes(selectedElementId, notesText, excalidrawAPI);
+    }
+  };
+
+  const getFlashcardsFromScene = useCallback((): any[] => {
+    if (!excalidrawAPI) return [];
+    const elements = excalidrawAPI.getSceneElements().filter((el: any) => !el.isDeleted);
+    const sceneCards: any[] = [];
+
+    elements.forEach((el: any) => {
+      const notes = el.customData?.notes;
+      if (!notes) return;
+
+      const regex = /(?:Pregunta|Q):\s*(.+?)\n(?:Respuesta|A):\s*(.+?)(?=\n(?:Pregunta|Q):|$)/gis;
+      let match;
+      let count = 1;
+      
+      let topic = "General";
+      if (el.customData?.pdfName) {
+        topic = `PDF pág. ${el.customData.pageIndex}`;
+      } else if (el.text) {
+        topic = el.text.length > 20 ? el.text.slice(0, 20) + "..." : el.text;
+      } else if (el.type !== "rectangle" && el.type !== "ellipse" && el.type !== "image") {
+        topic = el.type.charAt(0).toUpperCase() + el.type.slice(1);
+      } else if (el.type === "image") {
+        topic = "Imagen del Canvas";
+      }
+
+      while ((match = regex.exec(notes)) !== null) {
+        const question = match[1].trim();
+        const answer = match[2].trim();
+        if (question && answer) {
+          sceneCards.push({
+            id: `card-${el.id}-${count++}`,
+            question,
+            answer,
+            topic,
+            elementId: el.id,
+          });
+        }
+      }
+    });
+
+    return sceneCards;
+  }, [excalidrawAPI]);
+
+  const handleFocusElement = (elementId: string) => {
+    if (!excalidrawAPI) return;
+    const elements = excalidrawAPI.getSceneElements();
+    const el = elements.find((item: any) => item.id === elementId && !item.isDeleted);
+    if (el) {
+      setShowStudyMode(false);
+      excalidrawAPI.updateScene({
+        appState: { selectedElementIds: { [elementId]: true } }
+      });
+      (excalidrawAPI as any).scrollToContent([el], {
+        fitToViewport: false,
+        viewportZoomFactor: 1.2,
+        animate: true,
+      });
     }
   };
 
@@ -3898,6 +3964,29 @@ const ExcalidrawWrapper = () => {
                     </button>
                   </div>
 
+                  {/* PDF Meta Header info */}
+                  {selectedElement.customData?.pdfName && (
+                    <div style={{
+                      backgroundColor: "rgba(239, 68, 68, 0.05)",
+                      border: "1.5px solid rgba(239, 68, 68, 0.15)",
+                      borderRadius: "8px",
+                      padding: "8px 12px",
+                      marginBottom: "12px",
+                      fontSize: "12px",
+                      fontWeight: 600,
+                      color: "#b91c1c",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "6px",
+                    }}>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
+                        <polyline points="14 2 14 8 20 8"/>
+                      </svg>
+                      <span>📄 PDF: {selectedElement.customData.pdfName} (Pág. {selectedElement.customData.pageIndex} de {selectedElement.customData.totalPages})</span>
+                    </div>
+                  )}
+
                   {/* Content Area */}
                   {notesEditMode === "edit" ? (
                     <textarea
@@ -3966,6 +4055,26 @@ const ExcalidrawWrapper = () => {
                     ) : (
                       <div
                         className="markdown-preview"
+                        onClick={(e) => {
+                          const target = e.target as HTMLElement;
+                          const elementId = target.getAttribute("data-element-id");
+                          if (elementId && excalidrawAPI) {
+                            const sceneElements = excalidrawAPI.getSceneElements();
+                            const el = sceneElements.find((item: any) => item.id === elementId && !item.isDeleted);
+                            if (el) {
+                              excalidrawAPI.updateScene({
+                                appState: { selectedElementIds: { [elementId]: true } }
+                              });
+                              (excalidrawAPI as any).scrollToContent([el], {
+                                fitToViewport: false,
+                                viewportZoomFactor: 1.0,
+                                animate: true,
+                              });
+                            } else {
+                              alert("El elemento enlazado no se encuentra en esta pizarra.");
+                            }
+                          }
+                        }}
                         dangerouslySetInnerHTML={{
                           __html: parseMarkdownToHTML(selectedElement.customData?.notes || ""),
                         }}
@@ -4222,6 +4331,8 @@ const ExcalidrawWrapper = () => {
       <StudyMode
         isOpen={showStudyMode}
         onClose={() => setShowStudyMode(false)}
+        cards={getFlashcardsFromScene()}
+        onFocusElement={handleFocusElement}
       />
 
       <WorkspaceCommandPalette

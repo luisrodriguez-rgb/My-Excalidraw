@@ -96,6 +96,11 @@ export const importPDFToCanvas = async (
       updated: Date.now(),
       link: null,
       locked: false,
+      customData: {
+        pdfName: file.name,
+        pageIndex: i,
+        totalPages,
+      },
     };
 
     elements.push(imageElement);
