@@ -154,7 +154,7 @@ import { AuthModal } from "./components/AuthModal";
 import { PresentationMode } from "./components/PresentationMode";
 import { StudyMode } from "./components/StudyMode";
 import { importPDFToCanvas } from "./data/pdfImporter";
-import { createLaTeXCanvasElement, LATEX_PRESETS } from "./data/katexEngine";
+import { insertLaTeXSVGToCanvas, LATEX_PRESETS } from "./data/katexEngine";
 import { parseGoogleDriveUrl, createGoogleDriveCard } from "./data/googleDriveSuite";
 import { parseCSVData, renderBarChart } from "./data/dataPipelines";
 import { convertMermaidToCanvas } from "./data/mermaidConverter";
@@ -619,6 +619,7 @@ const ExcalidrawWrapper = () => {
   const [showNotesSidebar, setShowNotesSidebar] = useState(false);
   const [isImportingPDF, setIsImportingPDF] = useState(false);
   const [showLaTeXModal, setShowLaTeXModal] = useState(false);
+  const [isRenderingLaTeX, setIsRenderingLaTeX] = useState(false);
   const [showGDriveModal, setShowGDriveModal] = useState(false);
   const [showDataModal, setShowDataModal] = useState(false);
   const [showMermaidModal, setShowMermaidModal] = useState(false);
@@ -3038,79 +3039,64 @@ const ExcalidrawWrapper = () => {
                 pointerEvents: "auto",
               }}
             >
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
               </svg>
             </button>
           )}
         </div>
       )}
-      {/* Modal LaTeX */}
       {showLaTeXModal && (
         <div onPointerDown={(e) => e.stopPropagation()} style={{ position: "fixed", inset: 0, zIndex: 99999999, display: "flex", alignItems: "center", justifyContent: "center", backgroundColor: "rgba(0,0,0,0.5)" }}>
           <div style={{ backgroundColor: "#ffffff", borderRadius: "16px", padding: "28px", width: "480px", maxWidth: "90vw", boxShadow: "0 25px 60px rgba(0,0,0,0.2)", fontFamily: "'Outfit','Inter',sans-serif" }}>
-            <h3 style={{ margin: "0 0 6px", fontSize: "17px", fontWeight: 700, color: "#1e293b" }}>Insertar Referencia LaTeX</h3>
-            <p style={{ margin: "0 0 4px", fontSize: "13px", color: "#64748b" }}>Pega tu expresión LaTeX. Se insertará como texto en fuente monospace en el canvas.</p>
-            <p style={{ margin: "0 0 16px", fontSize: "12px", color: "#94a3b8", fontStyle: "italic" }}>Nota: Excalidraw no renderiza LaTeX. El texto se muestra tal como está escrito.</p>
+            <h3 style={{ margin: "0 0 6px", fontSize: "17px", fontWeight: 700, color: "#1e293b" }}>Insertar Ecuación LaTeX (SVG)</h3>
+            <p style={{ margin: "0 0 16px", fontSize: "13px", color: "#64748b" }}>Escribe tu expresión en sintaxis LaTeX. Se compilará localmente a una imagen vectorial SVG nítida con renderizado matemático real.</p>
             <textarea
               autoFocus
               value={technicalInputText}
               onChange={(e) => setTechnicalInputText(e.target.value)}
-              placeholder="Ejemplo: \frac{d}{dx}[x^n] = nx^{n-1}"
+              placeholder="Ejemplo: \int_{a}^{b} x^2 \, dx = \frac{b^3 - a^3}{3}"
               rows={4}
+              disabled={isRenderingLaTeX}
               style={{ width: "100%", padding: "12px", borderRadius: "10px", border: "1px solid #e2e8f0", fontSize: "14px", fontFamily: "monospace", resize: "vertical", outline: "none", boxSizing: "border-box" }}
             />
             <div style={{ display: "flex", gap: "10px", justifyContent: "flex-end", marginTop: "16px" }}>
-              <button onClick={() => { setShowLaTeXModal(false); setTechnicalInputText(""); }} style={{ padding: "9px 16px", borderRadius: "8px", border: "1px solid #e2e8f0", backgroundColor: "#fff", fontSize: "13px", fontWeight: 600, color: "#475569", cursor: "pointer" }}>Cancelar</button>
-              <button
-                onClick={() => {
-                  if (!technicalInputText.trim() || !excalidrawAPI) return;
-                  const x = (-excalidrawAPI.getAppState().scrollX + 200);
-                  const y = (-excalidrawAPI.getAppState().scrollY + 200);
-                  (excalidrawAPI as any).updateScene({
-                    elements: [
-                      ...(excalidrawAPI.getSceneElements() || []),
-                      {
-                        type: "text",
-                        id: `latex-${Date.now()}`,
-                        x, y,
-                        width: 400, height: 60,
-                        text: technicalInputText,
-                        fontSize: 20,
-                        fontFamily: 3,
-                        textAlign: "left",
-                        verticalAlign: "top",
-                        angle: 0,
-                        strokeColor: "#1e293b",
-                        backgroundColor: "transparent",
-                        fillStyle: "solid",
-                        strokeWidth: 1,
-                        strokeStyle: "solid",
-                        roughness: 0,
-                        opacity: 100,
-                        groupIds: [],
-                        frameId: null,
-                        roundness: null,
-                        seed: Math.floor(Math.random() * 100000),
-                        version: 1,
-                        versionNonce: Math.floor(Math.random() * 100000),
-                        isDeleted: false,
-                        boundElements: null,
-                        updated: Date.now(),
-                        link: null,
-                        locked: false,
-                        containerId: null,
-                        lineHeight: 1.25,
-                        autoResize: true,
-                      }
-                    ],
-                  });
-                  setShowLaTeXModal(false);
-                  setTechnicalInputText("");
-                }}
-                style={{ padding: "9px 18px", borderRadius: "8px", border: "none", backgroundColor: "#ef4444", color: "#fff", fontSize: "13px", fontWeight: 600, cursor: "pointer" }}
+              <button 
+                onClick={() => { setShowLaTeXModal(false); setTechnicalInputText(""); }} 
+                disabled={isRenderingLaTeX}
+                style={{ padding: "9px 16px", borderRadius: "8px", border: "1px solid #e2e8f0", backgroundColor: "#fff", fontSize: "13px", fontWeight: 600, color: "#475569", cursor: isRenderingLaTeX ? "not-allowed" : "pointer" }}
               >
-                Insertar en Canvas
+                Cancelar
+              </button>
+              <button
+                onClick={async () => {
+                  if (!technicalInputText.trim() || !excalidrawAPI || isRenderingLaTeX) return;
+                  setIsRenderingLaTeX(true);
+                  try {
+                    const x = (-excalidrawAPI.getAppState().scrollX + 200);
+                    const y = (-excalidrawAPI.getAppState().scrollY + 200);
+                    await insertLaTeXSVGToCanvas(technicalInputText.trim(), excalidrawAPI, x, y);
+                    setShowLaTeXModal(false);
+                    setTechnicalInputText("");
+                  } catch (err) {
+                    alert("No se pudo compilar la expresión LaTeX. Por favor, verifica la sintaxis.");
+                  } finally {
+                    setIsRenderingLaTeX(false);
+                  }
+                }}
+                disabled={isRenderingLaTeX}
+                style={{ 
+                  padding: "9px 18px", 
+                  borderRadius: "8px", 
+                  border: "none", 
+                  backgroundColor: isRenderingLaTeX ? "#fca5a5" : "#ef4444", 
+                  color: "#fff", 
+                  fontSize: "13px", 
+                  fontWeight: 600, 
+                  cursor: isRenderingLaTeX ? "wait" : "pointer" 
+                }}
+              >
+                {isRenderingLaTeX ? "Compilando..." : "Insertar en Canvas"}
               </button>
             </div>
           </div>
