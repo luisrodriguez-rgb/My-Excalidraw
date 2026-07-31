@@ -155,7 +155,7 @@ import { PresentationMode } from "./components/PresentationMode";
 import { StudyMode } from "./components/StudyMode";
 import { importPDFToCanvas } from "./data/pdfImporter";
 import { insertLaTeXSVGToCanvas, LATEX_PRESETS } from "./data/katexEngine";
-import { parseGoogleDriveUrl, createGoogleDriveCard } from "./data/googleDriveSuite";
+import { parseGoogleDriveUrl, createGoogleDriveCard, openGooglePicker } from "./data/googleDriveSuite";
 import { parseCSVData, renderBarChart } from "./data/dataPipelines";
 import { convertMermaidToCanvas } from "./data/mermaidConverter";
 import { parseSheetDataToExcalidraw } from "./data/sheetsImporter";
@@ -620,7 +620,6 @@ const ExcalidrawWrapper = () => {
   const [isImportingPDF, setIsImportingPDF] = useState(false);
   const [showLaTeXModal, setShowLaTeXModal] = useState(false);
   const [isRenderingLaTeX, setIsRenderingLaTeX] = useState(false);
-  const [showGDriveModal, setShowGDriveModal] = useState(false);
   const [showDataModal, setShowDataModal] = useState(false);
   const [showMermaidModal, setShowMermaidModal] = useState(false);
   const [technicalInputText, setTechnicalInputText] = useState("");
@@ -2851,8 +2850,22 @@ const ExcalidrawWrapper = () => {
           {/* 3. Google Drive */}
           <button
             className="floating-action-btn"
-            onPointerDown={(e) => { e.stopPropagation(); setShowGDriveModal(true); setTechnicalInputText(""); }}
-            title="Insertar enlace de Google Drive"
+            onPointerDown={(e) => {
+              e.stopPropagation();
+              openGooglePicker((info) => {
+                if (!excalidrawAPI) return;
+                const x = (-excalidrawAPI.getAppState().scrollX + 150);
+                const y = (-excalidrawAPI.getAppState().scrollY + 150);
+                const elements = createGoogleDriveCard(info, x, y);
+                if (elements && elements.length > 0) {
+                  (excalidrawAPI as any).updateScene({
+                    elements: [...(excalidrawAPI.getSceneElements() || []), ...elements],
+                  });
+                  (excalidrawAPI as any).scrollToContent?.(elements, { fitToViewport: true });
+                }
+              });
+            }}
+            title="Abrir selector de Google Drive"
             style={{
               width: "36px", height: "36px", borderRadius: "50%",
               backgroundColor: "#ffffff", color: "#4285F4",
@@ -3103,110 +3116,7 @@ const ExcalidrawWrapper = () => {
         </div>
       )}
 
-      {/* Modal Google Drive */}
-      {showGDriveModal && (
-        <div onPointerDown={(e) => e.stopPropagation()} style={{ position: "fixed", inset: 0, zIndex: 99999999, display: "flex", alignItems: "center", justifyContent: "center", backgroundColor: "rgba(0,0,0,0.5)" }}>
-          <div style={{ backgroundColor: "#ffffff", borderRadius: "16px", padding: "28px", width: "480px", maxWidth: "90vw", boxShadow: "0 25px 60px rgba(0,0,0,0.2)", fontFamily: "'Outfit','Inter',sans-serif" }}>
-            <h3 style={{ margin: "0 0 6px", fontSize: "17px", fontWeight: 700, color: "#1e293b" }}>Insertar Enlace de Google Drive</h3>
-            <p style={{ margin: "0 0 16px", fontSize: "13px", color: "#64748b" }}>Pega la URL pública de un PDF, Doc, Sheet o Slide de Google Drive.</p>
-            <input
-              autoFocus
-              type="text"
-              value={technicalInputText}
-              onChange={(e) => setTechnicalInputText(e.target.value)}
-              placeholder="https://drive.google.com/file/d/..."
-              style={{ width: "100%", padding: "12px", borderRadius: "10px", border: "1px solid #e2e8f0", fontSize: "14px", outline: "none", boxSizing: "border-box" }}
-            />
-            <div style={{ display: "flex", gap: "10px", justifyContent: "flex-end", marginTop: "16px" }}>
-              <button onClick={() => { setShowGDriveModal(false); setTechnicalInputText(""); }} style={{ padding: "9px 16px", borderRadius: "8px", border: "1px solid #e2e8f0", backgroundColor: "#fff", fontSize: "13px", fontWeight: 600, color: "#475569", cursor: "pointer" }}>Cancelar</button>
-              <button
-                onClick={() => {
-                  if (!technicalInputText.trim() || !excalidrawAPI) return;
-                  const url = technicalInputText.trim();
-                  const x = (-excalidrawAPI.getAppState().scrollX + 150);
-                  const y = (-excalidrawAPI.getAppState().scrollY + 150);
-                  // Detectar tipo de documento de Google Drive
-                  const isDoc = url.includes("/document/");
-                  const isSheet = url.includes("/spreadsheets/");
-                  const isSlide = url.includes("/presentation/");
-                  const isPDF = url.includes("/file/");
-                  const label = isDoc ? "Google Doc" : isSheet ? "Google Sheets" : isSlide ? "Google Slides" : isPDF ? "Google Drive PDF" : "Google Drive";
-                  const cardColor = isDoc ? "#4285F4" : isSheet ? "#0f9d58" : isSlide ? "#f4b400" : "#ea4335";
 
-                  (excalidrawAPI as any).updateScene({
-                    elements: [
-                      ...(excalidrawAPI.getSceneElements() || []),
-                      {
-                        type: "rectangle",
-                        id: `drive-card-${Date.now()}`,
-                        x, y,
-                        width: 280, height: 56,
-                        strokeColor: cardColor,
-                        backgroundColor: cardColor + "18",
-                        fillStyle: "solid",
-                        strokeWidth: 2,
-                        strokeStyle: "solid",
-                        roughness: 0,
-                        opacity: 100,
-                        groupIds: [],
-                        frameId: null,
-                        roundness: { type: 3 },
-                        seed: Math.floor(Math.random() * 100000),
-                        version: 1,
-                        versionNonce: Math.floor(Math.random() * 100000),
-                        isDeleted: false,
-                        boundElements: null,
-                        updated: Date.now(),
-                        link: url,
-                        locked: false,
-                        angle: 0,
-                      },
-                      {
-                        type: "text",
-                        id: `drive-text-${Date.now()}`,
-                        x: x + 12, y: y + 8,
-                        width: 256, height: 40,
-                        text: `${label}\n${url.length > 45 ? url.slice(0, 45) + "..." : url}`,
-                        fontSize: 13,
-                        fontFamily: 1,
-                        textAlign: "left",
-                        verticalAlign: "top",
-                        angle: 0,
-                        strokeColor: cardColor,
-                        backgroundColor: "transparent",
-                        fillStyle: "solid",
-                        strokeWidth: 1,
-                        strokeStyle: "solid",
-                        roughness: 0,
-                        opacity: 100,
-                        groupIds: [],
-                        frameId: null,
-                        roundness: null,
-                        seed: Math.floor(Math.random() * 100000),
-                        version: 1,
-                        versionNonce: Math.floor(Math.random() * 100000),
-                        isDeleted: false,
-                        boundElements: null,
-                        updated: Date.now(),
-                        link: url,
-                        locked: false,
-                        containerId: null,
-                        lineHeight: 1.4,
-                        autoResize: true,
-                      }
-                    ],
-                  });
-                  setShowGDriveModal(false);
-                  setTechnicalInputText("");
-                }}
-                style={{ padding: "9px 18px", borderRadius: "8px", border: "none", backgroundColor: "#ef4444", color: "#fff", fontSize: "13px", fontWeight: 600, cursor: "pointer" }}
-              >
-                Agregar al Canvas
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Modal CSV / Datos */}
       {showDataModal && (
