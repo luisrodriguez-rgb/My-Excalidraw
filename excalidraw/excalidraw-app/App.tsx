@@ -2806,31 +2806,11 @@ const ExcalidrawWrapper = () => {
             </svg>
           </button>
 
-          {/* 4. CSV / Datos */}
-          <button
-            className="floating-action-btn"
-            onPointerDown={(e) => { e.stopPropagation(); setShowDataModal(true); setTechnicalInputText(""); }}
-            title="Importar datos CSV a gráfico vectorial"
-            style={{
-              width: "36px", height: "36px", borderRadius: "50%",
-              backgroundColor: "#ffffff", color: "#16a34a",
-              border: "1.5px solid #bbf7d0",
-              boxShadow: "0 2px 8px rgba(0,0,0,0.10)",
-              cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
-              pointerEvents: "auto",
-            }}
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/>
-              <line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/>
-            </svg>
-          </button>
-
-          {/* 5. Mermaid */}
+          {/* 4. Mermaid */}
           <button
             className="floating-action-btn"
             onPointerDown={(e) => { e.stopPropagation(); setShowMermaidModal(true); setTechnicalInputText(""); }}
-            title="Convertir código Mermaid a diagrama"
+            title="Diagrama Mermaid — convierte código a nodos y flechas"
             style={{
               width: "36px", height: "36px", borderRadius: "50%",
               backgroundColor: "#ffffff", color: "#d97706",
@@ -2841,8 +2821,11 @@ const ExcalidrawWrapper = () => {
             }}
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M3 3h18v4H3z"/><path d="M8 7v4M16 7v4"/><path d="M5 11h6v4H5z"/><path d="M13 11h6v4h-6z"/>
-              <path d="M8 15v2M16 15v2"/><path d="M6 17h4M14 17h4"/>
+              <circle cx="12" cy="5" r="2"/>
+              <circle cx="5" cy="19" r="2"/>
+              <circle cx="19" cy="19" r="2"/>
+              <line x1="12" y1="7" x2="5" y2="17"/>
+              <line x1="12" y1="7" x2="19" y2="17"/>
             </svg>
           </button>
 
@@ -2891,11 +2874,12 @@ const ExcalidrawWrapper = () => {
             style={{
               width: "36px", height: "36px", borderRadius: "50%",
               backgroundColor: isImportingPDF ? "#ef4444" : "#ffffff",
-              color: isImportingPDF ? "#ffffff" : "#64748b",
-              border: "1.5px solid #e2e8f0",
+              color: isImportingPDF ? "#ffffff" : "#ef4444",
+              border: "1.5px solid #fecaca",
               boxShadow: "0 2px 8px rgba(0,0,0,0.10)",
               cursor: isImportingPDF ? "wait" : "pointer",
               display: "flex", alignItems: "center", justifyContent: "center",
+              position: "relative",
               pointerEvents: "auto",
             }}
           >
@@ -2904,10 +2888,13 @@ const ExcalidrawWrapper = () => {
                 <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
               </svg>
             ) : (
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
-                <polyline points="14 2 14 8 20 8"/>
-              </svg>
+              <>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
+                  <polyline points="14 2 14 8 20 8"/>
+                </svg>
+                <span style={{ position: "absolute", bottom: "2px", right: "2px", fontSize: "6px", fontWeight: 800, color: "#ef4444", letterSpacing: "-0.5px", lineHeight: 1 }}>PDF</span>
+              </>
             )}
           </button>
 
@@ -2991,14 +2978,46 @@ const ExcalidrawWrapper = () => {
               </svg>
             </button>
           )}
+
+          {/* 11. Mapa del Canvas (toggle Minimap) */}
+          <button
+            className="floating-action-btn"
+            onPointerDown={(e) => {
+              e.stopPropagation();
+              // Trigger the minimap toggle by clicking its collapsed button if exists
+              const collapseBtn = document.querySelector<HTMLButtonElement>(".minimap-toggle-btn.collapsed");
+              const closeBtn = document.querySelector<HTMLButtonElement>(".minimap-close");
+              if (collapseBtn) {
+                collapseBtn.click();
+              } else if (closeBtn) {
+                closeBtn.click();
+              }
+            }}
+            title="Mapa del canvas"
+            style={{
+              width: "36px", height: "36px", borderRadius: "50%",
+              backgroundColor: "#ffffff", color: "#64748b",
+              border: "1.5px solid #e2e8f0",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.10)",
+              cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+              pointerEvents: "auto",
+            }}
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/>
+              <line x1="9" y1="3" x2="9" y2="18"/>
+              <line x1="15" y1="6" x2="15" y2="21"/>
+            </svg>
+          </button>
         </div>
       )}
       {/* Modal LaTeX */}
       {showLaTeXModal && (
         <div onPointerDown={(e) => e.stopPropagation()} style={{ position: "fixed", inset: 0, zIndex: 99999999, display: "flex", alignItems: "center", justifyContent: "center", backgroundColor: "rgba(0,0,0,0.5)" }}>
           <div style={{ backgroundColor: "#ffffff", borderRadius: "16px", padding: "28px", width: "480px", maxWidth: "90vw", boxShadow: "0 25px 60px rgba(0,0,0,0.2)", fontFamily: "'Outfit','Inter',sans-serif" }}>
-            <h3 style={{ margin: "0 0 6px", fontSize: "17px", fontWeight: 700, color: "#1e293b" }}>Insertar Ecuación LaTeX</h3>
-            <p style={{ margin: "0 0 16px", fontSize: "13px", color: "#64748b" }}>Escribe o pega tu expresión LaTeX. Se convertirá en texto enriquecido en el canvas.</p>
+            <h3 style={{ margin: "0 0 6px", fontSize: "17px", fontWeight: 700, color: "#1e293b" }}>Insertar Referencia LaTeX</h3>
+            <p style={{ margin: "0 0 4px", fontSize: "13px", color: "#64748b" }}>Pega tu expresión LaTeX. Se insertará como texto en fuente monospace en el canvas.</p>
+            <p style={{ margin: "0 0 16px", fontSize: "12px", color: "#94a3b8", fontStyle: "italic" }}>Nota: Excalidraw no renderiza LaTeX. El texto se muestra tal como está escrito.</p>
             <textarea
               autoFocus
               value={technicalInputText}
@@ -3084,23 +3103,56 @@ const ExcalidrawWrapper = () => {
                 onClick={() => {
                   if (!technicalInputText.trim() || !excalidrawAPI) return;
                   const url = technicalInputText.trim();
-                  const x = (-excalidrawAPI.getAppState().scrollX + 200);
-                  const y = (-excalidrawAPI.getAppState().scrollY + 200);
+                  const x = (-excalidrawAPI.getAppState().scrollX + 150);
+                  const y = (-excalidrawAPI.getAppState().scrollY + 150);
+                  // Detectar tipo de documento de Google Drive
+                  const isDoc = url.includes("/document/");
+                  const isSheet = url.includes("/spreadsheets/");
+                  const isSlide = url.includes("/presentation/");
+                  const isPDF = url.includes("/file/");
+                  const label = isDoc ? "Google Doc" : isSheet ? "Google Sheets" : isSlide ? "Google Slides" : isPDF ? "Google Drive PDF" : "Google Drive";
+                  const cardColor = isDoc ? "#4285F4" : isSheet ? "#0f9d58" : isSlide ? "#f4b400" : "#ea4335";
+
                   (excalidrawAPI as any).updateScene({
                     elements: [
                       ...(excalidrawAPI.getSceneElements() || []),
                       {
-                        type: "text",
-                        id: `drive-${Date.now()}`,
+                        type: "rectangle",
+                        id: `drive-card-${Date.now()}`,
                         x, y,
-                        width: 500, height: 40,
-                        text: `[Google Drive] ${url}`,
-                        fontSize: 16,
+                        width: 280, height: 56,
+                        strokeColor: cardColor,
+                        backgroundColor: cardColor + "18",
+                        fillStyle: "solid",
+                        strokeWidth: 2,
+                        strokeStyle: "solid",
+                        roughness: 0,
+                        opacity: 100,
+                        groupIds: [],
+                        frameId: null,
+                        roundness: { type: 3 },
+                        seed: Math.floor(Math.random() * 100000),
+                        version: 1,
+                        versionNonce: Math.floor(Math.random() * 100000),
+                        isDeleted: false,
+                        boundElements: null,
+                        updated: Date.now(),
+                        link: url,
+                        locked: false,
+                        angle: 0,
+                      },
+                      {
+                        type: "text",
+                        id: `drive-text-${Date.now()}`,
+                        x: x + 12, y: y + 8,
+                        width: 256, height: 40,
+                        text: `${label}\n${url.length > 45 ? url.slice(0, 45) + "..." : url}`,
+                        fontSize: 13,
                         fontFamily: 1,
                         textAlign: "left",
                         verticalAlign: "top",
                         angle: 0,
-                        strokeColor: "#2563eb",
+                        strokeColor: cardColor,
                         backgroundColor: "transparent",
                         fillStyle: "solid",
                         strokeWidth: 1,
@@ -3119,7 +3171,7 @@ const ExcalidrawWrapper = () => {
                         link: url,
                         locked: false,
                         containerId: null,
-                        lineHeight: 1.25,
+                        lineHeight: 1.4,
                         autoResize: true,
                       }
                     ],
