@@ -686,19 +686,26 @@ const ExcalidrawWrapper = () => {
 
         try {
           const { images, elements } = await importPDFToCanvas(pdfFile);
-          excalidrawAPI.addFiles(
-            images.map((img: any) => ({
-              id: img.id as any,
-              dataURL: img.dataURL as any,
-              mimeType: (img.mimeType || "image/jpeg") as any,
-              created: Date.now(),
-            })),
-          );
+          const binaryFiles = images.map((img: any) => ({
+            id: img.id as any,
+            dataURL: img.dataURL as any,
+            mimeType: (img.mimeType || "image/jpeg") as any,
+            created: Date.now(),
+          }));
+
+          excalidrawAPI.addFiles(binaryFiles);
+
+          const currentFiles = { ...(excalidrawAPI.getFiles() || {}) };
+          binaryFiles.forEach((f: any) => {
+            currentFiles[f.id] = f;
+          });
+
           excalidrawAPI.updateScene({
             elements: [
               ...(excalidrawAPI.getSceneElements() || []),
               ...elements,
             ],
+            files: currentFiles,
           });
           (excalidrawAPI as any).scrollToContent?.(elements, { fitToViewport: true });
         } catch (err) {
@@ -2791,19 +2798,26 @@ const ExcalidrawWrapper = () => {
               setIsImportingPDF(true);
               try {
                 const { images, elements } = await importPDFToCanvas(file);
-                excalidrawAPI.addFiles(
-                  images.map((img: any) => ({
-                    id: img.id as any,
-                    dataURL: img.dataURL as any,
-                    mimeType: (img.mimeType || "image/jpeg") as any,
-                    created: Date.now(),
-                  })),
-                );
+                const binaryFiles = images.map((img: any) => ({
+                  id: img.id as any,
+                  dataURL: img.dataURL as any,
+                  mimeType: (img.mimeType || "image/jpeg") as any,
+                  created: Date.now(),
+                }));
+
+                excalidrawAPI.addFiles(binaryFiles);
+
+                const currentFiles = { ...(excalidrawAPI.getFiles() || {}) };
+                binaryFiles.forEach((f: any) => {
+                  currentFiles[f.id] = f;
+                });
+
                 excalidrawAPI.updateScene({
                   elements: [
                     ...(excalidrawAPI.getSceneElements() || []),
                     ...elements,
                   ],
+                  files: currentFiles,
                 });
                 (excalidrawAPI as any).scrollToContent?.(elements, { fitToViewport: true });
               } catch (err) {
