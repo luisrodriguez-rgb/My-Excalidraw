@@ -674,25 +674,30 @@ const ExcalidrawWrapper = () => {
     });
   };
 
-  // Intercept PDF Drag & Drop files natively before Excalidraw throws "Couldn't load invalid file"
+  // Intercept PDF and .excalidraw / .json Drag & Drop files natively before Excalidraw throws errors
   useEffect(() => {
     const handleDragOver = (e: DragEvent) => {
       if (e.dataTransfer?.types?.includes("Files")) {
-        const items = Array.from(e.dataTransfer.items || []);
-        const hasPDF = items.some((item) => item.type === "application/pdf" || item.kind === "file");
-        if (hasPDF) {
-          e.preventDefault();
-        }
+        e.preventDefault();
       }
     };
 
     const handleDrop = async (e: DragEvent) => {
       const files = Array.from(e.dataTransfer?.files || []);
+      if (!files.length || !excalidrawAPI) return;
+
       const pdfFile = files.find(
         (f) => f.type === "application/pdf" || f.name.toLowerCase().endsWith(".pdf"),
       );
 
-      if (pdfFile && excalidrawAPI) {
+      const excalidrawFile = files.find(
+        (f) =>
+          f.name.toLowerCase().endsWith(".excalidraw") ||
+          f.name.toLowerCase().endsWith(".json") ||
+          f.type === "application/json",
+      );
+
+      if (pdfFile) {
         e.preventDefault();
         e.stopPropagation();
         e.stopImmediatePropagation();
@@ -729,6 +734,62 @@ const ExcalidrawWrapper = () => {
           alert("Ocurrió un error al importar el archivo PDF.");
         } finally {
           setIsImportingPDF(false);
+        }
+      } else if (excalidrawFile) {
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+
+        try {
+          let loadedData: any = null;
+          try {
+            const blobResult = await loadFromBlob(excalidrawFile, null, null);
+            if (blobResult?.elements) {
+              loadedData = blobResult;
+            }
+          } catch (_e) {
+            // Fallback: parse JSON directly if type tag is missing
+            const text = await excalidrawFile.text();
+            const parsed = JSON.parse(text);
+            const rawElements = Array.isArray(parsed)
+              ? parsed
+              : parsed.elements || [];
+            if (rawElements.length) {
+              loadedData = {
+                elements: rawElements,
+                files: parsed.files || {},
+              };
+            }
+          }
+
+          if (loadedData && loadedData.elements?.length) {
+            if (loadedData.files && Object.keys(loadedData.files).length > 0) {
+              const fileList = Object.values(loadedData.files);
+              excalidrawAPI.addFiles(fileList as any);
+            }
+
+            const currentFiles = {
+              ...(excalidrawAPI.getFiles() || {}),
+              ...(loadedData.files || {}),
+            };
+
+            (excalidrawAPI as any).updateScene({
+              elements: [
+                ...(excalidrawAPI.getSceneElements() || []),
+                ...loadedData.elements,
+              ],
+              files: currentFiles,
+            });
+
+            (excalidrawAPI as any).scrollToContent?.(loadedData.elements, {
+              fitToViewport: true,
+            });
+          } else {
+            alert("El archivo no contiene elementos válidos de Excalidraw.");
+          }
+        } catch (err) {
+          console.error("Excalidraw Drag & Drop import error:", err);
+          alert("No se pudo cargar el archivo .excalidraw.");
         }
       }
     };
