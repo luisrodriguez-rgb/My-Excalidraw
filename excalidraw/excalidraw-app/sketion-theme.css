@@ -44,12 +44,13 @@
    1. GLOBAL TYPOGRAPHY & RESET
    -------------------------------------------------------------------------- */
 body, 
-button, 
-input, 
-select, 
-textarea, 
-.excalidraw, 
-.excalidraw * {
+button,
+.excalidraw .layer-ui__wrapper,
+.excalidraw .Island,
+.excalidraw .dropdown-menu,
+.excalidraw .context-menu,
+.excalidraw .popover,
+.excalidraw .modal {
   font-family: var(--sketion-font-family) !important;
 }
 
@@ -111,20 +112,34 @@ textarea,
   box-shadow: 0 2px 10px var(--sketion-cyan-glow) !important;
 }
 
-/* --------------------------------------------------------------------------
-   3. DROPDOWNS, POPOVERS & CONTEXT MENUS (GLASSMORPHISM)
-   -------------------------------------------------------------------------- */
-.excalidraw .dropdown-menu,
-.excalidraw .popover,
-.excalidraw .context-menu,
-.excalidraw .Island,
-.excalidraw .layer-ui__wrapper .Island {
-  background: var(--sketion-glass-bg) !important;
-  backdrop-filter: blur(20px) !important;
-  -webkit-backdrop-filter: blur(20px) !important;
-  border: 1px solid var(--sketion-glass-border) !important;
+/* Light Theme Popovers, Sidebar & Islands */
+.excalidraw.theme--light .dropdown-menu,
+.excalidraw.theme--light .popover,
+.excalidraw.theme--light .context-menu,
+.excalidraw.theme--light .Island,
+.excalidraw.theme--light .layer-ui__wrapper .Island {
+  background: rgba(255, 255, 255, 0.9) !important;
+  backdrop-filter: blur(24px) !important;
+  -webkit-backdrop-filter: blur(24px) !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+  border-radius: 14px !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08) !important;
+  color: #1A1F26 !important;
+}
+
+/* Dark Theme Popovers, Sidebar & Islands */
+.excalidraw.theme--dark .dropdown-menu,
+.excalidraw.theme--dark .popover,
+.excalidraw.theme--dark .context-menu,
+.excalidraw.theme--dark .Island,
+.excalidraw.theme--dark .layer-ui__wrapper .Island {
+  background: rgba(26, 31, 38, 0.9) !important;
+  backdrop-filter: blur(24px) !important;
+  -webkit-backdrop-filter: blur(24px) !important;
+  border: 1px solid rgba(242, 244, 247, 0.1) !important;
   border-radius: 14px !important;
   box-shadow: var(--sketion-shadow-card) !important;
+  color: #F2F4F7 !important;
 }
 
 /* Dropdown Menu Item Hover Glow */
@@ -159,13 +174,26 @@ textarea,
 /* --------------------------------------------------------------------------
    4. APP FOOTER & STATUS BAR
    -------------------------------------------------------------------------- */
-.excalidraw .footer-center,
-.excalidraw .footer-right,
-.excalidraw .App-bottom-bar {
-  background: var(--sketion-glass-bg) !important;
+
+/* Light Theme Footer */
+.excalidraw.theme--light .footer-center,
+.excalidraw.theme--light .footer-right,
+.excalidraw.theme--light .App-bottom-bar {
+  background: rgba(255, 255, 255, 0.9) !important;
   backdrop-filter: blur(16px) !important;
   border-radius: 12px !important;
-  border: 1px solid var(--sketion-glass-border) !important;
+  border: 1px solid rgba(0, 0, 0, 0.06) !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04) !important;
+}
+
+/* Dark Theme Footer */
+.excalidraw.theme--dark .footer-center,
+.excalidraw.theme--dark .footer-right,
+.excalidraw.theme--dark .App-bottom-bar {
+  background: rgba(26, 31, 38, 0.9) !important;
+  backdrop-filter: blur(16px) !important;
+  border-radius: 12px !important;
+  border: 1px solid rgba(242, 244, 247, 0.08) !important;
 }
 
 /* --------------------------------------------------------------------------
