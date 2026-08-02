@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <linearGradient id="sketionGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#06B6D4"/>
+      <stop offset="100%" stop-color="#7C3AED"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Dark Deep Base (#0B0F14) -->
+  <rect width="512" height="512" rx="128" fill="#0B0F14"/>
+
+  <!-- Sketion 'S' Geometric Node Path -->
+  <g transform="translate(0, 0)">
+    <!-- Main S Curve -->
+    <path d="M 352 176 L 224 176 C 180 176 152 204 152 240 C 152 276 180 300 224 308 L 288 320 C 332 328 360 352 360 388 C 360 424 332 452 288 452 L 160 452" 
+          fill="none" 
+          stroke="url(#sketionGradient)" 
+          stroke-width="40" 
+          stroke-linecap="round" 
+          stroke-linejoin="round"/>
+    
+    <!-- Connector Nodes -->
+    <circle cx="352" cy="176" r="18" fill="#06B6D4"/>
+    <circle cx="160" cy="452" r="18" fill="#7C3AED"/>
+  </g>
+</svg>

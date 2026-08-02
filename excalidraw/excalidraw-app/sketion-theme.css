@@ -1,0 +1,106 @@
+/* ==========================================================================
+   SKETION OFFICIAL BRAND DESIGN SYSTEM & GLOBAL THEME TOKENS
+   Tagline: Think. Structure. Build.
+   ========================================================================== */
+
+:root {
+  /* Sketion Core Palette (Brand Guide Specs) */
+  --sketion-bg-deep: #0B0F14;
+  --sketion-bg-surface: #1A1F26;
+  --sketion-text-light: #F2F4F7;
+  --sketion-text-muted: rgba(242, 244, 247, 0.65);
+  
+  --sketion-cyan: #06B6D4;
+  --sketion-violet: #7C3AED;
+  --sketion-gradient: linear-gradient(135deg, #06B6D4 0%, #7C3AED 100%);
+  --sketion-gradient-hover: linear-gradient(135deg, #0891B2 0%, #6D28D9 100%);
+
+  /* Typography */
+  --sketion-font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+
+  /* Shadows & Glows */
+  --sketion-glow-cyan: 0 0 24px rgba(6, 182, 212, 0.35);
+  --sketion-glow-violet: 0 0 24px rgba(124, 58, 237, 0.35);
+  --sketion-shadow-card: 0 8px 32px rgba(0, 0, 0, 0.4);
+
+  /* Glassmorphism */
+  --sketion-glass-bg: rgba(26, 31, 38, 0.75);
+  --sketion-glass-border: rgba(242, 244, 247, 0.08);
+}
+
+/* Global Font & Brand Application */
+body, button, input, select, textarea {
+  font-family: var(--sketion-font-family);
+}
+
+/* Sketion Gradient Text Utility Class */
+.sketion-gradient-text {
+  font-family: var(--sketion-font-family);
+  background: var(--sketion-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Sketion Tagline Utility Class */
+.sketion-tagline {
+  font-family: var(--sketion-font-family);
+  color: var(--sketion-text-light);
+  opacity: 0.7;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+/* Sketion Card & Glass Container */
+.sketion-glass-card {
+  background: var(--sketion-glass-bg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--sketion-glass-border);
+  border-radius: 16px;
+  box-shadow: var(--sketion-shadow-card);
+}
+
+/* App Welcome Screen Brand Layout */
+.sketion-welcome-heading {
+  text-align: center;
+  font-family: var(--sketion-font-family);
+}
+
+.sketion-welcome-title {
+  font-size: 2.5rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  background: var(--sketion-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.sketion-welcome-subtitle {
+  font-size: 0.85rem;
+  color: var(--sketion-text-light);
+  opacity: 0.7;
+  margin-top: 6px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+/* Sketion Logo Container Effects */
+.sketion-logo-wrapper {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+
+.sketion-logo-img {
+  width: 76px;
+  height: 76px;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), filter 0.3s ease;
+  filter: drop-shadow(0 6px 20px rgba(6, 182, 212, 0.35));
+}
+
+.sketion-logo-img:hover {
+  transform: scale(1.06) rotate(2deg);
+  filter: drop-shadow(0 8px 28px rgba(124, 58, 237, 0.5));
+}

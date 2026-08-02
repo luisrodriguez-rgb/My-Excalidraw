@@ -8,8 +8,6 @@ import type { Theme } from "@excalidraw/element/types";
 import { LanguageList } from "../app-language/LanguageList";
 import { supabase } from "../data/supabaseClient";
 
-import { saveDebugState } from "./DebugCanvas";
-
 const HomeIcon = (
   <svg
     xmlns="http://www.w3.org/2000/svg"
