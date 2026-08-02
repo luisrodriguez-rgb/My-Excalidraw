@@ -1,7 +1,6 @@
-import { loginIcon, eyeIcon } from "@excalidraw/excalidraw/components/icons";
+import { loginIcon } from "@excalidraw/excalidraw/components/icons";
 import { MainMenu } from "@excalidraw/excalidraw/index";
 import React, { useState, useEffect } from "react";
-import { isDevEnv } from "@excalidraw/common";
 
 import type { Theme } from "@excalidraw/element/types";
 
@@ -131,23 +130,7 @@ export const AppMainMenu: React.FC<{
         </MainMenu.Item>
       )}
 
-      {isDevEnv() && (
-        <MainMenu.Item
-          icon={eyeIcon}
-          onSelect={() => {
-            if (window.visualDebug) {
-              delete window.visualDebug;
-              saveDebugState({ enabled: false });
-            } else {
-              window.visualDebug = { data: [] };
-              saveDebugState({ enabled: true });
-            }
-            props?.refresh();
-          }}
-        >
-          Visual Debug
-        </MainMenu.Item>
-      )}
+
 
       <MainMenu.Separator />
       <MainMenu.DefaultItems.Preferences />
