@@ -514,7 +514,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
       return;
     }
     const id = `board_${crypto.randomUUID().replace(/-/g, "").substring(0, 12)}`;
-    let name = `Workspace ${boards.filter(b => !b.isDeleted).length + 1}`;
+    let name = `Sketion ${boards.filter(b => !b.isDeleted).length + 1}`;
     let elements: any[] = [];
 
     if (templateId) {
@@ -898,7 +898,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
         <div className="logo-section">
           <img src="/logo-custom-small.png" alt="Logo" className="logo-img" />
           <div className="logo-text">
-            <h2>Excalidraw</h2>
+            <h2>Sketion</h2>
             <span>Workspace</span>
           </div>
         </div>

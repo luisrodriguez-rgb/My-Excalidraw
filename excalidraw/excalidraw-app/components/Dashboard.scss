@@ -6,12 +6,12 @@
   --border-color: #2e2e36;
   --text-primary: #f3f4f6;
   --text-secondary: #9ca3af;
-  --accent-color: #e11d48; /* Red/Crimson highlight matching the logo */
-  --accent-hover: #be123c;
-  --accent-light: rgba(225, 29, 72, 0.15);
+  --accent-color: #06B6D4; /* Sketion Cyan */
+  --accent-hover: #7C3AED; /* Sketion Violet */
+  --accent-light: rgba(6, 182, 212, 0.15);
   --danger-color: #ef4444;
   --card-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
-  --font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, sans-serif;
+  --font-family: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 
   display: flex;
   height: 100vh;
@@ -29,9 +29,9 @@
     --border-color: #e2e8f0;
     --text-primary: #0f172a;
     --text-secondary: #64748b;
-    --accent-color: #e11d48; /* Premium Red */
-    --accent-hover: #be123c;
-    --accent-light: rgba(225, 29, 72, 0.08);
+    --accent-color: #06B6D4; /* Sketion Cyan */
+    --accent-hover: #7C3AED; /* Sketion Violet */
+    --accent-light: rgba(6, 182, 212, 0.08);
     --card-shadow: 0 4px 18px rgba(15, 23, 42, 0.04);
   }
 
@@ -423,7 +423,7 @@
           &:focus {
             border-color: var(--accent-color);
             background-color: var(--bg-card);
-            box-shadow: 0 0 0 3px rgba(225, 29, 72, 0.1);
+            box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.15);
           }
         }
 
@@ -790,7 +790,7 @@
 
         // Stats card color variants (pastel light backgrounds)
         &.board-count-card .stat-icon-compact {
-          background-color: rgba(225, 29, 72, 0.08);
+          background-color: rgba(6, 182, 212, 0.08);
           color: var(--accent-color);
         }
         &.folder-count-card .stat-icon-compact {
@@ -1419,12 +1419,12 @@
 
           &:hover {
             border-color: var(--accent-color);
-            background-color: rgba(225, 29, 72, 0.02);
+            background-color: rgba(6, 182, 212, 0.02);
 
             .placeholder-content {
               .plus-dashed-icon {
                 border-color: var(--accent-color);
-                background-color: rgba(225, 29, 72, 0.04);
+                background-color: rgba(6, 182, 212, 0.04);
                 color: var(--accent-color);
                 transform: scale(1.05);
               }
@@ -1788,7 +1788,7 @@
 
       .left-pink-hero-section {
         width: 320px;
-        background: linear-gradient(135deg, rgba(225, 29, 72, 0.08) 0%, rgba(225, 29, 72, 0.02) 100%);
+        background: linear-gradient(135deg, rgba(6, 182, 212, 0.08) 0%, rgba(124, 58, 237, 0.02) 100%);
         border-right: 1px solid var(--border-color);
         padding: 24px;
         display: flex;
@@ -1799,7 +1799,7 @@
           width: 44px;
           height: 44px;
           border-radius: 10px;
-          background-color: #ffe4e6;
+          background-color: rgba(6, 182, 212, 0.15);
           color: var(--accent-color);
           display: flex;
           align-items: center;
@@ -2050,19 +2050,20 @@
 }
 
 .quota-alert-banner {
-  background-color: #fee2e2;
-  border: 1px solid #fca5a5;
+  background-color: rgba(124, 58, 237, 0.12);
+  border: 1px solid rgba(124, 58, 237, 0.3);
   border-radius: 12px;
   padding: 16px 20px;
   margin-bottom: 24px;
   display: flex;
   align-items: center;
   gap: 16px;
-  color: #991b1b;
+  color: #F2F4F7;
   animation: slideDownAlert 0.3s ease-out;
 
   .alert-icon {
     font-size: 20px;
+    color: #06B6D4;
   }
 
   .alert-content {
@@ -2073,7 +2074,7 @@
   }
 
   .btn-upgrade-banner {
-    background-color: #ef4444;
+    background: var(--sketion-gradient, linear-gradient(135deg, #06B6D4 0%, #7C3AED 100%));
     color: white;
     border: none;
     padding: 8px 16px;
@@ -2081,11 +2082,12 @@
     font-weight: 600;
     font-size: 12.5px;
     cursor: pointer;
-    transition: background-color 0.15s ease;
+    transition: all 0.2s ease;
     white-space: nowrap;
 
     &:hover {
-      background-color: #dc2626;
+      filter: brightness(1.1);
+      transform: translateY(-1px);
     }
   }
 }
@@ -2611,8 +2613,8 @@
 
       &:hover {
         background: #ffffff;
-        border-color: #ef4444;
-        box-shadow: 0 4px 12px rgba(239, 68, 68, 0.08);
+        border-color: var(--accent-color);
+        box-shadow: 0 4px 12px rgba(6, 182, 212, 0.1);
       }
 
       .version-info {
@@ -2632,13 +2634,13 @@
 
           .elements-count-badge {
             font-weight: 600;
-            color: #ef4444;
+            color: var(--accent-hover);
           }
         }
       }
 
       .version-restore-btn {
-        background: #ef4444;
+        background: var(--accent-color);
         color: #ffffff;
         border: none;
         border-radius: 8px;
@@ -2649,7 +2651,7 @@
         transition: all 0.15s ease;
 
         &:hover {
-          background: #dc2626;
+          background: var(--accent-hover);
           transform: translateY(-1px);
         }
 

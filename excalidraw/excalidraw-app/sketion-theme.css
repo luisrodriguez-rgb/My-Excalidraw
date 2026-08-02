@@ -130,10 +130,30 @@ textarea,
 /* Dropdown Menu Item Hover Glow */
 .excalidraw .dropdown-menu-item:hover,
 .excalidraw .dropdown-menu-item.highlighted {
-  background: rgba(124, 58, 237, 0.15) !important;
-  color: var(--sketion-text-light) !important;
   border-left: 3px solid var(--sketion-cyan) !important;
   padding-left: 12px !important;
+}
+
+/* Light Theme highlighted styles */
+.excalidraw.theme--light .dropdown-menu-item:hover,
+.excalidraw.theme--light .dropdown-menu-item.highlighted {
+  background: rgba(124, 58, 237, 0.1) !important;
+  color: #7C3AED !important;
+}
+.excalidraw.theme--light .dropdown-menu-item:hover *,
+.excalidraw.theme--light .dropdown-menu-item.highlighted * {
+  color: #7C3AED !important;
+}
+
+/* Dark Theme highlighted styles */
+.excalidraw.theme--dark .dropdown-menu-item:hover,
+.excalidraw.theme--dark .dropdown-menu-item.highlighted {
+  background: rgba(124, 58, 237, 0.25) !important;
+  color: #FFFFFF !important;
+}
+.excalidraw.theme--dark .dropdown-menu-item:hover *,
+.excalidraw.theme--dark .dropdown-menu-item.highlighted * {
+  color: #FFFFFF !important;
 }
 
 /* --------------------------------------------------------------------------

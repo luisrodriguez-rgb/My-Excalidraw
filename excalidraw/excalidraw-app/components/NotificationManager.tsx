@@ -33,7 +33,7 @@ export const NotificationManager: React.FC<NotificationManagerProps> = ({
   useEffect(() => {
     const handleFocus = () => {
       setUnreadCount(0);
-      document.title = "Excalidraw Workspace";
+      document.title = "Sketion — Think. Structure. Build.";
     };
 
     window.addEventListener("focus", handleFocus);
@@ -42,9 +42,9 @@ export const NotificationManager: React.FC<NotificationManagerProps> = ({
 
   useEffect(() => {
     if (unreadCount > 0) {
-      document.title = `(${unreadCount}) Excalidraw Workspace`;
+      document.title = `(${unreadCount}) Sketion`;
     } else {
-      document.title = "Excalidraw Workspace";
+      document.title = "Sketion — Think. Structure. Build.";
     }
   }, [unreadCount]);
 
