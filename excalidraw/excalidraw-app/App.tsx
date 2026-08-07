@@ -140,6 +140,7 @@ import { Dashboard } from "./components/Dashboard";
 import { CollabChat } from "./components/CollabChat";
 import { NotificationManager } from "./components/NotificationManager";
 import { Minimap } from "./components/Minimap";
+import { PDFTextLayersOverlay } from "./components/PDFTextLayersOverlay";
 import { PresenceBar } from "./components/PresenceBar";
 import { AuthModal } from "./components/AuthModal";
 import { PresentationMode } from "./components/PresentationMode";
@@ -1063,6 +1064,9 @@ const ExcalidrawWrapper = () => {
   const minimapElementsRef = useRef<readonly any[]>([]);
   const minimapAppStateRef = useRef<any>(null);
   const [minimapTick, setMinimapTick] = useState(0);
+  const [minimapVisible, setMinimapVisible] = useState(true);
+  const minimapUpdateRef = useRef<((appState: any) => void) | null>(null);
+  const textLayersOverlayUpdateRef = useRef<((appState: any) => void) | null>(null);
   // Throttle minimap updates to at most once per 200ms to avoid re-renders every frame
   const throttledMinimapRefresh = useRef(
     debounce(() => setMinimapTick((t) => t + 1), 200),
@@ -1810,6 +1814,8 @@ const ExcalidrawWrapper = () => {
     // Update refs without triggering React re-renders on every frame
     minimapElementsRef.current = elements;
     minimapAppStateRef.current = appState;
+    minimapUpdateRef.current?.(appState);
+    textLayersOverlayUpdateRef.current?.(appState);
     throttledMinimapRefresh();
 
     // Sync username changes to realtime presence
@@ -2737,6 +2743,17 @@ const ExcalidrawWrapper = () => {
           appState={minimapAppStateRef.current}
           excalidrawAPI={excalidrawAPI}
           tick={minimapTick}
+          visible={minimapVisible}
+          onClose={() => setMinimapVisible(false)}
+          updateRef={minimapUpdateRef}
+        />
+      )}
+
+      {activeBoardId && excalidrawAPI && minimapAppStateRef.current && (
+        <PDFTextLayersOverlay
+          elements={minimapElementsRef.current}
+          appState={minimapAppStateRef.current}
+          updateRef={textLayersOverlayUpdateRef}
         />
       )}
 
@@ -2952,6 +2969,57 @@ const ExcalidrawWrapper = () => {
                     files: currentFiles,
                   });
                   (excalidrawAPI as any).scrollToContent?.(elements, { fitToViewport: true });
+
+                  // Subida asíncrona a Supabase Storage en segundo plano
+                  const boardFolder = activeBoardId || "local_board";
+                  images.forEach(async (img: any) => {
+                    try {
+                      const bucketName = "excalidraw-files";
+                      const filePath = `${boardFolder}/${img.id}.jpg`;
+                      
+                      const { error } = await supabase.storage
+                        .from(bucketName)
+                        .upload(filePath, img.blob, {
+                          contentType: "image/jpeg",
+                          upsert: true,
+                        });
+                      
+                      if (error) {
+                        console.warn(`[Background Storage] Error al subir ${img.id}:`, error.message);
+                        return;
+                      }
+
+                      const { data } = supabase.storage
+                        .from(bucketName)
+                        .getPublicUrl(filePath);
+                      
+                      const publicUrl = data.publicUrl;
+
+                      if (excalidrawAPI) {
+                        const filesStore = excalidrawAPI.getFiles();
+                        const updatedFiles = {
+                          ...filesStore,
+                          [img.id]: {
+                            ...filesStore[img.id],
+                            dataURL: publicUrl as any,
+                          },
+                        };
+
+                        excalidrawAPI.addFiles([{
+                          id: img.id,
+                          dataURL: publicUrl as any,
+                          mimeType: "image/jpeg",
+                          created: Date.now(),
+                        }]);
+
+                        (excalidrawAPI as any).updateScene({
+                          files: updatedFiles,
+                        });
+                      }
+                    } catch (uploadErr) {
+                      console.error(`[Background Storage] Fallo en carga para ${img.id}:`, uploadErr);
+                    }
+                  });
                 } catch (err) {
                   console.error("PDF import error:", err);
                   alert("Error al importar el PDF.");
@@ -3051,6 +3119,46 @@ const ExcalidrawWrapper = () => {
               </svg>
             </button>
           )}
+
+          {/* 11. Alternar Mapa del Canvas */}
+          <button
+            className={`floating-action-btn floating-minimap-btn ${minimapVisible ? "active" : ""}`}
+            onPointerDown={(e) => {
+              e.stopPropagation();
+              setMinimapVisible(!minimapVisible);
+            }}
+            title={minimapVisible ? "Ocultar mapa del canvas" : "Mostrar mapa del canvas"}
+            style={{
+              width: "36px",
+              height: "36px",
+              borderRadius: "50%",
+              backgroundColor: minimapVisible ? "#ef4444" : "#ffffff",
+              color: minimapVisible ? "#ffffff" : "#ef4444",
+              border: `1.5px solid ${minimapVisible ? "#ef4444" : "#fecaca"}`,
+              boxShadow: "0 2px 8px rgba(0,0,0,0.10)",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              pointerEvents: "auto",
+            }}
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21" />
+              <line x1="9" y1="3" x2="9" y2="18" />
+              <line x1="15" y1="6" x2="15" y2="21" />
+            </svg>
+          </button>
         </div>
       )}
       {showLaTeXModal && (

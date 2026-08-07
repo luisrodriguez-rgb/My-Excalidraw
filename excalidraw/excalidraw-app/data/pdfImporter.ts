@@ -17,7 +17,7 @@ export const importPDFToCanvas = async (
   file: File,
   onProgress?: (progress: PDFImportProgress) => void,
 ): Promise<{
-  images: { id: string; dataURL: string; mimeType: string; width: number; height: number }[];
+  images: { id: string; dataURL: string; mimeType: string; width: number; height: number; blob: Blob }[];
   elements: any[];
 }> => {
   // Dynamically load pdfjs from CDN
@@ -26,7 +26,7 @@ export const importPDFToCanvas = async (
   const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
   const totalPages = pdf.numPages;
 
-  const images: { id: string; dataURL: string; mimeType: string; width: number; height: number }[] = [];
+  const images: { id: string; dataURL: string; mimeType: string; width: number; height: number; blob: Blob }[] = [];
   const elements: any[] = [];
 
   let currentY = 100;
@@ -61,8 +61,17 @@ export const importPDFToCanvas = async (
       viewport,
     }).promise;
 
-    const dataURL = canvas.toDataURL("image/jpeg", 0.75);
+    // OPTIMIZACIÓN: Generar Blob local en lugar de DataURL Base64 gigante
+    const blob = await new Promise<Blob | null>((resolve) => {
+      canvas.toBlob(resolve, "image/jpeg", 0.75);
+    });
+    if (!blob) continue;
+
+    const dataURL = URL.createObjectURL(blob);
     const fileId = `pdf_page_${Date.now()}_${i}_${Math.random().toString(36).substring(2, 9)}`;
+
+    // Extracción de Texto usando PDF.js
+    const textContent = await page.getTextContent();
 
     images.push({
       id: fileId,
@@ -70,6 +79,7 @@ export const importPDFToCanvas = async (
       mimeType: "image/jpeg",
       width: viewport.width,
       height: viewport.height,
+      blob,
     });
 
     // Create an Excalidraw Image Element for this page
@@ -100,6 +110,10 @@ export const importPDFToCanvas = async (
         pdfName: file.name,
         pageIndex: i,
         totalPages,
+        viewBox: unscaledViewport.viewBox,
+        scale: targetScale,
+        rotation: unscaledViewport.rotation,
+        textContent,
       },
     };
 
@@ -116,7 +130,7 @@ export const importPDFToCanvas = async (
 /**
  * Helper to dynamically load pdfjs library if not present
  */
-const loadPdfJs = async (): Promise<any> => {
+export const loadPdfJs = async (): Promise<any> => {
   if ((window as any).pdfjsLib) {
     return (window as any).pdfjsLib;
   }

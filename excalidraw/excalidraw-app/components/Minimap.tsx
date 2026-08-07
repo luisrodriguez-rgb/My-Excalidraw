@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState } from "react";
+import React, { useRef, useEffect, useState, useMemo } from "react";
 import "./Minimap.scss";
 
 interface MinimapProps {
@@ -6,6 +6,9 @@ interface MinimapProps {
   appState: any;
   excalidrawAPI: any;
   tick?: number;
+  visible: boolean;
+  onClose: () => void;
+  updateRef?: React.MutableRefObject<((appState: any) => void) | null>;
 }
 
 export const Minimap: React.FC<MinimapProps> = ({
@@ -13,10 +16,12 @@ export const Minimap: React.FC<MinimapProps> = ({
   appState,
   excalidrawAPI,
   tick,
+  visible,
+  onClose,
+  updateRef,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const offscreenCanvasRef = useRef<HTMLCanvasElement | null>(null);
-  const [visible, setVisible] = useState(true);
   const [showDetails, setShowDetails] = useState(true);
 
   // Dragging state
@@ -24,17 +29,26 @@ export const Minimap: React.FC<MinimapProps> = ({
   const dragStart = useRef({ x: 0, y: 0 });
   const dragStartScroll = useRef({ scrollX: 0, scrollY: 0 });
 
-  // Cache bounds, scale and offsets to avoid recalculations during scroll
-  const boundsRef = useRef({ minX: -1000, maxX: 1000, minY: -1000, maxY: 1000 });
+  // Cache scale and offsets to avoid recalculations during scroll
   const scaleRef = useRef(1);
   const offsetXRef = useRef(0);
   const offsetYRef = useRef(0);
   const viewportBoundsRef = useRef({ x: 0, y: 0, w: 0, h: 0 });
+  const rafRef = useRef<number | null>(null);
 
-  const activeElements = elements.filter((el) => !el.isDeleted);
+  // Keep a reference to the latest appState to prevent stale closures during drag/raf
+  const appStateRef = useRef(appState);
+  useEffect(() => {
+    appStateRef.current = appState;
+  }, [appState]);
 
-  // Recalculate bounds and update the cached reference
-  const getSceneBounds = () => {
+  // OPTIMIZACIÓN 1: Memorizar elementos activos para evitar loops innecesarios en cada render
+  const activeElements = useMemo(() => {
+    return elements.filter((el) => !el.isDeleted);
+  }, [elements]);
+
+  // OPTIMIZACIÓN 2: Memorizar los límites de la escena para no recalcular en scrolls
+  const bounds = useMemo(() => {
     if (activeElements.length === 0) {
       return { minX: -1000, maxX: 1000, minY: -1000, maxY: 1000 };
     }
@@ -44,12 +58,13 @@ export const Minimap: React.FC<MinimapProps> = ({
     let minY = Infinity;
     let maxY = -Infinity;
 
-    activeElements.forEach((el) => {
+    for (let i = 0; i < activeElements.length; i++) {
+      const el = activeElements[i];
       minX = Math.min(minX, el.x);
       minY = Math.min(minY, el.y);
       maxX = Math.max(maxX, el.x + (el.width || 0));
       maxY = Math.max(maxY, el.y + (el.height || 0));
-    });
+    }
 
     const padding = 200;
     return {
@@ -58,10 +73,10 @@ export const Minimap: React.FC<MinimapProps> = ({
       minY: minY - padding,
       maxY: maxY + padding,
     };
-  };
+  }, [activeElements]);
 
-  // 1. Static drawing cycle: renders elements onto the offscreen canvas
-  // This ONLY runs when the active elements list or tick changes, NOT during scrolls.
+  // Ciclo 1: Dibujo estático de elementos en el Offscreen Canvas
+  // Esto solo se ejecuta cuando cambian los elementos activos, el tick o el tema.
   useEffect(() => {
     const mainCanvas = canvasRef.current;
     if (!mainCanvas) return;
@@ -78,9 +93,6 @@ export const Minimap: React.FC<MinimapProps> = ({
 
     ctx.clearRect(0, 0, offscreen.width, offscreen.height);
 
-    const bounds = getSceneBounds();
-    boundsRef.current = bounds;
-
     const boundsWidth = bounds.maxX - bounds.minX;
     const boundsHeight = bounds.maxY - bounds.minY;
 
@@ -96,22 +108,22 @@ export const Minimap: React.FC<MinimapProps> = ({
 
     if (activeElements.length === 0) return;
 
-    // High fidelity shape rendering
+    // Renderizado de figuras optimizado
     activeElements.forEach((el) => {
       const elX = el.x * scale + offsetX;
       const elY = el.y * scale + offsetY;
       const elW = (el.width || 0) * scale;
       const elH = (el.height || 0) * scale;
 
-      const isSelected = appState?.selectedElementIds?.[el.id];
+      const isSelected = appStateRef.current?.selectedElementIds?.[el.id];
 
-      // Styling based on selection and element type
+      // Estilo de relleno y borde basado en selección y tema
       if (isSelected) {
         ctx.fillStyle = "rgba(168, 85, 247, 0.7)"; // Selected glowing purple
         ctx.strokeStyle = "#a855f7";
         ctx.lineWidth = 1.5;
       } else {
-        ctx.fillStyle = appState.theme === "dark" 
+        ctx.fillStyle = appStateRef.current?.theme === "dark" 
           ? (el.strokeColor === "#000000" || el.strokeColor === "#1e1e1e" ? "rgba(255,255,255,0.25)" : el.strokeColor || "rgba(255,255,255,0.2)")
           : (el.strokeColor === "#ffffff" ? "rgba(0,0,0,0.15)" : el.strokeColor || "rgba(0,0,0,0.15)");
         ctx.strokeStyle = "transparent";
@@ -126,85 +138,95 @@ export const Minimap: React.FC<MinimapProps> = ({
           ctx.fill();
           if (isSelected) ctx.stroke();
         } else if (el.type === "arrow" || el.type === "line" || el.type === "freedraw") {
-          // Draw simplified connection line
           ctx.strokeStyle = ctx.fillStyle;
           ctx.lineWidth = Math.max(1, scale * 3);
           ctx.moveTo(elX, elY);
           ctx.lineTo(elX + elW, elY + elH);
           ctx.stroke();
         } else if (el.type === "text") {
-          // Text boxes styled as blueprint text composition lines
           ctx.fillRect(elX, elY, Math.max(elW, 2), Math.max(scale * 3, 1));
           ctx.fillRect(elX, elY + elH * 0.5, Math.max(elW * 0.7, 2), Math.max(scale * 2, 1));
         } else {
-          // Rectangles, images, and other cards
           ctx.fillRect(elX, elY, Math.max(elW, 2), Math.max(elH, 2));
           if (isSelected) ctx.strokeRect(elX, elY, Math.max(elW, 2), Math.max(elH, 2));
         }
       } else {
-        // Draw simplified generic shapes
         ctx.fillRect(elX, elY, Math.max(elW, 2), Math.max(elH, 2));
         if (isSelected) ctx.strokeRect(elX, elY, Math.max(elW, 2), Math.max(elH, 2));
       }
     });
 
-    // Refresh viewport overlay drawing on main canvas
-    drawViewportOnly();
+    // Refrescar el visor
+    triggerViewportDraw();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [elements, tick, showDetails, appState.theme]);
+  }, [bounds, activeElements, tick, showDetails, appState.theme]);
 
-  // 2. High-performance scroll drawing cycle (120 FPS)
-  // Copies the offscreen canvas onto the visible canvas and overlays the viewport
-  const drawViewportOnly = () => {
-    const canvas = canvasRef.current;
-    const offscreen = offscreenCanvasRef.current;
-    if (!canvas || !offscreen || !appState) return;
+  // Ciclo 2: Dibujo de alto rendimiento del visor con requestAnimationFrame
+  const triggerViewportDraw = () => {
+    if (rafRef.current) cancelAnimationFrame(rafRef.current);
 
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
+    rafRef.current = requestAnimationFrame(() => {
+      const canvas = canvasRef.current;
+      const offscreen = offscreenCanvasRef.current;
+      const currentAppState = appStateRef.current;
+      if (!canvas || !offscreen || !currentAppState) return;
 
-    const { width, height } = canvas;
-    ctx.clearRect(0, 0, width, height);
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
 
-    // Fast Blit: Copy offscreen elements cached image
-    ctx.drawImage(offscreen, 0, 0);
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(offscreen, 0, 0); // Fast blit
 
-    // Viewport layout calculation
-    const scale = scaleRef.current;
-    const offsetX = offsetXRef.current;
-    const offsetY = offsetYRef.current;
+      const scale = scaleRef.current;
+      const zoom = currentAppState.zoom.value;
+      const viewWidth = window.innerWidth / zoom;
+      const viewHeight = window.innerHeight / zoom;
+      
+      const vpX = (-currentAppState.scrollX) * scale + offsetXRef.current;
+      const vpY = (-currentAppState.scrollY) * scale + offsetYRef.current;
+      const vpW = viewWidth * scale;
+      const vpH = viewHeight * scale;
 
-    const zoom = appState.zoom.value;
-    const viewWidth = window.innerWidth / zoom;
-    const viewHeight = window.innerHeight / zoom;
-    const viewX = -appState.scrollX;
-    const viewY = -appState.scrollY;
+      viewportBoundsRef.current = { x: vpX, y: vpY, w: vpW, h: vpH };
 
-    const vpX = viewX * scale + offsetX;
-    const vpY = viewY * scale + offsetY;
-    const vpW = viewWidth * scale;
-    const vpH = viewHeight * scale;
-
-    viewportBoundsRef.current = { x: vpX, y: vpY, w: vpW, h: vpH };
-
-    // Viewport overlay styling
-    ctx.strokeStyle = "#a855f7";
-    ctx.lineWidth = 1.8;
-    ctx.strokeRect(vpX, vpY, vpW, vpH);
-
-    ctx.fillStyle = "rgba(168, 85, 247, 0.06)";
-    ctx.fillRect(vpX, vpY, vpW, vpH);
+      // Estilo caja contenedora del viewport (purple)
+      ctx.strokeStyle = "#a855f7";
+      ctx.lineWidth = 1.8;
+      ctx.strokeRect(vpX, vpY, vpW, vpH);
+      ctx.fillStyle = "rgba(168, 85, 247, 0.06)";
+      ctx.fillRect(vpX, vpY, vpW, vpH);
+    });
   };
 
+  // Registrar callback rápido para actualizaciones en tiempo real
   useEffect(() => {
-    drawViewportOnly();
+    if (!updateRef) return;
+    updateRef.current = (nextAppState: any) => {
+      appStateRef.current = nextAppState;
+      triggerViewportDraw();
+    };
+    return () => {
+      if (updateRef) {
+        updateRef.current = null;
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [updateRef]);
+
+  // Asegurar renderizado cuando se desmonta o cambia el visor
+  useEffect(() => {
+    triggerViewportDraw();
+    return () => {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [appState.scrollX, appState.scrollY, appState.zoom.value]);
 
-  // recents / zoom controls
   const handleZoom = (factor: number) => {
     if (!excalidrawAPI) return;
-    const currentZoom = appState.zoom.value;
+    const currentAppState = appStateRef.current;
+    if (!currentAppState) return;
+    const currentZoom = currentAppState.zoom.value;
     const newZoom = Math.min(Math.max(0.1, currentZoom * factor), 3.0);
     excalidrawAPI.updateScene({
       appState: { zoom: { value: newZoom } },
@@ -228,10 +250,10 @@ export const Minimap: React.FC<MinimapProps> = ({
     }
   };
 
-  // Dragging interaction
   const handlePointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
-    if (!canvas || !appState || !excalidrawAPI) return;
+    const currentAppState = appStateRef.current;
+    if (!canvas || !currentAppState || !excalidrawAPI) return;
 
     const rect = canvas.getBoundingClientRect();
     const clickX = e.clientX - rect.left;
@@ -239,7 +261,6 @@ export const Minimap: React.FC<MinimapProps> = ({
 
     const vp = viewportBoundsRef.current;
 
-    // Check if the click lies inside the viewport rectangle
     const isInsideViewport =
       clickX >= vp.x &&
       clickX <= vp.x + vp.w &&
@@ -250,26 +271,23 @@ export const Minimap: React.FC<MinimapProps> = ({
       isDraggingViewport.current = true;
       dragStart.current = { x: e.clientX, y: e.clientY };
       dragStartScroll.current = {
-        scrollX: appState.scrollX,
-        scrollY: appState.scrollY,
+        scrollX: currentAppState.scrollX,
+        scrollY: currentAppState.scrollY,
       };
       canvas.setPointerCapture(e.pointerId);
     } else {
-      // Direct jump recenter on click outside
       recenterAtClick(clickX, clickY);
     }
   };
 
   const handlePointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
-    if (!isDraggingViewport.current || !appState || !excalidrawAPI) return;
+    const currentAppState = appStateRef.current;
+    if (!isDraggingViewport.current || !currentAppState || !excalidrawAPI) return;
 
     const deltaX = e.clientX - dragStart.current.x;
     const deltaY = e.clientY - dragStart.current.y;
 
     const scale = scaleRef.current;
-    const zoom = appState.zoom.value;
-
-    // Convert minimap offset delta back to scene viewport scroll delta
     const sceneDeltaX = deltaX / scale;
     const sceneDeltaY = deltaY / scale;
 
@@ -287,16 +305,16 @@ export const Minimap: React.FC<MinimapProps> = ({
   };
 
   const recenterAtClick = (clickX: number, clickY: number) => {
-    const bounds = boundsRef.current;
+    const currentAppState = appStateRef.current;
+    if (!currentAppState || !excalidrawAPI) return;
     const scale = scaleRef.current;
     const offsetX = offsetXRef.current;
     const offsetY = offsetYRef.current;
 
-    // Convert coordinates
     const sceneX = (clickX - offsetX) / scale;
     const sceneY = (clickY - offsetY) / scale;
 
-    const zoom = appState.zoom.value;
+    const zoom = currentAppState.zoom.value;
     const scrollX = -sceneX + window.innerWidth / zoom / 2;
     const scrollY = -sceneY + window.innerHeight / zoom / 2;
 
@@ -305,35 +323,9 @@ export const Minimap: React.FC<MinimapProps> = ({
     });
   };
 
-  if (!visible) {
-    return (
-      <button
-        className="minimap-toggle-btn collapsed"
-        onClick={() => setVisible(true)}
-        title="Abrir mapa del canvas"
-      >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="20"
-          height="20"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2.5"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21" />
-          <line x1="9" y1="3" x2="9" y2="18" />
-          <line x1="15" y1="6" x2="15" y2="21" />
-        </svg>
-      </button>
-    );
-  }
+  if (!visible) return null;
 
-  const cursorStyle = isDraggingViewport.current 
-    ? "grabbing" 
-    : "grab";
+  const cursorStyle = isDraggingViewport.current ? "grabbing" : "grab";
 
   return (
     <div className="minimap-panel">
@@ -351,7 +343,7 @@ export const Minimap: React.FC<MinimapProps> = ({
               <polyline points="2 12 12 17 22 12"/>
             </svg>
           </button>
-          <button className="minimap-close" onClick={() => setVisible(false)} title="Cerrar">
+          <button className="minimap-close" onClick={onClose} title="Cerrar">
             ✕
           </button>
         </div>
@@ -360,15 +352,14 @@ export const Minimap: React.FC<MinimapProps> = ({
       <div className="minimap-body">
         <canvas
           ref={canvasRef}
-          width={180}
-          height={120}
+          width={150}
+          height={100}
           onPointerDown={handlePointerDown}
           onPointerMove={handlePointerMove}
           onPointerUp={handlePointerUp}
           style={{ cursor: cursorStyle }}
         />
         
-        {/* HUD control toolbar */}
         <div className="minimap-controls">
           <button onClick={() => handleZoom(1.1)} title="Zoom In">+</button>
           <button onClick={() => handleZoom(0.9)} title="Zoom Out">-</button>

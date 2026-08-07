@@ -11,16 +11,16 @@
   border-bottom-right-radius: 0;
   border-top-right-radius: 0;
   box-shadow: -4px -4px 20px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(239, 68, 68, 0.06);
-  padding: 12px;
+  padding: 8px;
   z-index: 999999;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
   overflow: hidden;
   user-select: none;
   font-family: "Outfit", "Inter", -apple-system, sans-serif;
   transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-  max-height: calc(100vh - 40px); /* Never overflow the screen, grows upward */
+  max-height: calc(100vh - 40px);
 
   .minimap-header {
     display: flex;
@@ -79,7 +79,7 @@
     position: relative;
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 6px;
 
     canvas {
       border-radius: 8px;
@@ -98,9 +98,9 @@
         background: rgba(255, 255, 255, 0.8);
         border: 1px solid rgba(0, 0, 0, 0.08);
         color: #475569;
-        font-size: 14px;
+        font-size: 12px;
         font-weight: 600;
-        padding: 5px 0;
+        padding: 3px 0;
         border-radius: 6px;
         cursor: pointer;
         display: flex;
@@ -110,7 +110,7 @@
         line-height: 1;
 
         &.btn-fit {
-          font-size: 11px;
+          font-size: 10px;
         }
 
         &:hover {
@@ -128,37 +128,6 @@
   }
 }
 
-.minimap-toggle-btn {
-  position: fixed;
-  bottom: 0;
-  right: 0;
-  width: 44px;
-  height: 44px;
-  border-radius: 12px 0 0 0;
-  background: rgba(255, 255, 255, 0.92);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(239, 68, 68, 0.18);
-  border-bottom: none;
-  border-right: none;
-  box-shadow: -4px -4px 14px rgba(0, 0, 0, 0.07);
-  color: #64748b;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 999999;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-
-  &:hover {
-    background: #ffffff;
-    color: #ef4444;
-  }
-
-  &:active {
-    transform: scale(0.95);
-  }
-}
-
 // Dark Mode Support
 .theme-dark {
   .minimap-panel {
@@ -170,6 +139,12 @@
       color: #94a3b8;
 
       .minimap-actions-left {
+        .action-toggle-details {
+          color: #94a3b8;
+          &:hover, &.active {
+            color: #f87171;
+          }
+        }
         .minimap-close {
           color: #64748b;
           &:hover {
@@ -200,18 +175,6 @@
       }
     }
   }
-
-  .minimap-toggle-btn {
-    background: rgba(30, 41, 59, 0.85);
-    border-color: rgba(255, 255, 255, 0.08);
-    color: #94a3b8;
-
-    &:hover {
-      background: #1e293b;
-      color: #f87171;
-      border-color: #ef4444;
-    }
-  }
 }
 
 // Corner exacto e integrado
@@ -225,15 +188,3 @@
   border-top-right-radius: 0 !important;
   margin: 0 !important;
 }
-
-.minimap-toggle-btn {
-  bottom: 0 !important;
-  right: 0 !important;
-  border-bottom: none !important;
-  border-right: none !important;
-  border-bottom-left-radius: 0 !important;
-  border-bottom-right-radius: 0 !important;
-  border-top-right-radius: 0 !important;
-  margin: 0 !important;
-}
-

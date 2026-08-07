@@ -414,7 +414,8 @@
   .floating-presentation-btn,
   .floating-comment-mode-btn,
   .floating-pdf-btn,
-  .floating-sheets-btn {
+  .floating-sheets-btn,
+  .floating-minimap-btn {
     transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
     background-color: #ffffff !important;
     color: #1e293b !important;
@@ -490,6 +491,35 @@
         color: #94a3b8;
       }
     }
+  }
+}
+
+/* PDF.js Text Layer Selection Styles */
+.pdf-text-layers-overlay {
+  user-select: none;
+}
+
+.pdf-text-layer {
+  color: transparent !important;
+  font-family: sans-serif;
+  transform-origin: 0 0;
+  pointer-events: auto;
+  user-select: text;
+  line-height: 1;
+  overflow: hidden;
+
+  span {
+    color: transparent !important;
+    position: absolute;
+    white-space: pre;
+    cursor: text;
+    transform-origin: 0% 0%;
+    forced-color-adjust: none;
+  }
+
+  ::selection {
+    background: rgba(0, 100, 255, 0.22) !important;
+    color: transparent !important;
   }
 }
 
